@@ -27,7 +27,7 @@ class User {
     private $onid;
 
     /** @var string */
-    private $onidEmail;
+    private $email;
 
     /** @var \DateTime|null */
     private $lastLogin;
@@ -159,8 +159,8 @@ class User {
     /**
      * Get the value of onidEmail
      */
-    public function getOnidEmail() {
-        return $this->onidEmail;
+    public function getEmail() {
+        return $this->email;
     }
 
     /**
@@ -168,8 +168,8 @@ class User {
      *
      * @return  self
      */
-    public function setOnidEmail($onidEmail) {
-        $this->onidEmail = $onidEmail;
+    public function setEmail($email) {
+        $this->onidEmail = $email;
         return $this;
     }
 

@@ -83,7 +83,7 @@ if($isLoggedIn) {
 			$navlinks['ADMIN'] = 'admin/';
 		}
 	}
-    $navlinks['PROFILE'] = 'profile/';
+    $navlinks['PROFILE'] = 'profile';
     $navlinks['SIGN OUT'] = 'signout';
 } else {
     if($configManager->getEnvironment() == 'dev')
