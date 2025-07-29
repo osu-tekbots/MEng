@@ -138,6 +138,35 @@ class UsersDao {
     }
 
     /**
+     * Fetches a single user with the user's UUID.
+     *
+     * @param string $uuid the UUID of the user, provided by OSU
+     * @return User|boolean the corresponding User from the database if the fetch succeeds and the user exists, 
+     * false otherwise
+     */
+    public function userIsStudent($uuid) {
+        try {
+
+            $user = $this->getUserByUuid($uuid);
+
+            $sql = 'SELECT * FROM User_flag_assignments ';
+            $sql .= 'WHERE fk_user_flag_id = 2 ';
+            $sql .= 'AND fk_user_id = :user_id ';
+            $params = array(':user_id' => $user->getId());
+            $result = $this->conn->query($sql, $params);
+            if (!$result || \count($result) == 0) {
+                return false;
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch single user by UUID: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Adds a new user to the database.
      *
      * @param \Model\User $user the user to add to the database

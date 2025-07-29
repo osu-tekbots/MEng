@@ -84,6 +84,7 @@ if($isLoggedIn) {
 		}
 	}
     $navlinks['PROFILE'] = 'profile';
+    $navlinks['UPLOAD'] = 'upload';
     $navlinks['SIGN OUT'] = 'signout';
 } else {
     if($configManager->getEnvironment() == 'dev')

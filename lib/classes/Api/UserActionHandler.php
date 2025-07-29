@@ -2,17 +2,12 @@
 namespace Api;
 
 use Model\User;
-use Model\UserAuthProvider;
-use Model\UserType;
-use Model\ShowcaseProfile;
 
 /**
  * Defines the logic for how to handle AJAX requests made to modify user information.
  */
-class ProfileActionHandler extends ActionHandler {
+class UserHandler extends ActionHandler {
 
-    /** @var \DataAccess\ShowcaseProfilesDao */
-    private $profilesDao;
     /** @var \DataAccess\UsersDao */
     private $usersDao;
 
@@ -24,9 +19,8 @@ class ProfileActionHandler extends ActionHandler {
      * @param \DataAccess\UsersDao $dao the data access object for users
      * @param \Util\Logger $logger the logger to use for logging information about actions
      */
-    public function __construct($profilesDao, $usersDao, $configManager, $logger) {
+    public function __construct($usersDao, $configManager, $logger) {
         parent::__construct($logger);
-        $this->profilesDao = $profilesDao;
         $this->usersDao = $usersDao;
         $this->configManager = $configManager;
     }
@@ -129,34 +123,6 @@ class ProfileActionHandler extends ActionHandler {
     }
 
     /**
-     * Handles a request to update a user's type
-     *
-     * @return void
-     */
-    public function handleUpdateUserType() {
-        $uid = $this->getFromBody('uid');
-        $admin = $this->getFromBody('admin');
-
-        $user = $this->usersDao->getUser($uid);
-
-        if ($admin) {
-            $user->getType()->setId(UserType::ADMIN);
-        } else {
-            $user->getType()->setId(UserType::STUDENT);
-        }
-
-        $ok = $this->usersDao->updateUser($user);
-        if (!$ok) {
-            $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Failed to update user type'));
-        }
-
-        $this->respond(new Response(
-            Response::OK,
-            'Successfully updated user type'
-        ));
-    }
-
-    /**
      * Handles a request to delete a user profile
      * 
      * @return void
@@ -217,9 +183,6 @@ class ProfileActionHandler extends ActionHandler {
 
             case 'createProfile':
                 $this->handleCreateProfile();
-
-            case 'updateUserType':
-                $this->handleUpdateUserType();
             
             case 'deleteProfile':
                 $this->handleDeleteProfile();
