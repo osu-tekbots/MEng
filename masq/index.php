@@ -34,7 +34,7 @@ switch ($action) {
                 $ok = true;
                 if (isset($ok) && $ok) {
                     stopMasquerade();
-                    startMasquerade($user);
+                    startMasquerade($user, $dao);
                     echo $redirect;
                     die();
                 }
@@ -61,9 +61,11 @@ switch ($action) {
 function stopMasquerade() {
     if (isset($_SESSION['masq'])) {
         unset($_SESSION['userID']);
+        unset($_SESSION['userIsAdmin']);
         if (isset($_SESSION['masq']['savedPreviousUser'])) {
             $_SESSION['site'] = $_SESSION['masq']['site'];
             $_SESSION['userID'] = $_SESSION['masq']['userID'];
+            $_SESSION['userIsAdmin'] = $_SESSION['masq']['userIsAdmin'];
         }
         unset($_SESSION['masq']);
     }
@@ -75,15 +77,17 @@ function stopMasquerade() {
  * @param \Model\User $user the user to masquerade as
  * @return void
  */
-function startMasquerade($user) {
+function startMasquerade($user, $dao) {
     $_SESSION['masq'] = array('active' => true);
     if (isset($_SESSION['userID'])) {
         $_SESSION['masq']['savedPreviousUser'] = true;
         $_SESSION['masq']['site'] = $_SESSION['site'];
         $_SESSION['masq']['userID'] = $_SESSION['userID'];
+        $_SESSION['masq']['userIsAdmin'] = $_SESSION['userIsAdmin'];
     }
     $_SESSION['site'] = 'MEng';
     $_SESSION['userID'] = $user->getId();
+    $_SESSION['userIsAdmin'] = $dao->userIsAdmin($user->getUuid());
     $_SESSION['auth'] = array(
         'method' => 'onid',
         'id' => strtolower($user->getOnid()),

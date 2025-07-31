@@ -138,10 +138,10 @@ class UsersDao {
     }
 
     /**
-     * Fetches a single user with the user's UUID.
+     * Fetches user student status with the user's UUID.
      *
      * @param string $uuid the UUID of the user, provided by OSU
-     * @return User|boolean the corresponding User from the database if the fetch succeeds and the user exists, 
+     * @return boolean true if the user is a student, 
      * false otherwise
      */
     public function userIsStudent($uuid) {
@@ -151,6 +151,64 @@ class UsersDao {
 
             $sql = 'SELECT * FROM User_flag_assignments ';
             $sql .= 'WHERE fk_user_flag_id = 2 ';
+            $sql .= 'AND fk_user_id = :user_id ';
+            $params = array(':user_id' => $user->getId());
+            $result = $this->conn->query($sql, $params);
+            if (!$result || \count($result) == 0) {
+                return false;
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch single user by UUID: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Fetches user admin status with the user's UUID.
+     *
+     * @param string $uuid the UUID of the user, provided by OSU
+     * @return boolean true if the user is an admin, 
+     * false otherwise
+     */
+    public function userIsAdmin($uuid) {
+        try {
+
+            $user = $this->getUserByUuid($uuid);
+
+            $sql = 'SELECT * FROM User_flag_assignments ';
+            $sql .= 'WHERE fk_user_flag_id = 3 ';
+            $sql .= 'AND fk_user_id = :user_id ';
+            $params = array(':user_id' => $user->getId());
+            $result = $this->conn->query($sql, $params);
+            if (!$result || \count($result) == 0) {
+                return false;
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch single user by UUID: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Fetches user reviewer status with the user's UUID.
+     *
+     * @param string $uuid the UUID of the user, provided by OSU
+     * @return boolean true if the user is a reviewer, 
+     * false otherwise
+     */
+    public function userIsReviewer($uuid) {
+        try {
+
+            $user = $this->getUserByUuid($uuid);
+
+            $sql = 'SELECT * FROM User_flag_assignments ';
+            $sql .= 'WHERE fk_user_flag_id = 4 ';
             $sql .= 'AND fk_user_id = :user_id ';
             $params = array(':user_id' => $user->getId());
             $result = $this->conn->query($sql, $params);

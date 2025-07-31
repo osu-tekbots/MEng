@@ -4,6 +4,13 @@ include_once '../bootstrap.php';
 use DataAccess\UsersDao;
 $usersDao = new UsersDao($dbConn, $logger);
 
+$js = array(
+    array(
+        'src' => 'assets/js/fileUpload.js',
+        'defer' => 'true'
+    )
+);
+
 include_once PUBLIC_FILES . '/modules/header.php';
 
 // $pHasUpload = $profile->isResumeUploaded();
@@ -14,13 +21,27 @@ include_once PUBLIC_FILES . '/modules/header.php';
 //     <p id='uploadText'>No file has been uploaded</p>
 // ";
 
-// $user = $usersDao->getUser($_SESSION['userID']);
+$user = $usersDao->getUser($_SESSION['userID']);
 // $test = $usersDao->userIsStudent($user->getUuid());
 // echo $test;
 
+// To-do: get document type from database (make a document type object)
+$documentType = 1;
+
 ?>
 
-<form>
+<form id="formUploadDocument">
+
+    <input type="hidden" name="userId" id="userId" value="<?php echo $user->getId(); ?>" />
+    <input type="hidden" name="documentType" id="documentType" value="<?php echo $documentType; ?>" />
+
+    <div class="btn-upload-submit">
+        <button type="submit" class="btn btn-primary" id="btnUploadSubmit">
+            <i class="fas fa-save"></i>&nbsp;&nbsp;Save Changes
+        </button>
+        <span class="loader" id="btnUploadLoader"></span>
+    </div>
+
     <h3 id="upload">Upload</h3>
     <div class="form-group">
         <?php echo $pResumeHtml; ?>
@@ -33,10 +54,10 @@ include_once PUBLIC_FILES . '/modules/header.php';
             </button>
         </div>
         <div class="mb-3">
-            <label class="form-label" for="profileResume" id="profileResumeLabel">
+            <label class="form-label" for="userUpload" id="userUploadLabel">
                 Choose file (PDF)
             </label>
-            <input name="profileResume" type="file" class="form-control" id="profileResume" accept=".pdf, application/pdf">
+            <input name="userUpload" type="file" class="form-control" id="userUpload" accept=".pdf, application/pdf">
             
         </div>
     </div>

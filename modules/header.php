@@ -44,7 +44,8 @@ $css = array_merge(
         'assets/css/header.css',
         'assets/css/footer.css',
         'assets/css/global.css',
-        'assets/css/layout.css'
+        'assets/css/layout.css',
+        'assets/css/snackbar.css'
     ),
     $css
 );
@@ -68,6 +69,8 @@ $js = array_merge(
             'crossorigin' => 'anonymous'
         ),
         'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js',
+        'assets/js/api.js',
+        'assets/js/snackbar.js'
     ), $js
 );
 
@@ -78,9 +81,9 @@ $navlinks = array(
 
 
 if($isLoggedIn) {
-	if (isset($_SESSION['userType'])){
-		if($_SESSION['userType'] == UserType::ADMIN) {
-			$navlinks['ADMIN'] = 'admin/';
+	if (isset($_SESSION['userIsAdmin'])){
+		if($_SESSION['userIsAdmin'] == true) {
+			$navlinks['ADMIN'] = 'admin';
 		}
 	}
     $navlinks['PROFILE'] = 'profile';
