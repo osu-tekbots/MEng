@@ -62,10 +62,12 @@ function stopMasquerade() {
     if (isset($_SESSION['masq'])) {
         unset($_SESSION['userID']);
         unset($_SESSION['userIsAdmin']);
+        unset($_SESSION['userIsStudent']);
         if (isset($_SESSION['masq']['savedPreviousUser'])) {
             $_SESSION['site'] = $_SESSION['masq']['site'];
             $_SESSION['userID'] = $_SESSION['masq']['userID'];
             $_SESSION['userIsAdmin'] = $_SESSION['masq']['userIsAdmin'];
+            $_SESSION['userIsStudent'] = $_SESSION['masq']['userIsStudent'];
         }
         unset($_SESSION['masq']);
     }
@@ -84,10 +86,12 @@ function startMasquerade($user, $dao) {
         $_SESSION['masq']['site'] = $_SESSION['site'];
         $_SESSION['masq']['userID'] = $_SESSION['userID'];
         $_SESSION['masq']['userIsAdmin'] = $_SESSION['userIsAdmin'];
+        $_SESSION['masq']['userIsStudent'] = $_SESSION['userIsStudent'];
     }
     $_SESSION['site'] = 'MEng';
     $_SESSION['userID'] = $user->getId();
     $_SESSION['userIsAdmin'] = $dao->userIsAdmin($user->getUuid());
+    $_SESSION['userIsStudent'] = $dao->userIsStudent($user->getUuid());
     $_SESSION['auth'] = array(
         'method' => 'onid',
         'id' => strtolower($user->getOnid()),

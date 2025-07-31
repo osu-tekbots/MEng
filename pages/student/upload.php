@@ -1,12 +1,12 @@
 <?php
-include_once '../bootstrap.php';
+include_once '../../bootstrap.php';
 
 use DataAccess\UsersDao;
 $usersDao = new UsersDao($dbConn, $logger);
 
 $js = array(
     array(
-        'src' => 'assets/js/fileUpload.js',
+        'src' => '../assets/js/fileUpload.js',
         'defer' => 'true'
     )
 );

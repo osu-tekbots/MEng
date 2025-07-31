@@ -68,6 +68,10 @@ $js = array_merge(
             'integrity' => 'sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q',
             'crossorigin' => 'anonymous'
         ),
+        array(
+            'src' => 'assets/js/header.js',
+            'defer' => 'true'
+        ),
         'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js',
         'assets/js/api.js',
         'assets/js/snackbar.js'
@@ -76,18 +80,22 @@ $js = array_merge(
 
 // Setup the navigation links. If there are links already defined, merge them AFTER the default links
 $navlinks = array(
-    'HOME' => 'home'
+    'HOME' => ''
 );
 
 
 if($isLoggedIn) {
 	if (isset($_SESSION['userIsAdmin'])){
 		if($_SESSION['userIsAdmin'] == true) {
-			$navlinks['ADMIN'] = 'admin';
+			$navlinks['ADMIN'] = 'administrator/uploads.php';
+		}
+	}
+    if (isset($_SESSION['userIsStudent'])){
+		if($_SESSION['userIsStudent'] == true) {
+			$navlinks['UPLOAD'] = 'student/upload.php';
 		}
 	}
     $navlinks['PROFILE'] = 'profile';
-    $navlinks['UPLOAD'] = 'upload';
     $navlinks['SIGN OUT'] = 'signout';
 } else {
     if($configManager->getEnvironment() == 'dev')

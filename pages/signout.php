@@ -12,6 +12,7 @@ unset($_SESSION['site']);
 unset($_SESSION['userID']);
 unset($_SESSION['auth']);
 unset($_SESSION['userIsAdmin']);
+unset($_SESSION['userIsStudent']);
 
 session_destroy();
 
