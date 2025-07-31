@@ -6,10 +6,13 @@ class RubricTemplate {
     private $id;
 
     /** @var string */
-    private $title;
+    private $name;
 
     /** @var string */
-    private $description;
+    private $lastUsed;
+
+    /** @var string */
+    private $lastModified;
 
     /**
      * Constructor
@@ -43,42 +46,62 @@ class RubricTemplate {
     }
 
     /**
-     * Get the value of title
+     * Get the value of name
      *
      * @return string
      */
-    public function getTitle() {
-        return $this->title;
+    public function getName() {
+        return $this->name;
     }
 
     /**
-     * Set the value of title
+     * Set the value of name
      *
-     * @param string $title
+     * @param string $name
      * @return self
      */
-    public function setTitle($title) {
-        $this->title = $title;
+    public function setName($name) {
+        $this->name = $name;
         return $this;
     }
 
     /**
-     * Get the value of description
+     * Get the value of lastUsed
      *
      * @return string
      */
-    public function getDescription() {
-        return $this->description;
+    public function getLastUsed() {
+        return $this->lastUsed;
     }
 
     /**
-     * Set the value of description
+     * Set the value of lastUsed
      *
-     * @param string $description
+     * @param string $lastUsed
      * @return self
      */
-    public function setDescription($description) {
-        $this->description = $description;
+    public function setLastUsed($lastUsed) {
+        $this->lastUsed = $lastUsed;
+        return $this;
+    }
+
+    /**
+     * Get the value of lastModified
+     *
+     * @return string
+     */
+    public function getLastModified() {
+        return $this->lastModified;
+    }
+
+    /**
+     * Set the value of lastModified
+     *
+     * @param string $lastModified
+     * @return self
+     */
+    public function setLastModified($lastModified) {
+        $this->lastModified = $lastModified;
         return $this;
     }
 }

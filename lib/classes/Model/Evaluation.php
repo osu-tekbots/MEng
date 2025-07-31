@@ -13,8 +13,11 @@ class Evaluation {
     /** @var string */
     private $fkReviewerId;
 
-    /** @var int */
-    private $fkDocumentType;
+    /** @var string */
+    private $fkEvaluationUpload;
+
+    /** @var string */
+    private $dateCreated;
 
     /**
      * Constructor
@@ -90,22 +93,42 @@ class Evaluation {
     }
 
     /**
-     * Get the value of fkDocumentType
+     * Get the value of fkEvaluationUpload
      *
-     * @return int
+     * @return string
      */
-    public function getFkDocumentType() {
-        return $this->fkDocumentType;
+    public function getFkEvaluationUpload() {
+        return $this->fkEvaluationUpload;
     }
 
     /**
-     * Set the value of fkDocumentType
+     * Set the value of fkEvaluationUpload
      *
-     * @param int $fkDocumentType
+     * @param string $fkEvaluationUpload
      * @return self
      */
-    public function setFkDocumentType($fkDocumentType) {
-        $this->fkDocumentType = $fkDocumentType;
+    public function setFkEvaluationUpload($fkEvaluationUpload) {
+        $this->fkEvaluationUpload = $fkEvaluationUpload;
+        return $this;
+    }
+
+    /**
+     * Get the value of dateCreated
+     *
+     * @return string
+     */
+    public function getDateCreated() {
+        return $this->dateCreated;
+    }
+
+    /**
+     * Set the value of dateCreated
+     *
+     * @param int $dateCreated
+     * @return self
+     */
+    public function setDateCreated($dateCreated) {
+        $this->dateCreated = $dateCreated;
         return $this;
     }
 }

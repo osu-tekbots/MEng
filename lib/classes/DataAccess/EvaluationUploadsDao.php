@@ -33,7 +33,51 @@ class EvaluationUploadsDao {
     }
 
     /**
-     * Adds a new eveluation object to the database.
+     * Gets an evaluation upload by id.
+     *
+     * @param string $id the ID of the evaluation upload to fetch
+     * @return EvaluationUpload|boolean an Evaluation Upload object if the fetch succeeds, false otherwise
+     */
+    public function getAllUnassignedEvaluationUploads($id) {
+        try {
+            $sql = 'SELECT * FROM Evaluation_uploads ';
+            $sql .= 'WHERE id = :id';
+            $params = array(
+                ':id' => $id
+            );
+            $result = $this->conn->query($sql, $params);
+
+            return self::ExtractEvaluationUploadFromRow($result[0]);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch evaluation upload object: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Gets evaluation uploads that aren't assigned.
+     *
+     * @return EvaluationUpload[]|boolean an array of Evaluation Upload objects if the fetch succeeds, false otherwise
+     */
+    public function getAllUnassignedEvaluationUploads() {
+        try {
+            $sql = 'SELECT * FROM Evaluation_uploads ';
+            $sql .= 'WHERE Evaluation_uploads.id NOT IN ';
+            $sql .= '(SELECT fk_evaluation_upload FROM Evaluations ';
+            $sql .= 'WHERE fk_evaluation_upload = Evaluation_uploads.id)';
+            $result = $this->conn->query($sql);
+
+            return \array_map('self::ExtractEvaluationUploadFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch evaluation upload objects: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Adds a new evaluation upload object to the database.
      *
      * @param \Model\EvaluationUpload $evaluationUpload the upload to add to the database
      * @return boolean true if the query execution succeeds, false otherwise.
@@ -42,20 +86,21 @@ class EvaluationUploadsDao {
         try {
 
             $sql = 'INSERT INTO Evaluation_uploads ';
-            $sql .= '(id, fk_user_id, fk_document_type, file_path, file_name ';
-            $sql .= 'VALUES (:id,:fk_user_id,:fk_document_type,:file_path,:file_name)';
+            $sql .= '(id, fk_user_id, fk_document_type, file_path, file_name, date_uploaded ';
+            $sql .= 'VALUES (:id,:fk_user_id,:fk_document_type,:file_path,:file_name, date_uploaded)';
             $params = array(
-                ':id' => $user->getId(),
-                ':fk_user_id' => $user->getFkUserId(),
-                ':fk_document_type' => $user->getFkDocumentType(),
-                ':file_path' => $user->getFilePath(),
-                ':file_name' => $user->getFileName()
+                ':id' => $evaluationUpload->getId(),
+                ':fk_user_id' => $evaluationUpload->getFkUserId(),
+                ':fk_document_type' => $evaluationUpload->getFkDocumentType(),
+                ':file_path' => $evaluationUpload->getFilePath(),
+                ':file_name' => $evaluationUpload->getFileName(),
+                ':date_uploaded' => $evaluationUpload->getDateUploaded()
             );
             $this->conn->execute($sql, $params);
 
             return true;
         } catch (\Exception $e) {
-            $this->logError('Failed to add new upload evaluation object: ' . $e->getMessage());
+            $this->logError('Failed to add new evaluation upload object: ' . $e->getMessage());
 
             return false;
         }
@@ -72,7 +117,8 @@ class EvaluationUploadsDao {
         $evaluationUpload->setFkUserId($row['fk_user_id'])
             ->setFkDocumentType($row['fk_document_type'])
             ->setFilePath($row['file_path'])
-            ->setFileName($row['file_name']);
+            ->setFileName($row['file_name'])
+            ->setDateUploaded($row['date_uploaded']);
         
         return $evaluationUpload;
     }

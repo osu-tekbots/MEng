@@ -19,6 +19,9 @@ class EvaluationUpload {
     /** @var string */
     private $fileName;
 
+    /** @var string */
+    private $dateUploaded;
+
     /**
      * Constructor
      *
@@ -129,6 +132,26 @@ class EvaluationUpload {
      */
     public function setFileName($fileName) {
         $this->fileName = $fileName;
+        return $this;
+    }
+
+    /**
+     * Get the value of dateUploaded
+     *
+     * @return string
+     */
+    public function getDateUploaded() {
+        return $this->dateUploaded;
+    }
+
+    /**
+     * Set the value of dateUploaded
+     *
+     * @param string $dateUploaded
+     * @return self
+     */
+    public function setDateUploaded($dateUploaded) {
+        $this->dateUploaded = $dateUploaded;
         return $this;
     }
 }
