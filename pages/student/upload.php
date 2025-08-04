@@ -13,17 +13,7 @@ $js = array(
 
 include_once PUBLIC_FILES . '/modules/header.php';
 
-// $pHasUpload = $profile->isResumeUploaded();
-// $pUploadButtonsStyle = $pHasUpload ? '' : "style='display: none;'";
-// $pUploadHtml = $pHasUpload ? "
-//     <p id='uploadText'>You have uploaded a file.</p>
-// " : "
-//     <p id='uploadText'>No file has been uploaded</p>
-// ";
-
 $user = $usersDao->getUser($_SESSION['userID']);
-// $test = $usersDao->userIsStudent($user->getUuid());
-// echo $test;
 
 // To-do: get document type from database (make a document type object)
 $documentType = 1;
@@ -44,15 +34,6 @@ $documentType = 1;
 
     <h3 id="upload">Upload</h3>
     <div class="form-group">
-        <?php echo $pResumeHtml; ?>
-        <div id="resumeActions" <?php echo $pResumeButtonsStyle; ?>>
-            <a href="<?php echo $pResumeLink; ?>" id="aResumeDownload" class="btn btn-primary btn-sm">
-                Download
-            </a>
-            <button type="button" id="btnResumeDelete" class="btn btn-danger btn-sm">
-                Delete Resume
-            </button>
-        </div>
         <div class="mb-3">
             <label class="form-label" for="userUpload" id="userUploadLabel">
                 Choose file (PDF)

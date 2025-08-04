@@ -60,7 +60,7 @@ class EvaluationUploadsDao {
      *
      * @return EvaluationUpload[]|boolean an array of Evaluation Upload objects if the fetch succeeds, false otherwise
      */
-    public function getAllUnassignedEvaluationUploads() {
+    public function getAllUnassignedUploads() {
         try {
             $sql = 'SELECT * FROM Evaluation_uploads ';
             $sql .= 'WHERE Evaluation_uploads.id NOT IN ';

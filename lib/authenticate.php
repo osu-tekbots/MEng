@@ -20,10 +20,12 @@ if(isset($_SESSION['site']) && $_SESSION['site'] == 'MEng') {
                 $logger->trace('Updating $_SESSION for this site using ONID: '.$_SESSION['auth']['id'].' (came from '.($_SESSION['site'] ?? 'no site').')');
                 $user = $usersDao->getUserByOnid($_SESSION['auth']['id']);
                 $userIsAdmin = $usersDao->userIsAdmin($user->getUuid());
+                $userIsStudent = $usersDao->userIsStudent($user->getUuid());
                 
                 $_SESSION['site'] = 'MEng';
                 $_SESSION['userID'] = $user->getId();
                 $_SESSION['userIsAdmin'] = $userIsAdmin;
+                $_SESSION['userIsStudent'] = $userIsStudent;
                 
                 break;
             
@@ -34,6 +36,7 @@ if(isset($_SESSION['site']) && $_SESSION['site'] == 'MEng') {
                 $_SESSION['site'] = NULL;
                 unset($_SESSION['userID']);
                 unset($_SESSION['userIsAdmin']);
+                unset($_SESSION['userIsStudent']);
         }
     } else {
         // Not logged in; still clear just to avoid the possibility of issues?
@@ -41,6 +44,7 @@ if(isset($_SESSION['site']) && $_SESSION['site'] == 'MEng') {
         $_SESSION['site'] = NULL;
         unset($_SESSION['userID']);
         unset($_SESSION['userIsAdmin']);
+        unset($_SESSION['userIsStudent']);
     }
 }
 
