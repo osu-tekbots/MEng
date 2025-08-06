@@ -11,39 +11,42 @@ $uploads = $uploadsDao->getAllUnassignedUploads();
 
 include_once PUBLIC_FILES . '/modules/header.php';
 
-
 ?>
-
-<table class="table table-striped table-hover">
-  <thead class="thead-light">
-    <tr>
-      <th scope="col">#</th>
-      <th scope="col">First</th>
-      <th scope="col">Last</th>
-      <th scope="col">Handle</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th scope="row">1</th>
-      <td>Mark</td>
-      <td>Otto</td>
-      <td>@mdo</td>
-    </tr>
-    <tr>
-      <th scope="row">2</th>
-      <td>Jacob</td>
-      <td>Thornton</td>
-      <td>@fat</td>
-    </tr>
-    <tr>
-      <th scope="row">3</th>
-      <td>Larry</td>
-      <td>the Bird</td>
-      <td>@twitter</td>
-    </tr>
-  </tbody>
-</table>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <h2>Unassigned Uploads</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+        <table class="table table-striped table-hover table-bordered">
+            <thead class="thead-light">
+                <tr>
+                <th scope="col">#</th>
+                <th scope="col">Uploader</th>
+                <th scope="col">Document Type</th>
+                <th scope="col">Date Uploaded</th>
+                <th scope="col">Reviewer(s)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th scope="row">1</th>
+                    <td>Mark</td>
+                    <td>Otto</td>
+                    <td>@mdo</td>
+                    <td>
+                        <select class="form-select">
+    
+                        </select>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
 
 <?php
 include_once PUBLIC_FILES . '/modules/footer.php';

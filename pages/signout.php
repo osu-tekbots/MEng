@@ -13,6 +13,8 @@ unset($_SESSION['userID']);
 unset($_SESSION['auth']);
 unset($_SESSION['userIsAdmin']);
 unset($_SESSION['userIsStudent']);
+unset($_SESSION['userIsReviewer']);
+unset($_SESSION['userType']);
 
 session_destroy();
 

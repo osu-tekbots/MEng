@@ -1,0 +1,33 @@
+# Apache Server Access File
+# OSU MEng Website
+# (c) 2025 Oregon State University
+
+
+# Deny access to files with specific extensions
+<FilesMatch "\.(ini|sh|sql)$">
+Order allow,deny
+Deny from all
+</FilesMatch>
+
+# Deny access to filenames starting with dot(.)
+<FilesMatch "^\.">
+Order allow,deny
+Deny from all
+</FilesMatch>
+
+RewriteEngine On
+
+RewriteBase /education/meng/
+
+# If the requested file is not a directory or a file, we need to append .php
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} (pages/|downloaders/|api/)
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
+
+# Prepend `pages/` to the URI if it needs it
+RewriteCond %{REQUEST_URI} !/(api|assets|downloaders|pages|masq)
+RewriteRule ^(.*)$ pages/$1
+
+
+

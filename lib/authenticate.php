@@ -21,11 +21,23 @@ if(isset($_SESSION['site']) && $_SESSION['site'] == 'MEng') {
                 $user = $usersDao->getUserByOnid($_SESSION['auth']['id']);
                 $userIsAdmin = $usersDao->userIsAdmin($user->getUuid());
                 $userIsStudent = $usersDao->userIsStudent($user->getUuid());
+                $userIsReviewer = $usersDao->userIsReviewer($user->getUuid());
                 
                 $_SESSION['site'] = 'MEng';
                 $_SESSION['userID'] = $user->getId();
                 $_SESSION['userIsAdmin'] = $userIsAdmin;
                 $_SESSION['userIsStudent'] = $userIsStudent;
+                $_SESSION['userIsReviewer'] = $userIsReviewer;
+
+                if ($userIsAdmin) {
+                    $_SESSION['userType'] = 'Admin';
+                } else if ($userIsReviewer) {
+                    $_SESSION['userType'] = 'Reviewer';
+                } else if ($userIsStudent) {
+                    $_SESSION['userType'] = 'Student';
+                } else {
+                    $_SESSION['userType'] = 'Public';
+                }
                 
                 break;
             
@@ -37,6 +49,8 @@ if(isset($_SESSION['site']) && $_SESSION['site'] == 'MEng') {
                 unset($_SESSION['userID']);
                 unset($_SESSION['userIsAdmin']);
                 unset($_SESSION['userIsStudent']);
+                unset($_SESSION['userIsReviewer']);
+                unset($_SESSION['userType']);
         }
     } else {
         // Not logged in; still clear just to avoid the possibility of issues?
@@ -45,6 +59,8 @@ if(isset($_SESSION['site']) && $_SESSION['site'] == 'MEng') {
         unset($_SESSION['userID']);
         unset($_SESSION['userIsAdmin']);
         unset($_SESSION['userIsStudent']);
+        unset($_SESSION['userIsReviewer']);
+        unset($_SESSION['userType']);
     }
 }
 

@@ -63,11 +63,15 @@ function stopMasquerade() {
         unset($_SESSION['userID']);
         unset($_SESSION['userIsAdmin']);
         unset($_SESSION['userIsStudent']);
+        unset($_SESSION['userIsReviewer']);
+        unset($_SESSION['userType']);
         if (isset($_SESSION['masq']['savedPreviousUser'])) {
             $_SESSION['site'] = $_SESSION['masq']['site'];
             $_SESSION['userID'] = $_SESSION['masq']['userID'];
             $_SESSION['userIsAdmin'] = $_SESSION['masq']['userIsAdmin'];
             $_SESSION['userIsStudent'] = $_SESSION['masq']['userIsStudent'];
+            $_SESSION['userIsReviewer'] = $_SESSION['masq']['userIsReviewer'];
+            $_SESSION['userType'] = $_SESSION['masq']['userType'];
         }
         unset($_SESSION['masq']);
     }
@@ -87,11 +91,30 @@ function startMasquerade($user, $dao) {
         $_SESSION['masq']['userID'] = $_SESSION['userID'];
         $_SESSION['masq']['userIsAdmin'] = $_SESSION['userIsAdmin'];
         $_SESSION['masq']['userIsStudent'] = $_SESSION['userIsStudent'];
+        $_SESSION['masq']['userIsReviewer'] = $_SESSION['userIsReviewer'];
+        $_SESSION['masq']['userType'] = $_SESSION['userType'];
     }
     $_SESSION['site'] = 'MEng';
     $_SESSION['userID'] = $user->getId();
-    $_SESSION['userIsAdmin'] = $dao->userIsAdmin($user->getUuid());
-    $_SESSION['userIsStudent'] = $dao->userIsStudent($user->getUuid());
+
+    $userIsAdmin = $dao->userIsAdmin($user->getUuid());
+    $userIsStudent = $dao->userIsStudent($user->getUuid());
+    $userIsReviewer = $dao->userIsReviewer($user->getUuid());
+
+    $_SESSION['userIsAdmin'] = $userIsAdmin;
+    $_SESSION['userIsStudent'] = $userIsStudent;
+    $_SESSION['userIsReviewer'] = $userIsReviewer;
+
+    if ($userIsAdmin) {
+        $_SESSION['userType'] = 'Admin';
+    } else if ($userIsReviewer) {
+        $_SESSION['userType'] = 'Reviewer';
+    } else if ($userIsStudent) {
+        $_SESSION['userType'] = 'Student';
+    } else {
+        $_SESSION['userType'] = 'Public';
+    }
+    
     $_SESSION['auth'] = array(
         'method' => 'onid',
         'id' => strtolower($user->getOnid()),

@@ -85,15 +85,16 @@ $navlinks = array(
 
 
 if($isLoggedIn) {
-	if (isset($_SESSION['userIsAdmin'])){
-		if($_SESSION['userIsAdmin'] == true) {
+	if (isset($_SESSION['userType'])){
+		if($_SESSION['userType'] == 'Admin') {
 			$navlinks['ADMIN'] = 'administrator/uploads.php';
-		}
-	}
-    if (isset($_SESSION['userIsStudent'])){
-		if($_SESSION['userIsStudent'] == true) {
-			$navlinks['UPLOAD'] = 'student/upload.php';
-		}
+		} 
+        if($_SESSION['userType'] == 'Reviewer') {
+            $navlinks['REVIEW'] = 'reviewer/assignments.php';
+        } 
+        if($_SESSION['userType'] == 'Student') {
+            $navlinks['UPLOAD'] = 'student/upload.php';
+        }
 	}
     $navlinks['PROFILE'] = 'profile';
     $navlinks['SIGN OUT'] = 'signout';
@@ -153,7 +154,7 @@ if($isLoggedIn) {
     <header id="header" class="dark">
         <a class="header-main-link" href="">
             <div class="logo">
-                <h1 class="d-none d-lg-block" style="font-size: 36px; margin-bottom: 5px">MEng</h1>
+                <h1 class="d-none d-lg-block" style="font-size: 48px;">MEng</h1>
 				<h5 class="d-lg-none">MEng</h5>
             </div>
         </a>
