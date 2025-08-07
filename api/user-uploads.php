@@ -5,9 +5,7 @@
 
 include_once '../bootstrap.php';
 
-use DataAccess\ShowcaseProfilesDao;
 use DataAccess\UsersDao;
-use Model\UserType;
 
 /**
  * Simple function that allows us to respond with a response code and a message inside a JSON object.
@@ -48,13 +46,13 @@ if (!$user || !$isLoggedIn || ($userId != $_SESSION['userID'])) {
 }
 
 // Construct the path
-// $filepath = 
-//     $configManager->get('server.upload_file_path') . 
-//     "/$userId" .
-//     "/$documentType";
+mkdir($configManager->get('server.upload_file_path') . "/$userId" . "/$documentType", 0777, true); 
 
 $filepath = 
-    $configManager->get('server.upload_file_path');
+    $configManager->get('server.upload_file_path') . 
+    "/$userId" .
+    "/$documentType" .
+    "/test.pdf";
 
 switch ($_POST['action']) {
 

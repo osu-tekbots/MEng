@@ -6,7 +6,7 @@ $usersDao = new UsersDao($dbConn, $logger);
 
 $js = array(
     array(
-        'src' => '../assets/js/fileUpload.js',
+        'src' => 'assets/js/fileUpload.js',
         'defer' => 'true'
     )
 );
