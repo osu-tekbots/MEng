@@ -1,7 +1,7 @@
 <?php
 namespace Model;
 
-class EvaluationFlag {
+class UserFlag {
     /** @var int */
     private $id;
 
@@ -17,7 +17,7 @@ class EvaluationFlag {
     /**
      * Constructor
      *
-     * @param int|null $id Optional ID to initialize the EvaluationFlag.
+     * @param int|null $id Optional ID to initialize the UserFlag.
      */
     public function __construct($id = null) {
         $this->id = $id;

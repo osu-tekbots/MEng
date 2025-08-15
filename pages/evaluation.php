@@ -2,7 +2,7 @@
 include_once '../bootstrap.php';
 
 use DataAccess\UsersDao;
-use DataAccess\EvaluationUploadsDao;
+use DataAccess\UploadsDao;
 
 $usersDao = new UsersDao($dbConn, $logger);
 

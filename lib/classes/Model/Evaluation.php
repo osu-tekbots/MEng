@@ -14,7 +14,7 @@ class Evaluation {
     private $fkReviewerId;
 
     /** @var string */
-    private $fkEvaluationUpload;
+    private $fkUploadId;
 
     /** @var string */
     private $dateCreated;
@@ -93,22 +93,22 @@ class Evaluation {
     }
 
     /**
-     * Get the value of fkEvaluationUpload
+     * Get the value of fkUploadId
      *
      * @return string
      */
-    public function getFkEvaluationUpload() {
-        return $this->fkEvaluationUpload;
+    public function getFkUploadId() {
+        return $this->fkUploadId;
     }
 
     /**
-     * Set the value of fkEvaluationUpload
+     * Set the value of fkUploadId
      *
-     * @param string $fkEvaluationUpload
+     * @param string $fkUploadId
      * @return self
      */
-    public function setFkEvaluationUpload($fkEvaluationUpload) {
-        $this->fkEvaluationUpload = $fkEvaluationUpload;
+    public function setFkUploadId($fkUploadId) {
+        $this->fkUploadId = $fkUploadId;
         return $this;
     }
 

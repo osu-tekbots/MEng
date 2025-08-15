@@ -10,7 +10,7 @@ use Model\User;
 session_start();
 
 $logdate = date("My") . "PHP.log";
-ini_set("error_log", "/nfs/ca/info/eecs_www/education/meng/.private/logs/" . $logdate);
+ini_set("error_log", __DIR__ . "/.private/logs/" . $logdate);
 ini_set("log_errors", 1);
 error_reporting(E_ALL);
 

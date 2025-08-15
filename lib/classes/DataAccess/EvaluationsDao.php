@@ -2,6 +2,7 @@
 namespace DataAccess;
 
 use Model\Evaluation;
+use Model\EvaluationFlag;
 
 /**
  * Contains logic for database interactions with evaluations data in the database. 
@@ -96,7 +97,7 @@ class EvaluationsDao {
                 ':id' => $evaluation->getId(),
                 ':fk_student_id' => $evaluation->getFkStudentId(),
                 ':fk_reviewer_id' => $evaluation->getFkReviewerId(),
-                ':fk_evaluation_upload' => $evaluation->getFkEvaluationUpload(),
+                ':fk_evaluation_upload' => $evaluation->getFkUploadId(),
                 ':date_created' => $evaluation->getDateCreated()
             );
             $this->conn->execute($sql, $params);
@@ -119,10 +120,25 @@ class EvaluationsDao {
 		$evaluation = new Evaluation($row['id']);
         $evaluation->setFkStudentId($row['fk_student_id'])
             ->setFkReviewerId($row['fk_reviewer_id'])
-            ->setFkEvaluationUpload($row['fk_evaluation_upload']);
+            ->setFkUploadId($row['fk_evaluation_upload']);
             ->setDateCreated($row['date_created']);
         
         return $evaluation;
+    }
+
+    /**
+     * Creates a new Evaluation Flag object by extracting the information from a row in the database.
+     *
+     * @param string[] $row a row from the database containing evaluation flag information
+     * @return \Model\EvaluationFlag
+     */
+    public static function ExtractEvaluationFlagFromRow($row) {
+		$evaluationflag = new EvaluationFlag($row['id']);
+        $evaluationflag->setFlagName($row['flag_name'])
+            ->setFlagType($row['flag_type'])
+            ->setIsActive($row['is_active']);
+        
+        return $evaluationflag;
     }
 
     /**

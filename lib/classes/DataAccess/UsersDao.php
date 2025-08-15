@@ -2,6 +2,7 @@
 namespace DataAccess;
 
 use Model\User;
+use Model\UserFlag;
 
 /**
  * Contains logic for database interactions with user data in the database. 
@@ -311,6 +312,21 @@ class UsersDao {
             ->setLastLogin(new \DateTime(($row['last_login'] == '' ? "now" : $row['last_login'])));
         
         return $user;
+    }
+
+    /**
+     * Creates a new User Flag object by extracting the information from a row in the database.
+     *
+     * @param string[] $row a row from the database containing user flag information
+     * @return \Model\UserFlag
+     */
+    public static function ExtractUserFlagFromRow($row) {
+		$userflag = new UserFlag($row['id']);
+        $userflag->setFlagName($row['flag_name'])
+            ->setFlagType($row['flag_type'])
+            ->setIsActive($row['is_active']);
+        
+        return $userflag;
     }
 
     /**

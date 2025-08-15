@@ -6,6 +6,9 @@
 include_once '../bootstrap.php';
 
 use DataAccess\UsersDao;
+use DataAccess\UploadsDao;
+use Model\Upload;
+
 
 /**
  * Simple function that allows us to respond with a response code and a message inside a JSON object.
@@ -45,6 +48,8 @@ if (!$user || !$isLoggedIn || ($userId != $_SESSION['userID'])) {
     respond(401, 'You do not have permission to make this request');
 }
 
+$uploadsDao = new UploadsDao($dbConn, $logger);
+
 // Construct the path
 mkdir($configManager->get('server.upload_file_path') . "/$userId" . "/$documentType", 0777, true); 
 
@@ -52,7 +57,7 @@ $filepath =
     $configManager->get('server.upload_file_path') . 
     "/$userId" .
     "/$documentType" .
-    "/test.pdf";
+    "/";
 
 switch ($_POST['action']) {
 
@@ -84,38 +89,84 @@ switch ($_POST['action']) {
         // We've passed all the checks, now we can upload the image
         //
 
-        $ok = move_uploaded_file($fileTmpName, $filepath);
+        $upload = new Upload();
+        $upload->setFkUserId($userId)
+            ->setFkDocumentType($documentType)
+            ->setFilePath("/" . $userId . "/" . $documentType . "/")
+            ->setFileName($fileName)
+            ->setDateUploaded(date('Y-m-d H:i:s'));
+
+        $ok = $uploadsDao->addNewUpload($upload);
+
+        if (!$ok) {
+            respond(500, 'Failed to create document database object ');
+        }
+
+        $ok = move_uploaded_file($fileTmpName, $filepath . $upload->getId() . ".pdf");
 
         if (!$ok) {
             respond(500, 'Failed to upload document ' . $fileTmpName . " " . $filepath);
         }
 
-        // $ok = $profilesDao->updateShowcaseProfile($profile);
-        // if (!$ok) {
-        //     $logger->warning('Profile image was uploaded, but inserting metadata into the database failed');
-        //     respond(500, 'Failed to upload profile image properly');
-        // }
+        respond(200, 'Successfully uploaded document');
+    
+    case 'updateDocument';
+
+        // Make sure we have a file
+        if (!isset($_FILES['userUpload'])) {
+            respond(400, 'Must include file in upload request');
+        }
+
+        // Get the information we need
+        $fileName = $_FILES['userUpload']['name'];
+        $fileSize = $_FILES['userUpload']['size'];
+        $fileTmpName  = $_FILES['userUpload']['tmp_name'];
+
+        // Check the file size
+        $tenMb = 10485760;
+        if ($fileSize > $tenMb) {
+            respond(400, 'File size must be smaller than 10MB');
+        }
+
+        // Check the mime type
+        $mime = mime_content_type($fileTmpName);
+        if ($mime != 'application/pdf') {
+            respond(400, 'File must be a pdf');
+        }
+
+        //
+        // We've passed all the checks, now we can upload the image
+        //
+
+        $previousUploadId = isset($_POST['previousUploadId']) && !empty($_POST['previousUploadId']) ? $_POST['previousUploadId'] : null;
+        $previousUpload = $uploadsDao->getUpload($previousUploadId);
+        $previousUpload->setFileName($fileName);
+        $uploadsDao->updateUpload($previousUpload);
+
+        $ok = move_uploaded_file($fileTmpName, $filepath . $previousUploadId . ".pdf");
+
+        if (!$ok) {
+            respond(500, 'Failed to upload document ' . $fileTmpName . " " . $filepath);
+        }
 
         respond(200, 'Successfully uploaded document');
-
         
     case 'deleteDocument':
 
-        // Delete the image
         $ok = unlink($filepath);
         if (!$ok) {
-            respond(500, 'Failed to delete profile image');
+            respond(500, 'Failed to delete document');
         }
 
-        $profile->setImageUploaded(false);
-        $ok = $profilesDao->updateShowcaseProfile($profile);
+        $previousUploadId = isset($_POST['previousUploadId']) && !empty($_POST['previousUploadId']) ? $_POST['previousUploadId'] : null;
+        $ok = $uploadsDao->deleteUpload($previousUploadId);
         if (!$ok) {
-            $logger->warning('Profile image was deleted, but inserting metadata into the database failed');
-            respond(500, 'Failed to delete profile image properly');
+            $logger->warning('Document was deleted, but inserting metadata into the database failed');
+            respond(500, 'Failed to delete document properly');
         }
 
-        respond(200, 'Successfully deleted profile image');
+        respond(200, 'Successfully deleted document');
 
     default:
-        respond(400, 'Invalid action on profile image resource');
+        respond(400, 'Invalid action on document resource');
 }

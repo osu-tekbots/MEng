@@ -3,7 +3,7 @@ namespace Model;
 
 use Util\IdGenerator;
 
-class EvaluationUpload {
+class Upload {
     /** @var string */
     private $id;
 
@@ -25,7 +25,7 @@ class EvaluationUpload {
     /**
      * Constructor
      *
-     * @param string|null $id Optional ID to initialize the EvaluationUpload.
+     * @param string|null $id Optional ID to initialize the Upload.
      */
     public function __construct($id = null) {
         if ($id === null) {
