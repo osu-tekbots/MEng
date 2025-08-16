@@ -10,9 +10,6 @@ class Upload {
     /** @var string */
     private $fkUserId;
 
-    /** @var int */
-    private $fkDocumentType;
-
     /** @var string */
     private $filePath;
 
@@ -72,26 +69,6 @@ class Upload {
      */
     public function setFkUserId($fkUserId) {
         $this->fkUserId = $fkUserId;
-        return $this;
-    }
-
-    /**
-     * Get the value of fkDocumentType
-     *
-     * @return int
-     */
-    public function getFkDocumentType() {
-        return $this->fkDocumentType;
-    }
-
-    /**
-     * Set the value of fkDocumentType
-     *
-     * @param int $fkDocumentType
-     * @return self
-     */
-    public function setFkDocumentType($fkDocumentType) {
-        $this->fkDocumentType = $fkDocumentType;
         return $this;
     }
 

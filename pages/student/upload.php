@@ -3,13 +3,11 @@ include_once '../../bootstrap.php';
 
 use DataAccess\UsersDao;
 use DataAccess\UploadsDao;
-use DataAccess\DocumentTypesDao;
 
 $selectedDocumentType = isset($_GET['documentType']) && !empty($_GET['documentType']) ? $_GET['documentType'] : 1;
 
 $usersDao = new UsersDao($dbConn, $logger);
 $uploadsDao = new UploadsDao($dbConn, $logger);
-$documentTypesDao = new DocumentTypesDao($dbConn, $logger);
 
 $js = array(
     array(
@@ -21,9 +19,9 @@ $js = array(
 include_once PUBLIC_FILES . '/modules/header.php';
 
 $user = $usersDao->getUser($_SESSION['userID']);
-$documentTypes = $documentTypesDao->getAllDocumentTypes();
+$documentTypes = $uploadsDao->getAllDocumentTypes();
 
-$previousUpload = $uploadsDao->getUserUploadByType($_SESSION['userID'], $selectedDocumentType);
+$previousUpload = $uploadsDao->getUserUploadByFlag($_SESSION['userID'], $selectedDocumentType);
 
 ?>
 
@@ -53,7 +51,7 @@ $previousUpload = $uploadsDao->getUserUploadByType($_SESSION['userID'], $selecte
                                     if ($documentType->getId() == $selectedDocumentType) {
                                         echo "selected";
                                     }
-                                    echo ">" . $documentType->getTypeName() . "</option>";
+                                    echo ">" . $documentType->getFlagName() . "</option>";
                                 }
                             ?>
                         </select>

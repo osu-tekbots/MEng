@@ -38,7 +38,7 @@ function onUploadDocumentFormSubmit() {
     // Request to upload the profile image if there is one
     if (previousUpload) {
         bodyDocumentUpload.append('action', 'updateDocument');
-        api.post('/user-uploads.php', bodyDocumentUpload, true)
+        api.post('/uploads.php', bodyDocumentUpload, true)
             .then(res => {
                 snackbar('Successfully updated', 'success');
                 $('#btnUploadLoader').hide();
@@ -50,7 +50,7 @@ function onUploadDocumentFormSubmit() {
             });
     } else if (newUpload) {
         bodyDocumentUpload.append('action', 'uploadDocument');
-        api.post('/user-uploads.php', bodyDocumentUpload, true)
+        api.post('/uploads.php', bodyDocumentUpload, true)
             .then(res => {
                 snackbar('Successfully uploaded', 'success');
                 $('#btnUploadLoader').hide();
@@ -72,3 +72,29 @@ $('#formUploadDocument').on('submit', onUploadDocumentFormSubmit);
 document.getElementById('formUploadDocument').addEventListener('submit', function(event) {
     event.preventDefault();
 });
+
+function onUploadDelete() {
+
+    let bodyDocumentUpload = new FormData();
+    const documentType = document.getElementById("documentType");
+    const userId = document.getElementById("userId");
+    const previousUploadId = document.getElementById("previousUploadId");
+
+    bodyDocumentUpload.append('userId', userId.value);
+    bodyDocumentUpload.append('documentType', documentType.value);
+    bodyDocumentUpload.append('previousUploadId', previousUploadId.value);
+
+    bodyDocumentUpload.append('action', 'deleteDocument');
+    api.post('/uploads.php', bodyDocumentUpload, true)
+        .then(res => {
+            snackbar('Successfully deleted', 'success');
+            $('#btnUploadLoader').hide();
+            setTimeout(function() { location.reload(); }, 1000);
+        })
+        .catch(err => {
+            snackbar(err.message, 'error');
+            $('#btnUploadLoader').hide();
+        });
+}
+
+$('#aUploadDelete').on('click', onUploadDelete);

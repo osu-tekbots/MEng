@@ -41,7 +41,7 @@ class UploadsDao {
      */
     public function getUpload($id) {
         try {
-            $sql = 'SELECT * FROM Evaluation_uploads ';
+            $sql = 'SELECT * FROM Uploads ';
             $sql .= 'WHERE id = :id ';
             $params = array(
                 ':id' => $id
@@ -57,20 +57,21 @@ class UploadsDao {
     }
 
     /**
-     * Gets an upload by User Id and Document Type.
+     * Gets an upload by User Id and Upload flag Id.
      *
      * @param string $userId the User Id of the upload to fetch
-     * @param int $documentType the Document Type Id of the upload to fetch
+     * @param int $uploadFlagId the Upload Flag Id of the upload to fetch
      * @return Upload|boolean an Upload object if the fetch succeeds, false otherwise
      */
-    public function getUserUploadByType($userId, $documentType) {
+    public function getUserUploadByFlag($userId, $uploadFlagId) {
         try {
-            $sql = 'SELECT * FROM Evaluation_uploads ';
-            $sql .= 'WHERE fk_user_id = :userId ';
-            $sql .= 'AND fk_document_type = :documentType';
+            $sql = 'SELECT Uploads.* FROM Uploads ';
+            $sql .= 'RIGHT JOIN Upload_flag_assignments ON Uploads.id = Upload_flag_assignments.fk_upload_id ';
+            $sql .= 'WHERE Uploads.fk_user_id = :userId ';
+            $sql .= 'AND Upload_flag_assignments.fk_upload_flag_id = :uploadFlagId';
             $params = array(
                 ':userId' => $userId,
-                ':documentType' => $documentType
+                ':uploadFlagId' => $uploadFlagId
             );
             $result = $this->conn->query($sql, $params);
 
@@ -93,15 +94,36 @@ class UploadsDao {
      */
     public function getAllUnassignedUploads() {
         try {
-            $sql = 'SELECT * FROM Evaluation_uploads ';
-            $sql .= 'WHERE Evaluation_uploads.id NOT IN ';
-            $sql .= '(SELECT fk_evaluation_upload FROM Evaluations ';
-            $sql .= 'WHERE fk_evaluation_upload = Evaluation_uploads.id)';
+            $sql = 'SELECT * FROM Uploads ';
+            $sql .= 'WHERE Uploads.id NOT IN ';
+            $sql .= '(SELECT fk_upload_id FROM Evaluations ';
+            $sql .= 'WHERE fk_upload_id = Uploads.id)';
             $result = $this->conn->query($sql);
 
             return \array_map('self::ExtractUploadFromRow', $result);
         } catch (\Exception $e) {
             $this->logError('Failed to fetch upload objects: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Fetches all the doc_type upload flags from the database.
+     * 
+     * If an error occurs during the fetch, the function will return `false`.
+     *
+     * @return UploadFlag[]|boolean an array of Upload Flag objects if the fetch succeeds, false otherwise
+     */
+    public function getAllDocumentTypes() {
+        try {
+            $sql = 'SELECT * FROM Upload_flags ';
+            $sql .= 'WHERE flag_type = "doc_type"';
+            $result = $this->conn->query($sql);
+
+            return \array_map('self::ExtractUploadFlagFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch document types: ' . $e->getMessage());
 
             return false;
         }
@@ -116,13 +138,12 @@ class UploadsDao {
     public function addNewUpload($upload) {
         try {
 
-            $sql = 'INSERT INTO Evaluation_uploads ';
-            $sql .= '(id, fk_user_id, fk_document_type, file_path, file_name, date_uploaded) ';
-            $sql .= 'VALUES (:id,:fk_user_id,:fk_document_type,:file_path,:file_name,:date_uploaded)';
+            $sql = 'INSERT INTO Uploads ';
+            $sql .= '(id, fk_user_id, file_path, file_name, date_uploaded) ';
+            $sql .= 'VALUES (:id,:fk_user_id,:file_path,:file_name,:date_uploaded)';
             $params = array(
                 ':id' => $upload->getId(),
                 ':fk_user_id' => $upload->getFkUserId(),
-                ':fk_document_type' => $upload->getFkDocumentType(),
                 ':file_path' => $upload->getFilePath(),
                 ':file_name' => $upload->getFileName(),
                 ':date_uploaded' => $upload->getDateUploaded()
@@ -138,6 +159,35 @@ class UploadsDao {
     }
 
     /**
+     * Adds a new upload flag assignment object to the database.
+     *
+     * @param string $uploadId the ID of the upload
+     * @param int $uploadFlagId the ID of the upload flag
+     * @param string||null $value value of flag, null if not provided
+     * @return boolean true if the query execution succeeds, false otherwise.
+     */
+    public function assignUploadFlag($uploadId, $uploadFlagId, $flagValue = null) {
+        try {
+
+            $sql = 'INSERT INTO Upload_flag_assignments ';
+            $sql .= '(fk_upload_id, fk_upload_flag_id, flag_value) ';
+            $sql .= 'VALUES (:fk_upload_id,:fk_upload_flag_id,:flag_value)';
+            $params = array(
+                ':fk_upload_id' => $uploadId,
+                ':fk_upload_flag_id' => $uploadFlagId,
+                ':flag_value' => $flagValue
+            );
+            $this->conn->execute($sql, $params);
+
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to assign upload flag: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Updates an existing upload in the database. 
      * 
      * This function only updates database information on an upload
@@ -147,16 +197,14 @@ class UploadsDao {
      */
     public function updateUpload($upload) {
         try {
-            $sql = 'UPDATE Evaluation_uploads SET ';
+            $sql = 'UPDATE Uploads SET ';
             $sql .= 'fk_user_id = :fk_user_id, ';
-            $sql .= 'fk_document_type = :fk_document_type, ';
             $sql .= 'file_path = :file_path, ';
             $sql .= 'file_name = :file_name, ';
             $sql .= 'date_uploaded = :date_uploaded ';
             $sql .= 'WHERE id = :id';
             $params = array(
                 ':fk_user_id' => $upload->getFkUserId(),
-                ':fk_document_type' => $upload->getFkDocumentType(),
                 ':file_path' => $upload->getFilePath(),
                 ':file_name' => $upload->getFileName(),
                 ':date_uploaded' => $upload->getDateUploaded(),
@@ -180,7 +228,7 @@ class UploadsDao {
      */
     public function deleteUpload($id) {
         try {
-            $sql = 'DELETE FROM Evaluation_uploads ';
+            $sql = 'DELETE FROM Uploads ';
             $sql .= 'WHERE id = :id ';
             $params = array(
                 ':id' => $id
@@ -204,7 +252,6 @@ class UploadsDao {
     public static function ExtractUploadFromRow($row) {
 		$upload = new Upload($row['id']);
         $upload->setFkUserId($row['fk_user_id'])
-            ->setFkDocumentType($row['fk_document_type'])
             ->setFilePath($row['file_path'])
             ->setFileName($row['file_name'])
             ->setDateUploaded($row['date_uploaded']);

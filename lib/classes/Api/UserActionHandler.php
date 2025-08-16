@@ -29,7 +29,7 @@ class UserActionHandler extends ActionHandler {
      *
      * @return void
      */
-    public function changeUserType() {
+    public function handleChangeUserType() {
         // Make sure the required parameters exit
         $userType = $this->getFromBody('userType');
 
@@ -58,7 +58,7 @@ class UserActionHandler extends ActionHandler {
         switch ($this->requestBody['action']) {
 
             case 'changeUserType':
-                $this->changeUserType();
+                $this->handleChangeUserType();
 
             default:
                 $this->respond(new Response(Response::BAD_REQUEST, 'Invalid action on user resource'));
