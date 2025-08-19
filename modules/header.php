@@ -87,13 +87,13 @@ $navlinks = array(
 if($isLoggedIn) {
 	if (isset($_SESSION['userType'])){
 		if($_SESSION['userType'] == 'Admin') {
-			$navlinks['ADMIN'] = 'administrator/uploads.php';
+			$navlinks['ADMIN'] = 'viewUploads.php';
 		} 
         if($_SESSION['userType'] == 'Reviewer') {
-            $navlinks['REVIEW'] = 'reviewer/assignments.php';
+            $navlinks['REVIEW'] = 'reviewerAssignments.php';
         } 
         if($_SESSION['userType'] == 'Student') {
-            $navlinks['UPLOAD'] = 'student/upload.php';
+            $navlinks['UPLOAD'] = 'studentUpload.php';
         }
 	}
     $navlinks['PROFILE'] = 'profile';

@@ -1,5 +1,5 @@
 <?php
-include_once '../../bootstrap.php';
+include_once '../bootstrap.php';
 
 use DataAccess\UsersDao;
 use DataAccess\UploadsDao;
@@ -95,7 +95,7 @@ $previousUpload = $uploadsDao->getUserUploadByFlag($_SESSION['userID'], $selecte
 <script>
     function onDocumentTypeChange() {
         const documentType = document.getElementById("documentType");
-        window.location.replace("student/upload.php?documentType=" + documentType.value);
+        window.location.replace("studentUpload.php?documentType=" + documentType.value);
     }
 </script>
 
