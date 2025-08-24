@@ -15,6 +15,11 @@ class RubricTemplate {
     private $lastModified;
 
     /**
+     * @var array RubricTemplateItem[]
+     */
+    public $items = [];
+
+    /**
      * Constructor
      *
      * @param int|null $id Optional ID for initializing the rubric template.
@@ -23,6 +28,7 @@ class RubricTemplate {
         if ($id !== null) {
             $this->id = $id;
         }
+        $this->items = [];
     }
 
     /**

@@ -1,7 +1,7 @@
 <?php
 namespace Model;
 
-class RubricTemplateItem {
+class RubricItemTemplate {
     /** @var int */
     private $id;
 
