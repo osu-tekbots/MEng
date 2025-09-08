@@ -57,6 +57,32 @@ class UploadsDao {
     }
 
     /**
+     * Fetches a single document type with the given upload ID from the database.
+     *
+     * @param string $uploadId the ID of the document type to fetch
+     * @return DocumentType|boolean the corresponding Document Type from the database if the fetch succeeds and the
+     * document type exists, false otherwise
+     */
+    public function getDocumentType($uploadId) {
+        try {
+            $sql = "SELECT Upload_flags.* FROM Upload_flag_assignments ";
+            $sql .= "INNER JOIN Upload_flags ON Upload_flag_assignments.fk_upload_flag_id = Upload_flags.id ";
+            $sql .= "WHERE Upload_flag_assignments.fk_upload_id = :uploadId";
+            $params = array(':uploadId' => $uploadId);
+            $result = $this->conn->query($sql, $params);
+            if (\count($result) == 0) {
+                return false;
+            }
+
+            return self::ExtractUploadFlagFromRow($result[0]);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch single document type by ID: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Gets an upload by User Id and Upload flag Id.
      *
      * @param string $userId the User Id of the upload to fetch

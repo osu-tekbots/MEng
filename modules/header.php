@@ -45,7 +45,8 @@ $css = array_merge(
         'assets/css/footer.css',
         'assets/css/global.css',
         'assets/css/layout.css',
-        'assets/css/snackbar.css'
+        'assets/css/snackbar.css',
+        'assets/css/multiselect.css'
     ),
     $css
 );
@@ -74,7 +75,8 @@ $js = array_merge(
         ),
         'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js',
         'assets/js/api.js',
-        'assets/js/snackbar.js'
+        'assets/js/snackbar.js',
+        'assets/js/multiselect.js'
     ), $js
 );
 

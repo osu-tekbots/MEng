@@ -11,6 +11,8 @@ $documentTypesDao = new DocumentTypesDao($dbConn, $logger);
 
 $uploads = $uploadsDao->getAllUnassignedUploads();
 
+require_once PUBLIC_FILES . '/lib/osu-identities-api.php';
+
 include_once PUBLIC_FILES . '/modules/header.php';
 
 ?>
@@ -29,24 +31,20 @@ include_once PUBLIC_FILES . '/modules/header.php';
                     <th scope="col">Uploader</th>
                     <th scope="col">Document Type</th>
                     <th scope="col">Date Uploaded</th>
-                    <!-- <th scope="col">Reviewer(s)</th> -->
+                    <th scope="col">Assign Reviewer(s)</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php 
                         foreach ($uploads as $upload) {
-                            echo '<tr onclick="goToUploadPage(\'' . $upload->getId() . '\')">';
+                            echo '<tr>';
                             echo '<th scope="row">' . $upload->getId() . '</th>';
                             $uploader = $usersDao->getUser($upload->getFkUserId());
                             echo '<td>' . $uploader->getFullName() . '</td>';
-                            $documentType = $documentTypesDao->getDocumentType($upload->getFkDocumentType());
-                            echo '<td>' . $documentType->getTypeName() . '</td>';
+                            $documentTypeFlag = $uploadsDao->getDocumentType($upload->getId());
+                            echo '<td>' . $documentTypeFlag->getFlagName() . '</td>';
                             echo '<td>' . $upload->getDateUploaded() . '</td>';
-                            // <!-- <td>
-                            //     <select class="form-select">
-            
-                            //     </select>
-                            // </td> -->
+                            echo '<td><input class="form-check-input" type="checkbox" id="flexCheckIndeterminate"></td>';
                             echo '</tr>';
                         }
                     ?>
@@ -54,12 +52,31 @@ include_once PUBLIC_FILES . '/modules/header.php';
             </table>
         </div>
     </div>
+    <div class="row">
+        <label for="fruits">Fruits</label>
+        <select id="fruits" name="fruits" data-placeholder="Select fruits" multiple data-multi-select>
+            <option value="Apple">Apple</option>
+            <option value="Banana">Banana</option>
+            <option value="Blackberry">Blackberry</option>
+            <option value="Blueberry">Blueberry</option>
+            <option value="Cherry">Cherry</option>
+            <option value="Cranberry">Cranberry</option>
+            <option value="Grapes">Grapes</option>
+            <option value="Kiwi">Kiwi</option>
+            <option value="Mango">Mango</option>
+            <option value="Orange">Orange</option>
+            <option value="Peach">Peach</option>
+            <option value="Pear">Pear</option>
+            <option value="Pineapple">Pineapple</option>
+            <option value="Raspberry">Raspberry</option>
+            <option value="Strawberry">Strawberry</option>
+            <option value="Watermelon">Watermelon</option>
+        </select>
+    </div>
 </div>
 
 <script>
-    function goToUploadPage(uploadId) {
-        window.location.replace("/upload.php?uploadId=" + uploadId);
-    }
+    document.querySelectorAll('[data-multi-select]').forEach(select => new MultiSelect(select));
 </script>
 
 <?php
