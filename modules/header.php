@@ -87,7 +87,7 @@ $navlinks = array(
 if($isLoggedIn) {
 	if (isset($_SESSION['userType'])){
 		if($_SESSION['userType'] == 'Admin') {
-			$navlinks['ADMIN'] = 'viewUploads.php';
+			$navlinks['ADMIN'] = ['Uploads'=> 'viewUploads.php', 'Build Rubrics'=> 'createRubric.php'];
 		} 
         if($_SESSION['userType'] == 'Reviewer') {
             $navlinks['REVIEW'] = 'reviewerAssignments.php';
@@ -115,7 +115,7 @@ if($isLoggedIn) {
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <base href="<?php echo $baseUrl ?>" />
     <title><?php echo $title; ?></title>
-
+    
     <?php
     // Include the CSS Stylesheets
     foreach ($css as $style) {
@@ -159,37 +159,80 @@ if($isLoggedIn) {
             </div>
         </a>
         <nav class="navigation d-none d-sm-block">
-            <ul>
-            <?php 
-            foreach ($navlinks as $title => $link) {
-                echo "
-                <a href='$link'>
-                    <li>$title</li>
-                </a>
-                ";
-            }
-            ?>
+            <style>
+                /* Hide dropdown by default */
+                .navigation .dropdown-menu {
+                    display: none;
+                    position: absolute; /* needed so it floats under the toggle */
+                }
 
+                /* Bootstrap JS adds .show when open */
+                .navigation .dropdown-menu.show {
+                    display: block;
+                }
+            </style>
+            <!-- uses style rules to manage dropdown opening and closing (not bootrstraps internal system) -->
+            <ul>
+                <?php 
+                    $navString = '';
+                    foreach ($navlinks as $title => $link) {
+                        if (is_array($link)) {
+                            $navString .= 
+                            '<li class="nav-item dropdown" style="list-style: none;">
+                                <a class="nav-link dropdown-toggle" href="#" id="dropdown_' . strtolower($title) . '" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'
+                                 . $title . 
+                                '</a>
+                            <ul class="dropdown-menu" aria-labelledby="dropdown_' . strtolower($title) . '">';
+                            foreach ($link as $itemName => $itemHref) {
+                                $navString .= '<li><a class="dropdown-item" href="' . $itemHref . '">' . $itemName . '</a></li>';
+                            }
+                            $navString .= '</ul> </li>';
+                            
+                        } else {
+                            $navString .= '<li class="nav-item" style="list-style: none;"><a class="nav-link" href="' . $link . '">' . $title . '</a></li>';
+                        }
+                    }
+                    echo $navString;
+                ?>
             </ul>
         </nav>
-        <nav class="navigation navbar-dark d-sm-none" id=navbarSmall>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navSmall" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse" id="navSmall" style="margin-top: 10px">
-            <?php 
-            foreach ($navlinks as $title => $link) {
-                echo "
-                <a href='$link'>
-                    <h5>
-                    $title
-                    </h5>
-                </a>
-                <br>
-                ";
-            }
-            ?>
-            <div>
+        <!-- Small screen version -->
+        <nav class="navigation d-block d-sm-none">
+            <style>
+                /* Hide dropdowns by default */
+                .navigation .dropdown-menu {
+                display: none;
+                position: absolute; /* floats below the toggle */
+                }
+
+                /* Show dropdown when JS adds .show */
+                .navigation .dropdown-menu.show {
+                display: block;
+                }
+            </style>
+
+            <ul>
+                <li class="nav-item dropdown" style="list-style: none;">
+                    <a class="nav-link dropdown-toggle" href="#" id="mobileNavDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Menu
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="mobileNavDropdown">
+                    <?php 
+                        $navString = '';
+                        foreach ($navlinks as $title => $link) {
+                            if (is_array($link)) {
+                                foreach ($link as $itemName => $itemHref) {
+                                    $navString .= '<li style="list-style: none;"><a class="dropdown-item" href="' . $itemHref . '">' . $itemName . '</a></li>';
+                                }
+                            } else {
+                                $navString .= '<li style="list-style: none;"><a class="dropdown-item" href="' . $link . '">' . $title . '</a></li>';
+                            }
+                        }
+                        echo $navString;
+                    ?>
+                    </ul>
+                </li>
+            </ul>
         </nav>
     </header>
 
