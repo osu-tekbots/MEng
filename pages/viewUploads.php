@@ -53,25 +53,20 @@ include_once PUBLIC_FILES . '/modules/header.php';
         </div>
     </div>
     <div class="row">
-        <label for="fruits">Fruits</label>
-        <select id="fruits" name="fruits" data-placeholder="Select fruits" multiple data-multi-select>
-            <option value="Apple">Apple</option>
-            <option value="Banana">Banana</option>
-            <option value="Blackberry">Blackberry</option>
-            <option value="Blueberry">Blueberry</option>
-            <option value="Cherry">Cherry</option>
-            <option value="Cranberry">Cranberry</option>
-            <option value="Grapes">Grapes</option>
-            <option value="Kiwi">Kiwi</option>
-            <option value="Mango">Mango</option>
-            <option value="Orange">Orange</option>
-            <option value="Peach">Peach</option>
-            <option value="Pear">Pear</option>
-            <option value="Pineapple">Pineapple</option>
-            <option value="Raspberry">Raspberry</option>
-            <option value="Strawberry">Strawberry</option>
-            <option value="Watermelon">Watermelon</option>
-        </select>
+        <div class="col">
+            <label for="reviewers">Assign Reviewers</label>
+            <select id="reviewers" name="reviewers" data-placeholder="Select Reviewers" data-select-all="false" multiple data-multi-select>
+                <option value="test">Rohan Thapliyal</option>
+            </select>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <label for="rubrics">Assign Rubric</label>
+            <select id="rubrics" name="rubrics" data-placeholder="Select Rubrics" data-select-all="false" multiple data-multi-select>
+                <option value="test">Test Rubric</option>
+            </select>
+        </div>
     </div>
 </div>
 
