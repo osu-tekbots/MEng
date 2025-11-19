@@ -6,8 +6,7 @@ use Model\UploadFlag;
 
 /**
  * Contains logic for database interactions with uploads data in the database. 
- * 
- * DAO stands for 'Data Access Object'
+ * * DAO stands for 'Data Access Object'
  */
 class UploadsDao {
 
@@ -57,6 +56,27 @@ class UploadsDao {
     }
 
     /**
+     * Gets the student ID (fk_user_id) associated with a specific upload.
+     * * @param string $uploadId the ID of the upload
+     * @return string|boolean the student ID if found, false otherwise
+     */
+    public function getStudentIdForUpload($uploadId) {
+        try {
+            $sql = 'SELECT fk_user_id FROM Uploads WHERE id = :id';
+            $params = array(':id' => $uploadId);
+            $result = $this->conn->query($sql, $params);
+
+            if ($result && count($result) > 0) {
+                return $result[0]['fk_user_id'];
+            }
+            return false;
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch student ID for upload: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Gets all uploads in Uploads table.
      *
      * @return Array|boolean Array of Upload objects if the fetch succeeds, false otherwise
@@ -73,6 +93,7 @@ class UploadsDao {
         }
     }
   
+    /**
      * Fetches a single document type with the given upload ID from the database.
      *
      * @param string $uploadId the ID of the document type to fetch
@@ -152,8 +173,7 @@ class UploadsDao {
 
     /**
      * Fetches all the doc_type upload flags from the database.
-     * 
-     * If an error occurs during the fetch, the function will return `false`.
+     * * If an error occurs during the fetch, the function will return `false`.
      *
      * @return UploadFlag[]|boolean an array of Upload Flag objects if the fetch succeeds, false otherwise
      */
@@ -231,8 +251,7 @@ class UploadsDao {
 
     /**
      * Updates an existing upload in the database. 
-     * 
-     * This function only updates database information on an upload
+     * * This function only updates database information on an upload
      *
      * @param \Model\Upload $upload the upload to update
      * @return boolean true if the query execution succeeds, false otherwise.
@@ -292,7 +311,7 @@ class UploadsDao {
      * @return \Model\Upload
      */
     public static function ExtractUploadFromRow($row) {
-		$upload = new Upload($row['id']);
+        $upload = new Upload($row['id']);
         $upload->setFkUserId($row['fk_user_id'])
             ->setFilePath($row['file_path'])
             ->setFileName($row['file_name'])
@@ -308,7 +327,7 @@ class UploadsDao {
      * @return \Model\UploadFlag
      */
     public static function ExtractUploadFlagFromRow($row) {
-		$uploadflag = new UploadFlag($row['id']);
+        $uploadflag = new UploadFlag($row['id']);
         $uploadflag->setFlagName($row['flag_name'])
             ->setFlagType($row['flag_type'])
             ->setIsActive($row['is_active']);
@@ -318,8 +337,7 @@ class UploadsDao {
 
     /**
      * Logs an error if a logger was provided to the class when it was constructed.
-     * 
-     * Essentially a wrapper around the error logging so we don't cause the equivalent of a null pointer exception.
+     * * Essentially a wrapper around the error logging so we don't cause the equivalent of a null pointer exception.
      *
      * @param string $message the message to log.
      * @return void

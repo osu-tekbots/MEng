@@ -32,10 +32,10 @@ include_once PUBLIC_FILES . '/modules/header.php';
                     <th scope="col">Uploader</th>
                     <th scope="col">Document Type</th>
                     <th scope="col">Date Uploaded</th>
-                    <th scope="col">Assign Reviewer(s)</th>
+                    <th scope="col">Select</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="uploadsTableBody">
                     <?php 
                         foreach ($uploads as $upload) {
                             echo '<tr>';
@@ -44,7 +44,8 @@ include_once PUBLIC_FILES . '/modules/header.php';
                             $documentTypeFlag = $uploadsDao->getDocumentType($upload->getId());
                             echo '<td>' . $documentTypeFlag->getFlagName() . '</td>';
                             echo '<td>' . $upload->getDateUploaded() . '</td>';
-                            echo '<td><input class="form-check-input" type="checkbox" id="flexCheckIndeterminate"></td>';
+                            // Added value attribute to checkbox to capture Upload ID
+                            echo '<td><input class="form-check-input upload-checkbox" type="checkbox" value="'.$upload->getId().'"></td>';
                             echo '</tr>';
                         }
                     ?>
@@ -52,10 +53,12 @@ include_once PUBLIC_FILES . '/modules/header.php';
             </table>
         </div>
     </div>
-    <div class="row">
-        <div class="col">
-            <label for="reviewers">Assign Reviewers</label>
-            <select id="reviewers" name="reviewers" data-placeholder="Select Reviewers" data-select-all="false" multiple data-multi-select>
+    
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <label for="reviewers">Assign Reviewers (Select one or more)</label>
+            <!-- Note: data-multi-select triggers the JS library. -->
+            <select id="reviewers" name="reviewers" data-placeholder="Select Reviewers" multiple data-multi-select class="form-control">
                 <?php 
                     $reviewers = $usersDao->getAllReviewers();
                     foreach ($reviewers as $reviewer) {
@@ -64,11 +67,10 @@ include_once PUBLIC_FILES . '/modules/header.php';
                 ?>
             </select>
         </div>
-    </div>
-    <div class="row">
-        <div class="col">
-            <label for="rubrics">Assign Rubric</label>
-            <select id="rubrics" name="rubrics" data-placeholder="Select Rubrics" data-select-all="false" multiple data-multi-select>
+        <div class="col-md-6">
+            <label for="rubrics">Assign Rubric (Select one)</label>
+            <select id="rubrics" name="rubrics" class="form-control">
+                <option value="" selected disabled>Select a Rubric...</option>
                 <?php 
                     $rubrics = $rubricsDao->getAllRubricTemplates();
                     foreach ($rubrics as $rubric) {
@@ -78,10 +80,85 @@ include_once PUBLIC_FILES . '/modules/header.php';
             </select>
         </div>
     </div>
+
+    <div class="row mt-4 mb-5">
+        <div class="col">
+            <button id="btnAssign" class="btn btn-primary btn-lg">Create Evaluations</button>
+        </div>
+    </div>
 </div>
 
+<!-- Libraries -->
 <script>
-    document.querySelectorAll('[data-multi-select]').forEach(select => new MultiSelect(select));
+    // Initialize MultiSelect if library is present
+    if(typeof MultiSelect !== 'undefined') {
+        document.querySelectorAll('[data-multi-select]').forEach(select => {
+            new MultiSelect(select);
+        });
+    }
+
+    document.getElementById('btnAssign').addEventListener('click', () => {
+        const btn = document.getElementById('btnAssign');
+        
+        // 1. Get Selected Uploads
+        const selectedUploads = Array.from(document.querySelectorAll('.upload-checkbox:checked'))
+            .map(cb => cb.value);
+
+        // 2. Get Selected Reviewers (via Hidden Inputs from MultiSelect)
+        const hiddenInputs = document.querySelectorAll('input[name="reviewers[]"]');
+        const selectedReviewers = Array.from(hiddenInputs).map(input => input.value);
+
+        // 3. Get Selected Rubric
+        const rubricSelect = document.getElementById('rubrics');
+        const selectedRubric = rubricSelect ? rubricSelect.value : null;
+
+        // Validation
+        if (selectedUploads.length === 0) {
+            // Assuming snackbar is available globally, otherwise use alert
+            if (typeof snackbar === 'function') snackbar('Please select at least one upload.', 'error');
+            else alert('Please select at least one upload.');
+            return;
+        }
+        if (selectedReviewers.length === 0) {
+            if (typeof snackbar === 'function') snackbar('Please select at least one reviewer.', 'error');
+            else alert('Please select at least one reviewer.');
+            return;
+        }
+        if (!selectedRubric) {
+            if (typeof snackbar === 'function') snackbar('Please select a rubric.', 'error');
+            else alert('Please select a rubric.');
+            return;
+        }
+
+        // Prepare Data
+        const body = {
+            action: 'assignEvaluations',
+            uploadIds: selectedUploads,
+            reviewerIds: selectedReviewers,
+            rubricId: selectedRubric
+        };
+
+        btn.disabled = true;
+        btn.innerText = 'Processing...';
+
+        // Use the project's api wrapper
+        // We assume api.js handles the base path (e.g. prepending '/api') or that '/evaluations.php' maps correctly.
+        api.post('/evaluations.php', body)
+            .then(res => {
+                if (typeof snackbar === 'function') snackbar(res.message, 'success');
+                else alert(res.message);
+                
+                // Reload after a short delay to show success message
+                setTimeout(() => window.location.reload(), 1000);
+            })
+            .catch(err => {
+                if (typeof snackbar === 'function') snackbar(err.message, 'error');
+                else alert('Error: ' + err.message);
+                
+                btn.disabled = false;
+                btn.innerText = 'Create Evaluations';
+            });
+    });
 </script>
 
 <?php

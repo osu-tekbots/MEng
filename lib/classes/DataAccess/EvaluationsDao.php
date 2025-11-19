@@ -8,8 +8,7 @@ use Model\EvaluationFlag;
 
 /**
  * Contains logic for database interactions with evaluations data in the database. 
- * 
- * DAO stands for 'Data Access Object'
+ * * DAO stands for 'Data Access Object'
  */
 class EvaluationsDao {
 
@@ -124,31 +123,26 @@ class EvaluationsDao {
 
     /**
      * Adds a new evaluation object to the database.
+     * REMOVED try/catch so errors bubble up to handler.
+     * FIXED table name typo (Evaluations).
      *
      * @param \Model\Evaluation $evaluation the evaluation to add to the database
      * @return boolean true if the query execution succeeds, false otherwise.
      */
     public function addNewEvaluation($evaluation) {
-        try {
+        $sql = 'INSERT INTO Evaluations ';
+        $sql .= '(id, fk_student_id, fk_reviewer_id, fk_upload_id, date_created) ';
+        $sql .= 'VALUES (:id, :fk_student_id, :fk_reviewer_id, :fk_upload_id, :date_created)';
+        $params = array(
+            ':id' => $evaluation->getId(),
+            ':fk_student_id' => $evaluation->getFkStudentId(),
+            ':fk_reviewer_id' => $evaluation->getFkReviewerId(),
+            ':fk_upload_id' => $evaluation->getFkUploadId(),
+            ':date_created' => $evaluation->getDateCreated()
+        );
+        $this->conn->execute($sql, $params);
 
-            $sql = 'INSERT INTO Evaluations ';
-            $sql .= '(id, fk_student_id, fk_reviewer_id, fk_evaluation_upload, date_created ';
-            $sql .= 'VALUES (:id,:fk_student_id,:fk_reviewer_id,:fk_evaluation_upload,:date_created)';
-            $params = array(
-                ':id' => $evaluation->getId(),
-                ':fk_student_id' => $evaluation->getFkStudentId(),
-                ':fk_reviewer_id' => $evaluation->getFkReviewerId(),
-                ':fk_evaluation_upload' => $evaluation->getFkUploadId(),
-                ':date_created' => $evaluation->getDateCreated()
-            );
-            $this->conn->execute($sql, $params);
-
-            return true;
-        } catch (\Exception $e) {
-            $this->logError('Failed to add new evaluation: ' . $e->getMessage());
-
-            return false;
-        }
+        return true;
     }
 
     public function getEvaluationRubricFromEvaluationId($evaluationId) {
@@ -160,7 +154,9 @@ class EvaluationsDao {
             );
             $result = $this->conn->query($sql, $params);
             //Will fail if multiple rubrics per evaluation
-            $this -> logError(json_encode($result[0]));
+            // $this -> logError(json_encode($result[0]));
+            if (!$result) return false;
+            
             $template = $this -> ExtractEvaluationRubricFromRow($result[0]);
             $template -> items = $this->getEvaluationRubricTemplateItems($template->getId());
             return $template;
@@ -188,6 +184,62 @@ class EvaluationsDao {
         }
     }
 
+    /**
+     * Creates a new Evaluation object from foreign keys.
+     * REMOVED try/catch so errors bubble up.
+     */
+    public function createEvaluation($studentId, $reviewerId, $uploadId) {
+        // 1. Generate a random 8-character ID
+        $id = bin2hex(random_bytes(4));
+
+        // 2. Get current date and time
+        $dateCreated = date('Y-m-d H:i:s');
+
+        // 3. Instantiate the Model
+        $evaluation = new Evaluation($id);
+        $evaluation->setFkStudentId($studentId)
+                    ->setFkReviewerId($reviewerId)
+                    ->setFkUploadId($uploadId)
+                    ->setDateCreated($dateCreated);
+
+        // 4. Persist to Database
+        if ($this->addNewEvaluation($evaluation)) {
+            return $evaluation;
+        }
+
+        return false;
+    }
+
+    /**
+     * Assigns a specific rubric template to an evaluation.
+     * Note: In a full system, this might involve copying rubric items. 
+     * Here we assume a direct link or simple creation for the sake of the assignment flow.
+     */
+    public function assignRubricToEvaluation($evaluationId, $rubricTemplateId) {
+        try {
+            // We need to fetch the template name to insert into Evaluation_rubrics
+            // or simply link them. This SQL assumes we are creating a new rubric instance
+            // linked to the evaluation based on the selected ID.
+            $sql = 'INSERT INTO Evaluation_rubrics (id, fk_evaluation_id, name, date_created) 
+                    SELECT :id, :evalId, name, NOW() 
+                    FROM Rubrics WHERE id = :rubricId';
+            
+            $id = bin2hex(random_bytes(4));
+            
+            $params = array(
+                ':id' => $id,
+                ':evalId' => $evaluationId,
+                ':rubricId' => $rubricTemplateId
+            );
+
+            $this->conn->execute($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to assign rubric: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
     public static function ExtractEvaluationRubricItemFromRow($row) {
         $item = new EvaluationRubricItem($row['id']);
         $item->setFkEvaluationRubricId($row['fk_evaluation_rubric_id'])
@@ -215,7 +267,7 @@ class EvaluationsDao {
      * @return \Model\Evaluation
      */
     public static function ExtractEvaluationFromRow($row) {
-		$evaluation = new Evaluation($row['id']);
+        $evaluation = new Evaluation($row['id']);
         $evaluation->setFkStudentId($row['fk_student_id'])
             ->setFkReviewerId($row['fk_reviewer_id'])
             ->setFkUploadId($row['fk_upload_id'])
@@ -231,7 +283,7 @@ class EvaluationsDao {
      * @return \Model\EvaluationFlag
      */
     public static function ExtractEvaluationFlagFromRow($row) {
-		$evaluationflag = new EvaluationFlag($row['id']);
+        $evaluationflag = new EvaluationFlag($row['id']);
         $evaluationflag->setFlagName($row['flag_name'])
             ->setFlagType($row['flag_type'])
             ->setIsActive($row['is_active']);
@@ -241,8 +293,7 @@ class EvaluationsDao {
 
     /**
      * Logs an error if a logger was provided to the class when it was constructed.
-     * 
-     * Essentially a wrapper around the error logging so we don't cause the equivalent of a null pointer exception.
+     * * Essentially a wrapper around the error logging so we don't cause the equivalent of a null pointer exception.
      *
      * @param string $message the message to log.
      * @return void
@@ -252,7 +303,8 @@ class EvaluationsDao {
             $this->logger->error($message);
         }
         if ($this->echoOnError) {
-            echo "$message\n";
+            // Echo commented out to prevent breaking JSON API responses
+            // echo "$message\n";
         }
     }
 }
