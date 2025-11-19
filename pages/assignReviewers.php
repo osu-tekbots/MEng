@@ -3,10 +3,12 @@ include_once '../bootstrap.php';
 
 use DataAccess\UsersDao;
 use DataAccess\UploadsDao;
+use DataAccess\RubricsDao;
 use DataAccess\DocumentTypesDao;
 
 $usersDao = new UsersDao($dbConn, $logger);
 $uploadsDao = new UploadsDao($dbConn, $logger);
+$rubricsDao = new RubricsDao($dbConn, $logger);
 $documentTypesDao = new DocumentTypesDao($dbConn, $logger);
 
 $uploads = $uploadsDao->getAllUnassignedUploads();
@@ -27,7 +29,6 @@ include_once PUBLIC_FILES . '/modules/header.php';
             <table class="table table-striped table-hover table-bordered">
                 <thead class="thead-light">
                     <tr>
-                    <th scope="col">#</th>
                     <th scope="col">Uploader</th>
                     <th scope="col">Document Type</th>
                     <th scope="col">Date Uploaded</th>
@@ -38,7 +39,6 @@ include_once PUBLIC_FILES . '/modules/header.php';
                     <?php 
                         foreach ($uploads as $upload) {
                             echo '<tr>';
-                            echo '<th scope="row">' . $upload->getId() . '</th>';
                             $uploader = $usersDao->getUser($upload->getFkUserId());
                             echo '<td>' . $uploader->getFullName() . '</td>';
                             $documentTypeFlag = $uploadsDao->getDocumentType($upload->getId());
@@ -56,7 +56,12 @@ include_once PUBLIC_FILES . '/modules/header.php';
         <div class="col">
             <label for="reviewers">Assign Reviewers</label>
             <select id="reviewers" name="reviewers" data-placeholder="Select Reviewers" data-select-all="false" multiple data-multi-select>
-                <option value="test">Rohan Thapliyal</option>
+                <?php 
+                    $reviewers = $usersDao->getAllReviewers();
+                    foreach ($reviewers as $reviewer) {
+                        echo '<option value="'. $reviewer->getId() .'">'. $reviewer->getFullName() .'</option>';
+                    }
+                ?>
             </select>
         </div>
     </div>
@@ -64,7 +69,12 @@ include_once PUBLIC_FILES . '/modules/header.php';
         <div class="col">
             <label for="rubrics">Assign Rubric</label>
             <select id="rubrics" name="rubrics" data-placeholder="Select Rubrics" data-select-all="false" multiple data-multi-select>
-                <option value="test">Test Rubric</option>
+                <?php 
+                    $rubrics = $rubricsDao->getAllRubricTemplates();
+                    foreach ($rubrics as $rubric) {
+                        echo '<option value="'. $rubric->getId() .'">'. $rubric->getName() .'</option>';
+                    }
+                ?>
             </select>
         </div>
     </div>
