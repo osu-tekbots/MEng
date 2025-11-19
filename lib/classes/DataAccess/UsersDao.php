@@ -139,6 +139,35 @@ class UsersDao {
     }
 
     /**
+     * Fetches user developer status with the user's UUID.
+     *
+     * @param string $uuid the UUID of the user, provided by OSU
+     * @return boolean true if the user is a developer, 
+     * false otherwise
+     */
+    public function userIsDeveloper($uuid) {
+        try {
+
+            $user = $this->getUserByUuid($uuid);
+
+            $sql = 'SELECT * FROM User_flag_assignments ';
+            $sql .= 'WHERE fk_user_flag_id = 1 ';
+            $sql .= 'AND fk_user_id = :user_id ';
+            $params = array(':user_id' => $user->getId());
+            $result = $this->conn->query($sql, $params);
+            if (!$result || \count($result) == 0) {
+                return false;
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch single user by UUID: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Fetches user student status with the user's UUID.
      *
      * @param string $uuid the UUID of the user, provided by OSU
@@ -220,6 +249,72 @@ class UsersDao {
             return true;
         } catch (\Exception $e) {
             $this->logError('Failed to fetch single user by UUID: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Fetches all users with the student flag
+     *
+     * @return User[]|boolean an array of User objects if the fetch succeeds, false otherwise
+     */
+    public function getAllStudents() {
+        try {
+            $sql = 'SELECT Users.* FROM Users ';
+            $sql .= 'LEFT JOIN User_flag_assignments ';
+            $sql .= 'ON Users.id = User_flag_assignments.fk_user_id ';
+            $sql .= 'WHERE User_flag_assignments.fk_user_flag_id = 2';
+
+            $result = $this->conn->query($sql);
+
+            return \array_map('self::ExtractUserFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch students: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Fetches all users with the admin flag
+     *
+     * @return User[]|boolean an array of User objects if the fetch succeeds, false otherwise
+     */
+    public function getAllAdmins() {
+        try {
+            $sql = 'SELECT Users.* FROM Users ';
+            $sql .= 'LEFT JOIN User_flag_assignments ';
+            $sql .= 'ON Users.id = User_flag_assignments.fk_user_id ';
+            $sql .= 'WHERE User_flag_assignments.fk_user_flag_id = 3';
+
+            $result = $this->conn->query($sql);
+
+            return \array_map('self::ExtractUserFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch admins: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Fetches all users with the reviewer flag
+     *
+     * @return User[]|boolean an array of User objects if the fetch succeeds, false otherwise
+     */
+    public function getAllReviewers() {
+        try {
+            $sql = 'SELECT Users.* FROM Users ';
+            $sql .= 'LEFT JOIN User_flag_assignments ';
+            $sql .= 'ON Users.id = User_flag_assignments.fk_user_id ';
+            $sql .= 'WHERE User_flag_assignments.fk_user_flag_id = 4';
+
+            $result = $this->conn->query($sql);
+
+            return \array_map('self::ExtractUserFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch reviewers: ' . $e->getMessage());
 
             return false;
         }

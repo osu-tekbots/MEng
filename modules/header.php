@@ -15,7 +15,7 @@ if (!session_id()) {
 
 $baseUrl = $configManager->getBaseUrl();
 
-$title = (isset($title) ? $title : 'MEng') . ' | OSU';
+$title = (isset($title) ? $title : 'MEng Assessment') . ' | OSU';
 
 // If the URL contains a query string parameter 'contentOnly=true', then we won't display a header or a footer
 if (!isset($contentOnly)) {
@@ -45,7 +45,8 @@ $css = array_merge(
         'assets/css/footer.css',
         'assets/css/global.css',
         'assets/css/layout.css',
-        'assets/css/snackbar.css'
+        'assets/css/snackbar.css',
+        'assets/css/multiselect.css'
     ),
     $css
 );
@@ -74,7 +75,8 @@ $js = array_merge(
         ),
         'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js',
         'assets/js/api.js',
-        'assets/js/snackbar.js'
+        'assets/js/snackbar.js',
+        'assets/js/multiselect.js'
     ), $js
 );
 
@@ -86,18 +88,15 @@ $navlinks = array(
 
 if($isLoggedIn) {
 	if (isset($_SESSION['userType'])){
-		if($_SESSION['userType'] == 'Admin') {
-			$navlinks['ADMIN'] = ['Uploads'=> 'viewUploads.php', 'Build Rubrics'=> 'createRubric.php'];
-        } 
-        if($_SESSION['userType'] == 'Instructor') {
-            $navlinks['INSTRUCTOR'] = ['Assignments' => 'instructorAssignments.php', 'Create Assignment' => 'createAssignment.php', 'Build Rubrics'=> 'createRubric.php'];
-		} 
-        if($_SESSION['userType'] == 'Reviewer') {
-            $navlinks['REVIEW'] = ['Reviewer Assignments' =>'reviewerAssignments.php', 'Evaluate Rubrics'=> 'evaluateRubrics.php'];
-        } 
-        if($_SESSION['userType'] == 'Student') {
-            $navlinks['UPLOAD'] = 'studentUpload.php';
-        }
+    if($_SESSION['userType'] == 'Admin') {
+        $navlinks['ADMIN'] = ['Assign Reviewers'=> 'assignReviewers.php', 'Build Rubrics'=> 'createRubric.php'];
+    } 
+    if($_SESSION['userType'] == 'Reviewer') {
+      $navlinks['REVIEW'] = ['Reviewer Assignments' =>'reviewerAssignments.php', 'Evaluate Rubrics'=> 'evaluateRubrics.php'];
+    } 
+    if($_SESSION['userType'] == 'Student') {
+      $navlinks['UPLOAD'] = 'studentUpload.php';
+    }
 	}
     $navlinks['PROFILE'] = 'profile';
     $navlinks['SIGN OUT'] = 'signout';
@@ -157,8 +156,8 @@ if($isLoggedIn) {
     <header id="header" class="dark">
         <a class="header-main-link" href="">
             <div class="logo">
-                <h1 class="d-none d-lg-block" style="font-size: 48px;">MEng</h1>
-				<h5 class="d-lg-none">MEng</h5>
+                <h1 class="d-none d-lg-block" style="font-size: 48px;">MEng Assessment</h1>
+				<h5 class="d-lg-none">MEng Assessment</h5>
             </div>
         </a>
         <nav class="navigation d-none d-sm-block">
