@@ -1,0 +1,491 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.3
+-- https://www.phpmyadmin.net/
+--
+-- Host: db
+-- Generation Time: Nov 19, 2025 at 01:14 AM
+-- Server version: 10.3.39-MariaDB-1:10.3.39+maria~ubu2004
+-- PHP Version: 8.3.26
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Database: `meng`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Document_types`
+--
+
+CREATE TABLE `Document_types` (
+  `id` int(11) NOT NULL,
+  `type_name` varchar(32) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `Document_types`
+--
+
+INSERT INTO `Document_types` (`id`, `type_name`) VALUES
+(1, 'Report'),
+(2, 'Thesis');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Evaluations`
+--
+
+CREATE TABLE `Evaluations` (
+  `id` varchar(8) NOT NULL,
+  `fk_student_id` varchar(8) NOT NULL,
+  `fk_reviewer_id` varchar(8) NOT NULL,
+  `fk_upload_id` varchar(8) NOT NULL,
+  `date_created` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Evaluation_flags`
+--
+
+CREATE TABLE `Evaluation_flags` (
+  `id` int(11) NOT NULL,
+  `flag_name` varchar(32) NOT NULL,
+  `flag_type` enum('Status') NOT NULL,
+  `is_active` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `Evaluation_flags`
+--
+
+INSERT INTO `Evaluation_flags` (`id`, `flag_name`, `flag_type`, `is_active`) VALUES
+(1, 'Is Complete', 'Status', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Evaluation_flag_assignments`
+--
+
+CREATE TABLE `Evaluation_flag_assignments` (
+  `id` int(11) NOT NULL,
+  `fk_evaluation_id` varchar(8) NOT NULL,
+  `fk_evaluation_flag_id` int(11) NOT NULL,
+  `flag_value` varchar(32) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Evaluation_rubrics`
+--
+
+CREATE TABLE `Evaluation_rubrics` (
+  `id` int(11) NOT NULL,
+  `fk_evaluation_id` varchar(8) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `date_created` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Evaluation_rubric_items`
+--
+
+CREATE TABLE `Evaluation_rubric_items` (
+  `id` int(11) NOT NULL,
+  `fk_evaluation_rubric_id` int(11) NOT NULL,
+  `name` text NOT NULL,
+  `description` text NOT NULL,
+  `answer_type` enum('number','boolean','text') NOT NULL,
+  `answer_value` text DEFAULT NULL,
+  `comments` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Invites`
+--
+
+CREATE TABLE `Invites` (
+  `id` varchar(8) NOT NULL,
+  `email` varchar(64) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Rubric_item_templates`
+--
+
+CREATE TABLE `Rubric_item_templates` (
+  `id` int(11) NOT NULL,
+  `fk_rubric_template_id` int(11) NOT NULL,
+  `name` text NOT NULL,
+  `description` text NOT NULL,
+  `answer_type` enum('number','boolean','text') NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Rubric_templates`
+--
+
+CREATE TABLE `Rubric_templates` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `last_used` datetime NOT NULL,
+  `last_modified` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Uploads`
+--
+
+CREATE TABLE `Uploads` (
+  `id` varchar(8) NOT NULL,
+  `fk_user_id` varchar(8) NOT NULL,
+  `file_path` varchar(64) NOT NULL,
+  `file_name` varchar(64) NOT NULL,
+  `date_uploaded` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `Uploads`
+--
+
+INSERT INTO `Uploads` (`id`, `fk_user_id`, `file_path`, `file_name`, `date_uploaded`) VALUES
+('pFUaze3Z', 'jKieNkw1', '/jKieNkw1/2/', 'MEng Database draft (9).pdf', '2025-08-16 18:11:23');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Upload_flags`
+--
+
+CREATE TABLE `Upload_flags` (
+  `id` int(11) NOT NULL,
+  `flag_name` varchar(32) NOT NULL,
+  `flag_type` enum('doc_type','status') NOT NULL,
+  `is_active` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `Upload_flags`
+--
+
+INSERT INTO `Upload_flags` (`id`, `flag_name`, `flag_type`, `is_active`) VALUES
+(1, 'Computer Science Thesis', 'doc_type', 1),
+(2, 'Mechanical Engineering Thesis', 'doc_type', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Upload_flag_assignments`
+--
+
+CREATE TABLE `Upload_flag_assignments` (
+  `id` int(11) NOT NULL,
+  `fk_upload_id` varchar(8) NOT NULL,
+  `fk_upload_flag_id` int(11) NOT NULL,
+  `flag_value` varchar(32) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `Upload_flag_assignments`
+--
+
+INSERT INTO `Upload_flag_assignments` (`id`, `fk_upload_id`, `fk_upload_flag_id`, `flag_value`) VALUES
+(4, 'pFUaze3Z', 2, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Users`
+--
+
+CREATE TABLE `Users` (
+  `id` varchar(8) NOT NULL,
+  `uuid` varchar(32) NOT NULL,
+  `osu_id` varchar(32) NOT NULL,
+  `first_name` varchar(32) NOT NULL,
+  `last_name` varchar(32) NOT NULL,
+  `onid` varchar(11) NOT NULL,
+  `email` varchar(64) NOT NULL,
+  `last_login` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `Users`
+--
+
+INSERT INTO `Users` (`id`, `uuid`, `osu_id`, `first_name`, `last_name`, `onid`, `email`, `last_login`) VALUES
+('jKieNkw1', '14979642353', '934427597', 'Rohan', 'Thapliyal', 'thapliyr', 'thapliyr@oregonstate.edu', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `User_flags`
+--
+
+CREATE TABLE `User_flags` (
+  `id` int(11) NOT NULL,
+  `flag_name` varchar(32) NOT NULL,
+  `flag_type` enum('Role','Department') NOT NULL,
+  `is_active` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `User_flags`
+--
+
+INSERT INTO `User_flags` (`id`, `flag_name`, `flag_type`, `is_active`) VALUES
+(1, 'Developer', 'Role', 1),
+(2, 'Student', 'Role', 1),
+(3, 'Admin', 'Role', 1),
+(4, 'Reviewer', 'Role', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `User_flag_assignments`
+--
+
+CREATE TABLE `User_flag_assignments` (
+  `id` int(11) NOT NULL,
+  `fk_user_id` varchar(8) NOT NULL,
+  `fk_user_flag_id` int(11) NOT NULL,
+  `flag_value` varchar(32) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `User_flag_assignments`
+--
+
+INSERT INTO `User_flag_assignments` (`id`, `fk_user_id`, `fk_user_flag_id`, `flag_value`) VALUES
+(2, 'jKieNkw1', 2, NULL),
+(3, 'jKieNkw1', 3, NULL),
+(4, 'jKieNkw1', 4, NULL);
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `Document_types`
+--
+ALTER TABLE `Document_types`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `Evaluations`
+--
+ALTER TABLE `Evaluations`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `evaluations_users_student` (`fk_student_id`),
+  ADD KEY `evaluations_users_reviewer` (`fk_reviewer_id`),
+  ADD KEY `evaluations_uploads` (`fk_upload_id`);
+
+--
+-- Indexes for table `Evaluation_flags`
+--
+ALTER TABLE `Evaluation_flags`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `Evaluation_flag_assignments`
+--
+ALTER TABLE `Evaluation_flag_assignments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `evaluation_flag_assignments_evaluations` (`fk_evaluation_id`),
+  ADD KEY `evaluation_flag_assignments_evaluation_flags` (`fk_evaluation_flag_id`) USING BTREE;
+
+--
+-- Indexes for table `Evaluation_rubrics`
+--
+ALTER TABLE `Evaluation_rubrics`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `evaluation_rubrics_evaluations` (`fk_evaluation_id`);
+
+--
+-- Indexes for table `Evaluation_rubric_items`
+--
+ALTER TABLE `Evaluation_rubric_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `evaluation_rubric_items_evaluation_rubrics` (`fk_evaluation_rubric_id`);
+
+--
+-- Indexes for table `Invites`
+--
+ALTER TABLE `Invites`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `Rubric_item_templates`
+--
+ALTER TABLE `Rubric_item_templates`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `rubric_item_templates_rubric_templates` (`fk_rubric_template_id`);
+
+--
+-- Indexes for table `Rubric_templates`
+--
+ALTER TABLE `Rubric_templates`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `Uploads`
+--
+ALTER TABLE `Uploads`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `uploads_users` (`fk_user_id`);
+
+--
+-- Indexes for table `Upload_flags`
+--
+ALTER TABLE `Upload_flags`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `Upload_flag_assignments`
+--
+ALTER TABLE `Upload_flag_assignments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `upload_flag_assignments_uploads` (`fk_upload_id`),
+  ADD KEY `upload_flag_assignments_upload_flags` (`fk_upload_flag_id`);
+
+--
+-- Indexes for table `Users`
+--
+ALTER TABLE `Users`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `User_flags`
+--
+ALTER TABLE `User_flags`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `User_flag_assignments`
+--
+ALTER TABLE `User_flag_assignments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_flag_assignments_user_flags` (`fk_user_flag_id`) USING BTREE,
+  ADD KEY `user_flag_assignments_users` (`fk_user_id`) USING BTREE;
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `Document_types`
+--
+ALTER TABLE `Document_types`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT for table `Evaluation_flags`
+--
+ALTER TABLE `Evaluation_flags`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `Evaluation_flag_assignments`
+--
+ALTER TABLE `Evaluation_flag_assignments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Evaluation_rubrics`
+--
+ALTER TABLE `Evaluation_rubrics`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Evaluation_rubric_items`
+--
+ALTER TABLE `Evaluation_rubric_items`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Rubric_item_templates`
+--
+ALTER TABLE `Rubric_item_templates`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Rubric_templates`
+--
+ALTER TABLE `Rubric_templates`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Upload_flags`
+--
+ALTER TABLE `Upload_flags`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT for table `Upload_flag_assignments`
+--
+ALTER TABLE `Upload_flag_assignments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `User_flags`
+--
+ALTER TABLE `User_flags`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT for table `User_flag_assignments`
+--
+ALTER TABLE `User_flag_assignments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `Evaluations`
+--
+ALTER TABLE `Evaluations`
+  ADD CONSTRAINT `evaluations_uploads` FOREIGN KEY (`fk_upload_id`) REFERENCES `Uploads` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `Uploads`
+--
+ALTER TABLE `Uploads`
+  ADD CONSTRAINT `uploads_users` FOREIGN KEY (`fk_user_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `Upload_flag_assignments`
+--
+ALTER TABLE `Upload_flag_assignments`
+  ADD CONSTRAINT `upload_flag_assignments_upload_flags` FOREIGN KEY (`fk_upload_flag_id`) REFERENCES `Upload_flags` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `upload_flag_assignments_uploads` FOREIGN KEY (`fk_upload_id`) REFERENCES `Uploads` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

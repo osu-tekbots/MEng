@@ -73,7 +73,7 @@ class UploadsDao {
         }
     }
   
-     * Fetches a single document type with the given upload ID from the database.
+     /* Fetches a single document type with the given upload ID from the database.
      *
      * @param string $uploadId the ID of the document type to fetch
      * @return DocumentType|boolean the corresponding Document Type from the database if the fetch succeeds and the
