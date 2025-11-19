@@ -57,6 +57,24 @@ class UploadsDao {
     }
 
     /**
+     * Gets all uploads in Uploads table.
+     *
+     * @return Array|boolean Array of Upload objects if the fetch succeeds, false otherwise
+     */
+    public function getAllUploads() {
+        try {
+            $sql = 'SELECT * FROM Uploads ';
+            $result = $this->conn->query($sql);
+
+            return \array_map('self::ExtractUploadFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch all upload objects: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Gets an upload by User Id and Upload flag Id.
      *
      * @param string $userId the User Id of the upload to fetch

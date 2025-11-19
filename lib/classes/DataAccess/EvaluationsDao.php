@@ -2,6 +2,8 @@
 namespace DataAccess;
 
 use Model\Evaluation;
+use Model\EvaluationRubricItem;
+use Model\EvaluationRubric;
 use Model\EvaluationFlag;
 
 /**
@@ -41,8 +43,7 @@ class EvaluationsDao {
      */
     public function getEvaluationById($id) {
         try {
-            $this->conn->execute($sql, $params);
-            $sql = 'SELECT * FROM Evaluation ';
+            $sql = 'SELECT * FROM Evaluations ';
             $sql .= 'WHERE id = :id';
             $params = array(
                 ':id' => $id
@@ -65,8 +66,7 @@ class EvaluationsDao {
      */
     public function getEvaluationsByStudentUserId($userId) {
         try {
-            $this->conn->execute($sql, $params);
-            $sql = 'SELECT * FROM Evaluation ';
+            $sql = 'SELECT * FROM Evaluations ';
             $sql .= 'WHERE fk_student_id = :userId';
             $params = array(
                 ':userId' => $userId
@@ -82,6 +82,47 @@ class EvaluationsDao {
     }
 
     /**
+     * Gets evaluation objects by reviewer's userId the database.
+     *
+     * @param int $userId the user id of the reviewer
+     * @return Evaluation[]|boolean an Evaluation object if the query execution succeeds, false otherwise.
+     */
+    public function getEvaluationsByReviewerUserId($userId) {
+        try {
+            $sql = 'SELECT * FROM Evaluations ';
+            $sql .= 'WHERE fk_reviewer_id = :userId';
+            $params = array(
+                ':userId' => $userId
+            );
+            $result = $this->conn->query($sql, $params);
+
+            return \array_map('self::ExtractEvaluationFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to add new evaluation: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    public function getEvaluationRubricsByReviewerUserId($userId) {
+        try {
+            $evaluations = $this->getEvaluationsByReviewerUserId($userId);
+            $rubrics = [];
+            foreach ($evaluations as $evaluation) {
+                $rubric = $this->getEvaluationRubricFromEvaluationId($evaluation->getId());
+                if ($rubric) {
+                    $rubrics[] = $rubric;
+                }
+            }
+            return $rubrics;
+        } catch (\Exception $e) {
+            $this->logError('Failed to get evaluation rubrics from reviewer id: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Adds a new evaluation object to the database.
      *
      * @param \Model\Evaluation $evaluation the evaluation to add to the database
@@ -90,7 +131,7 @@ class EvaluationsDao {
     public function addNewEvaluation($evaluation) {
         try {
 
-            $sql = 'INSERT INTO Evaluation ';
+            $sql = 'INSERT INTO Evaluations ';
             $sql .= '(id, fk_student_id, fk_reviewer_id, fk_evaluation_upload, date_created ';
             $sql .= 'VALUES (:id,:fk_student_id,:fk_reviewer_id,:fk_evaluation_upload,:date_created)';
             $params = array(
@@ -110,6 +151,63 @@ class EvaluationsDao {
         }
     }
 
+    public function getEvaluationRubricFromEvaluationId($evaluationId) {
+        try {
+            $sql = 'SELECT * FROM Evaluation_rubrics ';
+            $sql .= 'WHERE fk_evaluation_id = :evaluationId';
+            $params = array(
+                ':evaluationId' => $evaluationId
+            );
+            $result = $this->conn->query($sql, $params);
+            //Will fail if multiple rubrics per evaluation
+            $this -> logError(json_encode($result[0]));
+            $template = $this -> ExtractEvaluationRubricFromRow($result[0]);
+            $template -> items = $this->getEvaluationRubricTemplateItems($template->getId());
+            return $template;
+        } catch (\Exception $e) {
+            $this->logError('Failed to get evaluation rubric from evaluation id: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    public function getEvaluationRubricTemplateItems($evaluationRubricId) {
+        try {
+            $sql = 'SELECT * FROM Evaluation_rubric_items ';
+            $sql .= 'WHERE fk_evaluation_rubric_id = :evaluationRubricId';
+            $params = array(
+                ':evaluationRubricId' => $evaluationRubricId
+            );
+            $result = $this->conn->query($sql, $params);
+
+            return \array_map('self::ExtractEvaluationRubricItemFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to get evaluation rubric template items: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    public static function ExtractEvaluationRubricItemFromRow($row) {
+        $item = new EvaluationRubricItem($row['id']);
+        $item->setFkEvaluationRubricId($row['fk_evaluation_rubric_id'])
+                ->setName($row['name'])
+                ->setDescription($row['description'])
+                ->setAnswerType($row['answer_type'])
+                ->setValue($row['value']);
+
+        return $item;
+    }
+
+    public static function ExtractEvaluationRubricFromRow($row) {
+        $evaluationrubric = new EvaluationRubric($row['id']);
+        $evaluationrubric->setFkEvaluationId($row['fk_evaluation_id'])
+            ->setName($row['name'])
+            ->setDateCreated($row['date_created']);
+
+        return $evaluationrubric;
+    }
+
     /**
      * Creates a new Evaluation object by extracting the information from a row in the database.
      *
@@ -120,7 +218,7 @@ class EvaluationsDao {
 		$evaluation = new Evaluation($row['id']);
         $evaluation->setFkStudentId($row['fk_student_id'])
             ->setFkReviewerId($row['fk_reviewer_id'])
-            ->setFkUploadId($row['fk_evaluation_upload']);
+            ->setFkUploadId($row['fk_upload_id'])
             ->setDateCreated($row['date_created']);
         
         return $evaluation;

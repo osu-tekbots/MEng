@@ -88,9 +88,12 @@ if($isLoggedIn) {
 	if (isset($_SESSION['userType'])){
 		if($_SESSION['userType'] == 'Admin') {
 			$navlinks['ADMIN'] = ['Uploads'=> 'viewUploads.php', 'Build Rubrics'=> 'createRubric.php'];
+        } 
+        if($_SESSION['userType'] == 'Instructor') {
+            $navlinks['INSTRUCTOR'] = ['Assignments' => 'instructorAssignments.php', 'Create Assignment' => 'createAssignment.php', 'Build Rubrics'=> 'createRubric.php'];
 		} 
         if($_SESSION['userType'] == 'Reviewer') {
-            $navlinks['REVIEW'] = 'reviewerAssignments.php';
+            $navlinks['REVIEW'] = ['Reviewer Assignments' =>'reviewerAssignments.php', 'Evaluate Rubrics'=> 'evaluateRubrics.php'];
         } 
         if($_SESSION['userType'] == 'Student') {
             $navlinks['UPLOAD'] = 'studentUpload.php';

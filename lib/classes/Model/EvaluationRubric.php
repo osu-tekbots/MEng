@@ -15,12 +15,18 @@ class EvaluationRubric {
     private $dateCreated;
 
     /**
+     * @var array EvaluationRubricItem[]
+     */
+    public $items = [];
+
+    /**
      * Constructor
      *
      * @param int|null $id Optional ID to initialize the EvaluationRubric.
      */
     public function __construct($id = null) {
         $this->id = $id;
+        $this->items = [];
     }
 
     /**
