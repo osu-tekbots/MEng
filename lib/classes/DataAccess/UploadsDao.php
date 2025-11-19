@@ -57,6 +57,22 @@ class UploadsDao {
     }
 
     /**
+     * Gets all uploads in Uploads table.
+     *
+     * @return Array|boolean Array of Upload objects if the fetch succeeds, false otherwise
+     */
+    public function getAllUploads() {
+        try {
+            $sql = 'SELECT * FROM Uploads ';
+            $result = $this->conn->query($sql);
+
+            return \array_map('self::ExtractUploadFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch all upload objects: ' . $e->getMessage());
+            return false;
+        }
+    }
+  
      * Fetches a single document type with the given upload ID from the database.
      *
      * @param string $uploadId the ID of the document type to fetch

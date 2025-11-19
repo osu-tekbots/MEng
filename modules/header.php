@@ -88,15 +88,15 @@ $navlinks = array(
 
 if($isLoggedIn) {
 	if (isset($_SESSION['userType'])){
-		if($_SESSION['userType'] == 'Admin') {
-			$navlinks['ADMIN'] = ['Assign Reviewers'=> 'assignReviewers.php', 'Build Rubrics'=> 'createRubric.php'];
-		} 
-        if($_SESSION['userType'] == 'Reviewer') {
-            $navlinks['REVIEW'] = 'reviewerAssignments.php';
-        } 
-        if($_SESSION['userType'] == 'Student') {
-            $navlinks['UPLOAD'] = 'studentUpload.php';
-        }
+    if($_SESSION['userType'] == 'Admin') {
+        $navlinks['ADMIN'] = ['Assign Reviewers'=> 'assignReviewers.php', 'Build Rubrics'=> 'createRubric.php'];
+    } 
+    if($_SESSION['userType'] == 'Reviewer') {
+      $navlinks['REVIEW'] = ['Reviewer Assignments' =>'reviewerAssignments.php', 'Evaluate Rubrics'=> 'evaluateRubrics.php'];
+    } 
+    if($_SESSION['userType'] == 'Student') {
+      $navlinks['UPLOAD'] = 'studentUpload.php';
+    }
 	}
     $navlinks['PROFILE'] = 'profile';
     $navlinks['SIGN OUT'] = 'signout';
