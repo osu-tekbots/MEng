@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Nov 19, 2025 at 01:14 AM
+-- Generation Time: Nov 19, 2025 at 02:30 AM
 -- Server version: 10.3.39-MariaDB-1:10.3.39+maria~ubu2004
 -- PHP Version: 8.3.26
 
@@ -141,6 +141,20 @@ CREATE TABLE `Rubric_item_templates` (
   `answer_type` enum('number','boolean','text') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+--
+-- Dumping data for table `Rubric_item_templates`
+--
+
+INSERT INTO `Rubric_item_templates` (`id`, `fk_rubric_template_id`, `name`, `description`, `answer_type`) VALUES
+(1, 1, 'What is the students gpa', '<p>Insert it as a <strong>number&nbsp;</strong></p>', 'number'),
+(2, 1, 'Is the student a grad student', '<p><strong>yes or no</strong> but include comments</p>', 'number'),
+(3, 1, 'Idk what to put here', '', 'number'),
+(4, 2, 'Question 1 here ', '<p>Answer something</p>', 'text'),
+(5, 2, 'Put a number here', '<p><i>Hi</i></p>', 'number'),
+(6, 3, 'Shouldnt display anything <a href = \'https://google.com\'> google </a> ', '<p><strong>None of these should be displayed but this should be bolded:</strong></p><p>&lt;h2&gt; This is a heading &lt;/h2&gt;</p><p>&lt;input value = â€œThis should be an inputâ€&gt;</p><p>&nbsp;</p>', 'text'),
+(7, 3, '<php> break everything <?php>', '<p>&lt;img href = â€œhttps://en.wikipedia.org/wiki/File:View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_(cropped).jpgâ€&gt;</p><p>&lt;a&gt; This shouldnt be displayed as a link &lt;/a&gt;</p>', 'text'),
+(8, 3, 'Testing a bunch of breaks', '<p>&lt;br&gt;</p><p>hi</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>hi</p>', 'number');
+
 -- --------------------------------------------------------
 
 --
@@ -153,6 +167,15 @@ CREATE TABLE `Rubric_templates` (
   `last_used` datetime NOT NULL,
   `last_modified` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `Rubric_templates`
+--
+
+INSERT INTO `Rubric_templates` (`id`, `name`, `last_used`, `last_modified`) VALUES
+(1, 'Engr 67 2025 Rubric', '2025-11-18 17:57:09', '2025-11-18 18:25:19'),
+(2, 'Engr 67 2026 Rubric', '2025-11-18 17:59:12', '2025-11-18 17:59:12'),
+(3, 'Input sanitization testing rubric', '2025-11-18 18:28:33', '2025-11-18 18:29:34');
 
 -- --------------------------------------------------------
 
@@ -430,13 +453,13 @@ ALTER TABLE `Evaluation_rubric_items`
 -- AUTO_INCREMENT for table `Rubric_item_templates`
 --
 ALTER TABLE `Rubric_item_templates`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `Rubric_templates`
 --
 ALTER TABLE `Rubric_templates`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `Upload_flags`
