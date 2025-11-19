@@ -37,9 +37,88 @@ if (isset($_GET['evaluationId'])) {
 include_once PUBLIC_FILES . '/modules/header.php';
 ?>
 
+<?php
+function renderAnswerInput($item) {
+    $type = $item->getAnswerType();
+    $id   = htmlspecialchars($item->getId());
+    $name = "answers[$id]";
+
+    switch ($type) {
+
+        /* ---------------------------------------------------------
+           TEXT INPUT
+        --------------------------------------------------------- */
+        case "text": ?>
+            <textarea
+                class="form-control item-answer"
+                id="<?= $id ?>_answer"
+                name="<?= $name ?>"
+                rows="3"
+            ></textarea>
+        <?php break;
+
+        /* ---------------------------------------------------------
+           BOOLEAN (TRUE / FALSE)
+        --------------------------------------------------------- */
+        case "boolean": ?>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input"
+                       type="radio"
+                       name="<?= $name ?>"
+                       id="<?= $id ?>_answer"
+                       value="true">
+                <label class="form-check-label" for="<?= $id ?>_true">True</label>
+            </div>
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input"
+                       type="radio"
+                       name="<?= $name ?>"
+                       id="<?= $id ?>_answer"
+                       value="false">
+                <label class="form-check-label" for="<?= $id ?>_false">False</label>
+            </div>
+        <?php break;
+
+        /* ---------------------------------------------------------
+           NUMBER — LIKERT SCALE (1–10)
+        --------------------------------------------------------- */
+        case "number": ?>
+            <div class="likert-scale d-flex gap-2 flex-wrap">
+                <?php for ($i = 1; $i <= 10; $i++): ?>
+                    <div class="form-check">
+                        <input  class="form-check-input"
+                                type="radio"
+                                name="<?= $name ?>"
+                                id="<?= $id ?>_answer"
+                                value="<?= $i ?>">
+                        <label class="form-check-label" for="<?= $id ?>_<?= $i ?>">
+                            <?= $i ?>
+                        </label>
+                    </div>
+                <?php endfor; ?>
+            </div>
+        <?php break;
+
+        /* ---------------------------------------------------------
+           DEFAULT → TEXTAREA
+        --------------------------------------------------------- */
+        default: ?>
+            <textarea
+                class="form-control item-answer"
+                id="<?= $id ?>_answer"
+                name="<?= $name ?>"
+                rows="3"
+            ></textarea>
+        <?php
+    }
+}
+?>
+
+
 <div class="container mt-4">
     <h2>Review Document</h2>
-
+    <!-- Selecting Evaluation-->
     <div class="row">
         <form method="GET" class="mb-4">
 
@@ -59,7 +138,11 @@ include_once PUBLIC_FILES . '/modules/header.php';
             <form method="POST" action="submitRubricAnswers.php">
                 <input type="hidden" name="templateId" value="<?php echo $selectedTemplate->getId(); ?>">
                 
+                <!--Evaluation questions + answer box-->
+
                 <?php foreach ($selectedTemplate -> items as $item): ?>
+                    <!-- Question:: -->
+
                     <div class="row mb-5">
                         <!-- Left column: Name and Description (12/12) -->
                         <div class="card col-md-12">
@@ -78,17 +161,31 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                 <?php echo $item->getDescription(); ?>
                             </div>
                         </div>
+                    
+                    <!-- Answer:: -->
 
                         <!-- Full-width answer textarea below -->
                         <div class="col-12 mt-2">
-                            <textarea 
-                                class="form-control item-answer" 
-                                id="<?php echo htmlspecialchars($item->getId() . 'answer'); ?>" 
-                                name="answers[<?php echo htmlspecialchars($item->getId()); ?>]" 
-                                rows="3">
-                            </textarea>
+                            <?php renderAnswerInput($item); ?>
+                            <!-- Displays the correct answer type for the item -->
+                        </div>
+
+                    <!-- Comment:: -->
+                        <div class="col-12 mt-2" <?php echo(($item -> getAnswerType() == "text")?("hidden"):(""));?>> 
+                            <!-- Full-width comment textarea only displays when the answer isnt already text-->
+                            <label> 
+                                Add Comments: 
+
+                                <textarea 
+                                    class="form-control item-comments" 
+                                    id="<?php echo htmlspecialchars($item->getId() . 'comments'); ?>" 
+                                    name="comments[<?php echo htmlspecialchars($item->getId()); ?>]" 
+                                    >
+                                </textarea>
+                            </label>
                         </div>
                     </div>
+
                 <?php endforeach; ?>
             </form>
     <?php endif; ?>
@@ -120,6 +217,9 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
     function initializeAnswerEditors() {
         document.querySelectorAll('textarea.item-answer').forEach(textarea => {
+            createEditorForAnswer(textarea);
+        });
+        document.querySelectorAll('textarea.item-comments').forEach(textarea => {
             createEditorForAnswer(textarea);
         });
         
