@@ -30,61 +30,63 @@ $previousUpload = $uploadsDao->getUserUploadByFlag($_SESSION['userID'], $selecte
     <input type="hidden" name="userId" id="userId" value="<?php echo $user->getId(); ?>" />
 
     <div class="container-fluid">
-        <div class="row">
-            <div class="col">
-                <h3 id="upload">Upload</h3>
+        <div class="container mt-4">
+            <div class="row">
+                <div class="col">
+                    <h3 id="upload">Upload</h3>
+                </div>
             </div>
-        </div>
-        <div class="form-group">
-            <div class="mb-3">
-                <div class="row">
-                    <div class="col">
-                        <label class="form-label" for="userUpload" id="userUploadLabel">
-                            Choose file (PDF)
-                        </label>
-                    </div>
-                    <div class="col-3">
-                        <select class="form-select" id="documentType" onChange="onDocumentTypeChange()">
-                            <?php 
-                                foreach ($documentTypes as $documentType) {
-                                    echo "<option value=" . $documentType->getId() . " ";
-                                    if ($documentType->getId() == $selectedDocumentType) {
-                                        echo "selected";
+            <div class="form-group">
+                <div class="mb-3">
+                    <div class="row">
+                        <div class="col">
+                            <label class="form-label" for="userUpload" id="userUploadLabel">
+                                Choose file (PDF)
+                            </label>
+                        </div>
+                        <div class="col-3">
+                            <select class="form-select" id="documentType" onChange="onDocumentTypeChange()">
+                                <?php 
+                                    foreach ($documentTypes as $documentType) {
+                                        echo "<option value=" . $documentType->getId() . " ";
+                                        if ($documentType->getId() == $selectedDocumentType) {
+                                            echo "selected";
+                                        }
+                                        echo ">" . $documentType->getFlagName() . "</option>";
                                     }
-                                    echo ">" . $documentType->getFlagName() . "</option>";
-                                }
-                            ?>
-                        </select>
+                                ?>
+                            </select>
+                        </div>
+                    </div>
+                    </br>
+                    <?php
+                        if ($previousUpload) {
+                            echo '<div class="row">';
+                            echo '<input type="hidden" name="previousUploadId" id="previousUploadId" value="' . $previousUpload->getId() . '" />';
+                            echo '<div class="col-2"><h4>Previous Upload: </h4></div>';
+                            echo '<div class="col-2"><a id="aUploadDownload" class="btn btn-primary w-100">Download</a></div>';
+                            echo '<div class="col-1"><a id="aUploadStatus" class="btn btn-success w-100">Status</a></div>';
+                            echo '<div class="col-1"><a id="aUploadDelete" class="btn btn-danger w-100">Delete</a></div>';
+                            echo '</div>';
+                            echo '</br>';
+                        }
+                    ?>
+                    <div class="row">
+                        <div class="col">
+                            <input name="userUpload" type="file" class="form-control" id="userUpload" accept=".pdf, application/pdf">
+                        </div>
                     </div>
                 </div>
-                </br>
-                <?php
-                    if ($previousUpload) {
-                        echo '<div class="row">';
-                        echo '<input type="hidden" name="previousUploadId" id="previousUploadId" value="' . $previousUpload->getId() . '" />';
-                        echo '<div class="col-2"><h4>Previous Upload: </h4></div>';
-                        echo '<div class="col-2"><a id="aUploadDownload" class="btn btn-primary w-100">Download</a></div>';
-                        echo '<div class="col-1"><a id="aUploadStatus" class="btn btn-success w-100">Status</a></div>';
-                        echo '<div class="col-1"><a id="aUploadDelete" class="btn btn-danger w-100">Delete</a></div>';
-                        echo '</div>';
-                        echo '</br>';
-                    }
-                ?>
-                <div class="row">
-                    <div class="col">
-                        <input name="userUpload" type="file" class="form-control" id="userUpload" accept=".pdf, application/pdf">
-                    </div>
-                </div>
-            </div>
-        </div>      
+            </div>      
 
-        <div class="row">
-            <div class="col">
-                <div class="btn-upload-submit">
-                    <button type="submit" class="btn btn-primary" id="btnUploadSubmit">
-                        <i class="fas fa-save"></i>&nbsp;&nbsp;Save Changes
-                    </button>
-                    <span class="loader" id="btnUploadLoader"></span>
+            <div class="row">
+                <div class="col">
+                    <div class="btn-upload-submit">
+                        <button type="submit" class="btn btn-primary" id="btnUploadSubmit">
+                            <i class="fas fa-save"></i>&nbsp;&nbsp;Save Changes
+                        </button>
+                        <span class="loader" id="btnUploadLoader"></span>
+                    </div>
                 </div>
             </div>
         </div>

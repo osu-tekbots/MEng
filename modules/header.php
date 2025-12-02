@@ -40,6 +40,11 @@ $css = array_merge(
             'integrity' => 'sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf',
             'crossorigin' => 'anonymous'
         ),
+        array(
+            'href' => 'https://cdn.datatables.net/v/bs5/dt-2.3.5/datatables.min.css',
+            'integrity' => 'sha384-49/RW1o98YG2C2zlWgS77FLSrXw99u/R5gTv26HOR4VWXy7jVEt8iS/cfDn6UtHE',
+            'crossorigin' => 'anonymous'
+        ),
         'assets/css/theme.css',
         'assets/css/header.css',
         'assets/css/footer.css',
@@ -70,6 +75,11 @@ $js = array_merge(
             'crossorigin' => 'anonymous'
         ),
         array(
+            'src' => 'https://cdn.datatables.net/v/bs5/dt-2.3.5/datatables.min.js',
+            'integrity' => 'sha384-0y3De3Rxhdkd4JPUzXfzK6J+7DyDlhLosIUV2OnIgn3Lh1i86pheXHOYUHK85Vwz',
+            'crossorigin' => 'anonymous'
+        ),
+        array(
             'src' => 'assets/js/header.js',
             'defer' => 'true'
         ),
@@ -88,13 +98,13 @@ $navlinks = array(
 
 if($isLoggedIn) {
 	if (isset($_SESSION['userType'])){
-    if($_SESSION['userType'] == 'Admin') {
+    if($_SESSION['userIsAdmin']) {
         $navlinks['ADMIN'] = ['Assign Reviewers'=> 'assignReviewers.php', 'Build Rubrics'=> 'createRubric.php'];
     } 
-    if($_SESSION['userType'] == 'Reviewer') {
+    if($_SESSION['userIsReviewer']) {
       $navlinks['REVIEW'] = ['Reviewer Assignments' =>'reviewerAssignments.php', 'Evaluate Rubrics'=> 'evaluateRubrics.php'];
     } 
-    if($_SESSION['userType'] == 'Student') {
+    if($_SESSION['userIsStudent']) {
       $navlinks['UPLOAD'] = 'studentUpload.php';
     }
 	}

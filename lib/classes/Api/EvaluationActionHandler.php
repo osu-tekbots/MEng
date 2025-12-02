@@ -43,9 +43,7 @@ class EvaluationActionHandler extends ActionHandler {
         $count = 0;
         $errors = [];
 
-        // Loop through assignments
         foreach ($uploadIds as $uploadId) {
-            // Try to find student ID
             try {
                 $studentId = $this->uploadsDao->getStudentIdForUpload($uploadId);
             } catch (\Exception $e) {
@@ -60,11 +58,9 @@ class EvaluationActionHandler extends ActionHandler {
 
             foreach ($reviewerIds as $reviewerId) {
                 try {
-                    // 1. Create Evaluation (DAO will now throw exception on SQL error)
                     $newEval = $this->evaluationsDao->createEvaluation($studentId, $reviewerId, $uploadId);
 
                     if ($newEval) {
-                        // 2. Create Rubric Copy
                         $success = $this->rubricsDao->createRubricForEvaluation($newEval->getId(), $rubricId);
                         if ($success) {
                             $count++;
@@ -74,19 +70,16 @@ class EvaluationActionHandler extends ActionHandler {
                     }
 
                 } catch (\Exception $e) {
-                    // Catch specific SQL errors here
                     $errors[] = "DB Error (Student: $studentId, Reviewer: $reviewerId): " . $e->getMessage();
                 }
             }
         }
 
-        // Build response
         if ($count > 0 && empty($errors)) {
             $this->respond(new Response(Response::OK, "Successfully created $count evaluations."));
         } elseif ($count > 0 && !empty($errors)) {
             $this->respond(new Response(Response::OK, "Created $count evaluations with errors: " . implode('; ', $errors)));
         } else {
-            // Total failure
             $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, "Failed. Errors: " . implode('; ', $errors)));
         }
     }

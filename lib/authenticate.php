@@ -29,6 +29,8 @@ if(isset($_SESSION['site']) && $_SESSION['site'] == 'MEng') {
                 $_SESSION['userIsStudent'] = $userIsStudent;
                 $_SESSION['userIsReviewer'] = $userIsReviewer;
 
+
+                // To-do: put each type's section in the header and display if user has proper permissions (no need for this)
                 if ($userIsAdmin) {
                     $_SESSION['userType'] = 'Admin';
                 } else if ($userIsReviewer) {

@@ -321,6 +321,50 @@ class UsersDao {
     }
 
     /**
+     * Fetches all department user flags
+     *
+     * @return UserFlag[]|boolean an array of UserFlag objects if the fetch succeeds, false otherwise
+     */
+    public function getAllDepartmentFlags() {
+        try {
+            $sql = 'SELECT User_flags.* FROM User_flags ';
+            $sql .= 'WHERE User_flags.flag_type = "Department"';
+
+            $result = $this->conn->query($sql);
+
+            return \array_map('self::ExtractUserFlagFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch department flags: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Fetches all department user flags
+     *
+     * @param string $id the id of the user
+     * @return UserFlag[]|boolean an array of UserFlag objects if the fetch succeeds, false otherwise
+     */
+    public function getUserFlags($id) {
+        try {
+            $sql = 'SELECT User_flags.* FROM User_flags ';
+            $sql .= 'LEFT JOIN User_flag_assignments ';
+            $sql .= 'ON User_flags.id = User_flag_assignments.fk_flag_id ';
+            $sql .= 'WHERE User_flag_assignments.fk_user_id = :id';
+
+            $params = array(':id' => $id);
+            $result = $this->conn->query($sql, $params);
+
+            return \array_map('self::ExtractUserFlagFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch flags: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Adds a new user to the database.
      *
      * @param \Model\User $user the user to add to the database

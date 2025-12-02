@@ -12,6 +12,15 @@ $rubricsDao = new RubricsDao($dbConn, $logger);
 $documentTypesDao = new DocumentTypesDao($dbConn, $logger);
 
 $uploads = $uploadsDao->getAllUnassignedUploads();
+if (isset($_GET['onlyUnassigned'])) {
+    if ($_GET['onlyUnassigned'] == 'unassigned') {
+        $uploads = $uploadsDao->getAllUnassignedUploads();
+    } else {
+        $uploads = $uploadsDao->getAllUploads();
+    }
+}
+
+$department_flags = $usersDao->getAllDepartmentFlags();
 
 require_once PUBLIC_FILES . '/lib/osu-identities-api.php';
 
@@ -19,78 +28,113 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
 ?>
 <div class="container-fluid">
-    <div class="row">
-        <div class="col">
-            <h2>Unassigned Uploads</h2>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col">
-            <table class="table table-striped table-hover table-bordered">
-                <thead class="thead-light">
-                    <tr>
-                    <th scope="col">Uploader</th>
-                    <th scope="col">Document Type</th>
-                    <th scope="col">Date Uploaded</th>
-                    <th scope="col">Select</th>
-                    </tr>
-                </thead>
-                <tbody id="uploadsTableBody">
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col">
+                <h2>Uploads</h2>
+            </div>
+            <div class="col">
+                <select id="departments" name="departments" class="form-control">
+                    <option value="" selected disabled>All Departments</option>
                     <?php 
-                        foreach ($uploads as $upload) {
-                            echo '<tr>';
-                            $uploader = $usersDao->getUser($upload->getFkUserId());
-                            echo '<td>' . $uploader->getFullName() . '</td>';
-                            $documentTypeFlag = $uploadsDao->getDocumentType($upload->getId());
-                            echo '<td>' . $documentTypeFlag->getFlagName() . '</td>';
-                            echo '<td>' . $upload->getDateUploaded() . '</td>';
-                            // Added value attribute to checkbox to capture Upload ID
-                            echo '<td><input class="form-check-input upload-checkbox" type="checkbox" value="'.$upload->getId().'"></td>';
-                            echo '</tr>';
+                        foreach ($department_flags as $department_flag) {
+                            echo '<option value="'. $department_flag->getId() .'">'. $department_flag->getFlagName() .'</option>';
                         }
                     ?>
-                </tbody>
-            </table>
+                </select>
+            </div>
+            <div class="col">
+                <select id="assigned" name="assigned" class="form-control" onChange="onAssignmentChange()">
+                    <?php 
+                        if (isset($_GET['onlyUnassigned'])) {
+                            if ($_GET['onlyUnassigned'] == 'unassigned') {
+                                echo '<option value="all">All Uploads</option>';
+                                echo '<option value="unassigned" selected>Unassigned Uploads Only</option>';
+                            } else {
+                                echo '<option value="all" selected>All Uploads</option>';
+                                echo '<option value="unassigned">Unassigned Uploads Only</option>';
+                            }
+                        } else {
+                            echo '<option value="all">All Uploads</option>';
+                            echo '<option value="unassigned" selected>Unassigned Uploads Only</option>';
+                        }
+                    ?>
+                </select>
+            </div>
         </div>
-    </div>
-    
-    <div class="row mt-3">
-        <div class="col-md-6">
-            <label for="reviewers">Assign Reviewers (Select one or more)</label>
-            <!-- Note: data-multi-select triggers the JS library. -->
-            <select id="reviewers" name="reviewers" data-placeholder="Select Reviewers" multiple data-multi-select class="form-control">
-                <?php 
-                    $reviewers = $usersDao->getAllReviewers();
-                    foreach ($reviewers as $reviewer) {
-                        echo '<option value="'. $reviewer->getId() .'">'. $reviewer->getFullName() .'</option>';
-                    }
-                ?>
-            </select>
+        <br>
+        <br>
+        <div class="row">
+            <div class="col">
+                <table id="uploadsTable" class="table table-striped table-hover table-bordered">
+                    <thead class="thead-light">
+                        <tr>
+                        <th scope="col">Student Name</th>
+                        <th scope="col">Department/Major</th>
+                        <th scope="col">Date Uploaded</th>
+                        <th scope="col">Select</th>
+                        </tr>
+                    </thead>
+                    <tbody id="uploadsTableBody">
+                        <?php 
+                            foreach ($uploads as $upload) {
+                                echo '<tr>';
+                                $uploader = $usersDao->getUser($upload->getFkUserId());
+                                echo '<td>' . $uploader->getFullName() . '</td>';
+                                $documentTypeFlag = $uploadsDao->getDocumentType($upload->getId());
+                                echo '<td>' . $documentTypeFlag->getFlagName() . '</td>';
+                                echo '<td>' . $upload->getDateUploaded() . '</td>';
+                                echo '<td><input class="form-check-input upload-checkbox" type="checkbox" value="'.$upload->getId().'"></td>';
+                                echo '</tr>';
+                            }
+                        ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="col-md-6">
-            <label for="rubrics">Assign Rubric (Select one)</label>
-            <select id="rubrics" name="rubrics" class="form-control">
-                <option value="" selected disabled>Select a Rubric...</option>
-                <?php 
-                    $rubrics = $rubricsDao->getAllRubricTemplates();
-                    foreach ($rubrics as $rubric) {
-                        echo '<option value="'. $rubric->getId() .'">'. $rubric->getName() .'</option>';
-                    }
-                ?>
-            </select>
+        
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label for="reviewers">Assign Reviewers (Select one or more)</label>
+                <select id="reviewers" name="reviewers" data-placeholder="Select Reviewers" multiple data-multi-select class="form-control">
+                    <?php 
+                        $reviewers = $usersDao->getAllReviewers();
+                        foreach ($reviewers as $reviewer) {
+                            echo '<option value="'. $reviewer->getId() .'">'. $reviewer->getFullName() .'</option>';
+                        }
+                    ?>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="rubrics">Assign Rubric (Select one)</label>
+                <select id="rubrics" name="rubrics" class="form-control">
+                    <option value="" selected disabled>Select a Rubric...</option>
+                    <?php 
+                        $rubrics = $rubricsDao->getAllRubricTemplates();
+                        foreach ($rubrics as $rubric) {
+                            echo '<option value="'. $rubric->getId() .'">'. $rubric->getName() .'</option>';
+                        }
+                    ?>
+                </select>
+            </div>
         </div>
-    </div>
 
-    <div class="row mt-4 mb-5">
-        <div class="col">
-            <button id="btnAssign" class="btn btn-primary btn-lg">Create Evaluations</button>
+        <div class="row mt-4 mb-5">
+            <div class="col">
+                <button id="btnAssign" class="btn btn-primary btn-lg">Create Evaluations</button>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Libraries -->
 <script>
-    // Initialize MultiSelect if library is present
+    function onAssignmentChange() {
+        const assigned = document.getElementById("assigned");
+        window.location.replace("assignReviewers.php?onlyUnassigned=" + assigned.value);
+    }
+
+    new DataTable('#uploadsTable');
+
     if(typeof MultiSelect !== 'undefined') {
         document.querySelectorAll('[data-multi-select]').forEach(select => {
             new MultiSelect(select);
@@ -99,22 +143,14 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
     document.getElementById('btnAssign').addEventListener('click', () => {
         const btn = document.getElementById('btnAssign');
-        
-        // 1. Get Selected Uploads
         const selectedUploads = Array.from(document.querySelectorAll('.upload-checkbox:checked'))
             .map(cb => cb.value);
-
-        // 2. Get Selected Reviewers (via Hidden Inputs from MultiSelect)
         const hiddenInputs = document.querySelectorAll('input[name="reviewers[]"]');
         const selectedReviewers = Array.from(hiddenInputs).map(input => input.value);
-
-        // 3. Get Selected Rubric
         const rubricSelect = document.getElementById('rubrics');
         const selectedRubric = rubricSelect ? rubricSelect.value : null;
 
-        // Validation
         if (selectedUploads.length === 0) {
-            // Assuming snackbar is available globally, otherwise use alert
             if (typeof snackbar === 'function') snackbar('Please select at least one upload.', 'error');
             else alert('Please select at least one upload.');
             return;
@@ -130,7 +166,6 @@ include_once PUBLIC_FILES . '/modules/header.php';
             return;
         }
 
-        // Prepare Data
         const body = {
             action: 'assignEvaluations',
             uploadIds: selectedUploads,
@@ -141,14 +176,10 @@ include_once PUBLIC_FILES . '/modules/header.php';
         btn.disabled = true;
         btn.innerText = 'Processing...';
 
-        // Use the project's api wrapper
-        // We assume api.js handles the base path (e.g. prepending '/api') or that '/evaluations.php' maps correctly.
         api.post('/evaluations.php', body)
             .then(res => {
                 if (typeof snackbar === 'function') snackbar(res.message, 'success');
                 else alert(res.message);
-                
-                // Reload after a short delay to show success message
                 setTimeout(() => window.location.reload(), 1000);
             })
             .catch(err => {
