@@ -239,14 +239,39 @@ class EvaluationsDao {
             return false;
         }
     }
+
+    /*
+        Updates the value and comments of an evaluation rubric item. 
+        Expected that the rubric item is already in the database.
+        @param EvaluationRubricItem $evaluationRubricItem the evaluation rubric item to update
+        @return boolean true if the query execution succeeds, false otherwise.
+    */
+    public function setEvaluationRubricItem($evaluationRubricItem) {
+        try {
+            $sql = 'UPDATE Evaluation_rubric_items SET answer_value = :value, comments = :comments WHERE id = :id';
+            $params = array(
+                ':value' => $evaluationRubricItem->getValue(),
+                ':id' => $evaluationRubricItem->getId(),
+                ':comments' => $evaluationRubricItem->getComments()
+            );
+        
+            $this->conn->execute($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to set evaluation rubric item: ' . $e->getMessage());
+            return false;
+        }
+    }
     
     public static function ExtractEvaluationRubricItemFromRow($row) {
         $item = new EvaluationRubricItem($row['id']);
+        //$this->logError(json_encode($row));
         $item->setFkEvaluationRubricId($row['fk_evaluation_rubric_id'])
                 ->setName($row['name'])
                 ->setDescription($row['description'])
                 ->setAnswerType($row['answer_type'])
-                ->setValue($row['value']);
+                ->setValue($row['answer_value'])
+                ->setComments($row['comments']);
 
         return $item;
     }

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Nov 19, 2025 at 02:30 AM
+-- Generation Time: Dec 02, 2025 at 09:45 AM
 -- Server version: 10.3.39-MariaDB-1:10.3.39+maria~ubu2004
 -- PHP Version: 8.3.26
 
@@ -54,6 +54,13 @@ CREATE TABLE `Evaluations` (
   `date_created` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+--
+-- Dumping data for table `Evaluations`
+--
+
+INSERT INTO `Evaluations` (`id`, `fk_student_id`, `fk_reviewer_id`, `fk_upload_id`, `date_created`) VALUES
+('3db8f1b4', 'jKieNkw1', 'jKieNkw1', 'pFUaze3Z', '2025-11-19 02:51:44');
+
 -- --------------------------------------------------------
 
 --
@@ -100,6 +107,14 @@ CREATE TABLE `Evaluation_rubrics` (
   `date_created` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+--
+-- Dumping data for table `Evaluation_rubrics`
+--
+
+INSERT INTO `Evaluation_rubrics` (`id`, `fk_evaluation_id`, `name`, `date_created`) VALUES
+(3, '62ec7217', 'New template temp', '2025-11-19 02:51:01'),
+(4, '3db8f1b4', 'Engr 67 2025 Rubric', '2025-11-19 02:51:44');
+
 -- --------------------------------------------------------
 
 --
@@ -115,6 +130,16 @@ CREATE TABLE `Evaluation_rubric_items` (
   `answer_value` text DEFAULT NULL,
   `comments` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `Evaluation_rubric_items`
+--
+
+INSERT INTO `Evaluation_rubric_items` (`id`, `fk_evaluation_rubric_id`, `name`, `description`, `answer_type`, `answer_value`, `comments`) VALUES
+(7, 3, 'aefaef', '<p>awfaf</p>', 'boolean', NULL, NULL),
+(8, 4, 'What is the students gpa', '<p>Insert it as a <strong>number&nbsp;</strong></p>', 'number', '10', '<p>Its really good</p><p><i><strong>bold comment</strong></i></p>'),
+(9, 4, 'Is the student a grad student', '<p><strong>yes or no</strong> but include comments</p>', 'boolean', 'false', '<p>Man idk but not a grad student</p>'),
+(10, 4, 'describe the student', '<p>put text</p>', 'text', '<p>Very good student, idk</p><p>This is me testing some bold and wysvifg features</p><ul><li>student info</li><li>also student ingto</li><li><strong>heres a bold</strong></li></ul>', '');
 
 -- --------------------------------------------------------
 
@@ -147,13 +172,14 @@ CREATE TABLE `Rubric_item_templates` (
 
 INSERT INTO `Rubric_item_templates` (`id`, `fk_rubric_template_id`, `name`, `description`, `answer_type`) VALUES
 (1, 1, 'What is the students gpa', '<p>Insert it as a <strong>number&nbsp;</strong></p>', 'number'),
-(2, 1, 'Is the student a grad student', '<p><strong>yes or no</strong> but include comments</p>', 'number'),
-(3, 1, 'Idk what to put here', '', 'number'),
+(2, 1, 'Is the student a grad student', '<p><strong>yes or no</strong> but include comments</p>', 'boolean'),
+(3, 1, 'describe the student', '<p>put text</p>', 'text'),
 (4, 2, 'Question 1 here ', '<p>Answer something</p>', 'text'),
 (5, 2, 'Put a number here', '<p><i>Hi</i></p>', 'number'),
 (6, 3, 'Shouldnt display anything <a href = \'https://google.com\'> google </a> ', '<p><strong>None of these should be displayed but this should be bolded:</strong></p><p>&lt;h2&gt; This is a heading &lt;/h2&gt;</p><p>&lt;input value = â€œThis should be an inputâ€&gt;</p><p>&nbsp;</p>', 'text'),
 (7, 3, '<php> break everything <?php>', '<p>&lt;img href = â€œhttps://en.wikipedia.org/wiki/File:View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_(cropped).jpgâ€&gt;</p><p>&lt;a&gt; This shouldnt be displayed as a link &lt;/a&gt;</p>', 'text'),
-(8, 3, 'Testing a bunch of breaks', '<p>&lt;br&gt;</p><p>hi</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>hi</p>', 'number');
+(8, 3, 'Testing a bunch of breaks', '<p>&lt;br&gt;</p><p>hi</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>hi</p>', 'number'),
+(9, 4, 'aefaef', '<p>awfaf</p>', 'boolean');
 
 -- --------------------------------------------------------
 
@@ -173,9 +199,10 @@ CREATE TABLE `Rubric_templates` (
 --
 
 INSERT INTO `Rubric_templates` (`id`, `name`, `last_used`, `last_modified`) VALUES
-(1, 'Engr 67 2025 Rubric', '2025-11-18 17:57:09', '2025-11-18 18:25:19'),
+(1, 'Engr 67 2025 Rubric', '2025-11-18 17:57:09', '2025-11-19 02:15:55'),
 (2, 'Engr 67 2026 Rubric', '2025-11-18 17:59:12', '2025-11-18 17:59:12'),
-(3, 'Input sanitization testing rubric', '2025-11-18 18:28:33', '2025-11-18 18:29:34');
+(3, 'Input sanitization testing rubric', '2025-11-18 18:28:33', '2025-11-18 18:29:34'),
+(4, 'New template temp', '2025-11-19 02:21:18', '2025-11-19 02:23:26');
 
 -- --------------------------------------------------------
 
@@ -441,25 +468,25 @@ ALTER TABLE `Evaluation_flag_assignments`
 -- AUTO_INCREMENT for table `Evaluation_rubrics`
 --
 ALTER TABLE `Evaluation_rubrics`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `Evaluation_rubric_items`
 --
 ALTER TABLE `Evaluation_rubric_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `Rubric_item_templates`
 --
 ALTER TABLE `Rubric_item_templates`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `Rubric_templates`
 --
 ALTER TABLE `Rubric_templates`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `Upload_flags`
@@ -471,7 +498,7 @@ ALTER TABLE `Upload_flags`
 -- AUTO_INCREMENT for table `Upload_flag_assignments`
 --
 ALTER TABLE `Upload_flag_assignments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `User_flags`
