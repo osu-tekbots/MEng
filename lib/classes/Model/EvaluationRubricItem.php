@@ -18,7 +18,10 @@ class EvaluationRubricItem {
     private $answerType;
 
     /** @var string */
-    private $value;
+    private $answerValue;
+
+    /** @var string */
+    private $comments;
 
     /**
      * Constructor
@@ -135,7 +138,7 @@ class EvaluationRubricItem {
      * @return string
      */
     public function getValue() {
-        return $this->value;
+        return $this->answerValue;
     }
 
     /**
@@ -145,7 +148,27 @@ class EvaluationRubricItem {
      * @return self
      */
     public function setValue($value) {
-        $this->value = $value;
+        $this->answerValue = $value;
+        return $this;
+    }
+
+    /**
+     * Get the value of comments
+     *
+     * @return string
+     */
+    public function getComments() {
+        return $this->comments;
+    }
+
+    /**
+     * Set the value of comments
+     *
+     * @param string $comments
+     * @return self
+     */
+    public function setComments($comments) {
+        $this->comments = $comments;
         return $this;
     }
 }
