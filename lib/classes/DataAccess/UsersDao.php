@@ -277,6 +277,33 @@ class UsersDao {
     }
 
     /**
+     * Fetches all users who have the Student flag AND the specific department flag.
+     *
+     * @param int $departmentFlagId The ID of the department flag
+     * @return User[]|boolean An array of User objects or false on failure
+     */
+    public function getStudentsByDepartment($departmentFlagId) {
+        try {
+            $sql = 'SELECT Users.* FROM Users ';
+            // Join for the Student Flag (ID 2)
+            $sql .= 'JOIN User_flag_assignments as ufa_student ON Users.id = ufa_student.fk_user_id ';
+            // Join for the Department Flag (Selected ID)
+            $sql .= 'JOIN User_flag_assignments as ufa_dept ON Users.id = ufa_dept.fk_user_id ';
+            
+            $sql .= 'WHERE ufa_student.fk_user_flag_id = 2 ';
+            $sql .= 'AND ufa_dept.fk_user_flag_id = :dept_id';
+
+            $params = array(':dept_id' => $departmentFlagId);
+            $result = $this->conn->query($sql, $params);
+
+            return \array_map('self::ExtractUserFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch students by department: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Fetches all users with the admin flag
      *
      * @return User[]|boolean an array of User objects if the fetch succeeds, false otherwise
@@ -316,6 +343,33 @@ class UsersDao {
         } catch (\Exception $e) {
             $this->logError('Failed to fetch reviewers: ' . $e->getMessage());
 
+            return false;
+        }
+    }
+
+    /**
+     * Fetches all users who have the Reviewer flag AND the specific department flag.
+     *
+     * @param int $departmentFlagId The ID of the department flag
+     * @return User[]|boolean An array of User objects or false on failure
+     */
+    public function getReviewersByDepartment($departmentFlagId) {
+        try {
+            $sql = 'SELECT Users.* FROM Users ';
+            // Join for the Reviewer Flag (ID 4)
+            $sql .= 'JOIN User_flag_assignments as ufa_reviewer ON Users.id = ufa_reviewer.fk_user_id ';
+            // Join for the Department Flag (Selected ID)
+            $sql .= 'JOIN User_flag_assignments as ufa_dept ON Users.id = ufa_dept.fk_user_id ';
+            
+            $sql .= 'WHERE ufa_reviewer.fk_user_flag_id = 4 ';
+            $sql .= 'AND ufa_dept.fk_user_flag_id = :dept_id';
+
+            $params = array(':dept_id' => $departmentFlagId);
+            $result = $this->conn->query($sql, $params);
+
+            return \array_map('self::ExtractUserFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch reviewers by department: ' . $e->getMessage());
             return false;
         }
     }

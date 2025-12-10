@@ -11,19 +11,30 @@ $uploadsDao = new UploadsDao($dbConn, $logger);
 $rubricsDao = new RubricsDao($dbConn, $logger);
 $documentTypesDao = new DocumentTypesDao($dbConn, $logger);
 
-// 1. Fetch Uploads based on filter
-$uploads = [];
-if (isset($_GET['onlyUnassigned']) && $_GET['onlyUnassigned'] == 'all') {
-    $uploads = $uploadsDao->getAllUploads();
+// 1. Determine Server-Side Filters (Department Only)
+$filterDepartment = isset($_GET['department']) && $_GET['department'] != '' ? $_GET['department'] : null;
+
+// 2. Fetch Students based on Department Filter
+$students = [];
+if ($filterDepartment) {
+    $students = $usersDao->getStudentsByDepartment($filterDepartment);
 } else {
-    // Default to unassigned only
-    $uploads = $uploadsDao->getAllUnassignedUploads();
+    $students = $usersDao->getAllStudents();
 }
 
-// 2. Group Uploads by User ID
-// Structure: [ userId => [ upload1, upload2... ] ]
+// 3. Fetch Uploads Data
+$allUploads = $uploadsDao->getAllUploads();
+$unassignedUploads = $uploadsDao->getAllUnassignedUploads();
+
+// Create a lookup array for unassigned IDs
+$unassignedIds = [];
+foreach ($unassignedUploads as $upl) {
+    $unassignedIds[$upl->getId()] = true;
+}
+
+// 4. Group All Uploads by User ID
 $uploadsGroupedByUser = [];
-foreach ($uploads as $upload) {
+foreach ($allUploads as $upload) {
     $uid = $upload->getFkUserId();
     if (!isset($uploadsGroupedByUser[$uid])) {
         $uploadsGroupedByUser[$uid] = [];
@@ -31,10 +42,14 @@ foreach ($uploads as $upload) {
     $uploadsGroupedByUser[$uid][] = $upload;
 }
 
+// 5. Build Department Map (ID -> Name) for display
 $department_flags = $usersDao->getAllDepartmentFlags();
+$deptMap = [];
+foreach ($department_flags as $dept) {
+    $deptMap[$dept->getId()] = $dept->getFlagName();
+}
 
 require_once PUBLIC_FILES . '/lib/osu-identities-api.php';
-
 include_once PUBLIC_FILES . '/modules/header.php';
 ?>
 
@@ -50,7 +65,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
         box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
     }
     
-    /* Styles for the expanded child row */
+    /* Child Table Styles */
     .child-table {
         width: 100%;
         margin: 10px 0;
@@ -59,6 +74,48 @@ include_once PUBLIC_FILES . '/modules/header.php';
     }
     .child-table th { font-size: 0.85em; color: #6c757d; }
     .child-table td { vertical-align: middle; }
+    
+    /* Visually distinguish assigned rows */
+    .assigned-upload td {
+        color: #6c757d;
+        background-color: #f1f1f1;
+    }
+
+    /* --- Rubric Dropdown Styling --- */
+    #rubrics {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        box-shadow: none !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        height: 45px !important;
+        min-height: 45px !important;
+        margin: 0 !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 5px !important;
+        font-size: 16px !important;
+        color: #212529 !important;
+        font-family: inherit !important;
+        line-height: 1.5 !important;
+        padding: 7px 30px 7px 12px !important;
+        cursor: pointer !important;
+        background-color: #fff !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23949ba3' viewBox='0 0 16 16'%3E%3Cpath d='M8 13.1l-8-8 2.1-2.2 5.9 5.9 5.9-5.9 2.1 2.2z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 15px center !important;
+        background-size: 12px 12px !important;
+    }
+    #rubrics:focus {
+        outline: none !important;
+        border-color: #c1c9d0 !important;
+    }
+    #rubrics:invalid {
+        color: #65727e !important;
+    }
+    #rubrics option {
+        color: #212529;
+    }
 </style>
 
 <div class="container-fluid">
@@ -66,7 +123,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
         <div class="row mb-4">
             <div class="col">
-                <h2>Upload Management</h2>
+                <h2>Assign Reviews</h2>
                 <p class="text-muted">Select students below to view and assign their uploads.</p>
             </div>
         </div>
@@ -80,27 +137,21 @@ include_once PUBLIC_FILES . '/modules/header.php';
                 <div class="form-row mb-3">
                     <div class="col-md-6">
                         <label class="text-muted small text-uppercase font-weight-bold">Filter by Department</label>
-                        <select id="departments" name="departments" class="form-control">
-                            <option value="" selected disabled>All Departments</option>
+                        <select id="departments" name="departments" class="form-control" onchange="filterDepartments()">
+                            <option value="">All Departments</option>
                             <?php 
-                                foreach ($department_flags as $department_flag) {
-                                    echo '<option value="'. $department_flag->getId() .'">'. $department_flag->getFlagName() .'</option>';
+                                foreach ($department_flags as $dept) {
+                                    $selected = ($filterDepartment == $dept->getId()) ? 'selected' : '';
+                                    echo '<option value="'. $dept->getId() .'" '.$selected.'>'. $dept->getFlagName() .'</option>';
                                 }
                             ?>
                         </select>
                     </div>
                     <div class="col-md-6">
                         <label class="text-muted small text-uppercase font-weight-bold">Filter by Status</label>
-                        <select id="assigned" name="assigned" class="form-control" onChange="onAssignmentChange()">
-                            <?php 
-                                if (isset($_GET['onlyUnassigned']) && $_GET['onlyUnassigned'] == 'all') {
-                                    echo '<option value="all" selected>All Uploads</option>';
-                                    echo '<option value="unassigned">Unassigned Uploads Only</option>';
-                                } else {
-                                    echo '<option value="all">All Uploads</option>';
-                                    echo '<option value="unassigned" selected>Unassigned Uploads Only</option>';
-                                }
-                            ?>
+                        <select id="filterStatus" class="form-control" onchange="updateUploadVisibility()">
+                            <option value="unassigned" selected>Unassigned Uploads Only</option>
+                            <option value="all">All Uploads (Includes Assigned)</option>
                         </select>
                     </div>
                 </div>
@@ -110,35 +161,85 @@ include_once PUBLIC_FILES . '/modules/header.php';
                 <table id="usersTable" class="table table-striped table-hover table-bordered w-100">
                     <thead class="thead-light">
                         <tr>
-                            <th scope="col" style="width: 50px;"></th> <th scope="col" class="col-5">Student Name</th>
-                            <th scope="col" class="col-5">Email</th>
-                            <th scope="col" class="text-center col-2">Upload Count</th>
+                            <th scope="col" style="width: 40px;"></th> <th scope="col">Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Department</th>
+                            <th scope="col" class="text-center">Files</th>
+                            <th scope="col">Last Login</th>
                         </tr>
                     </thead>
                     <tbody id="uploadsTableBody">
                         <?php 
-                            // Loop through the grouped users
-                            foreach ($uploadsGroupedByUser as $userId => $userUploads) {
-                                $user = $usersDao->getUser($userId);
-                                if(!$user) continue; // Skip if user not found
+                            foreach ($students as $student) {
+                                $studentId = $student->getId();
+                                
+                                // Get Uploads
+                                $userUploads = isset($uploadsGroupedByUser[$studentId]) ? $uploadsGroupedByUser[$studentId] : [];
 
-                                // Prepare upload data for JS
+                                // Prepare Uploads JSON for child row
                                 $uploadsPayload = [];
                                 foreach($userUploads as $up) {
                                     $docType = $uploadsDao->getDocumentType($up->getId());
+                                    $isAssigned = !isset($unassignedIds[$up->getId()]); 
+                                    
+                                    // FORMAT UPLOAD DATE (Standardize Format)
+                                    $dateRaw = $up->getDateUploaded();
+                                    $dateDisplay = '';
+                                    if ($dateRaw instanceof DateTime) {
+                                        $dateDisplay = $dateRaw->format("m/d/Y g:i A");
+                                    } elseif (is_string($dateRaw) && !empty($dateRaw)) {
+                                        $dateDisplay = date("m/d/Y g:i A", strtotime($dateRaw));
+                                    } else {
+                                        $dateDisplay = '-';
+                                    }
+
                                     $uploadsPayload[] = [
                                         'id' => $up->getId(),
                                         'name' => $docType ? $docType->getFlagName() : 'Unknown Type',
-                                        'date' => $up->getDateUploaded()
+                                        'date' => $dateDisplay, // Uses the formatted date string
+                                        'isAssigned' => $isAssigned
                                     ];
                                 }
                                 $jsonUploads = htmlspecialchars(json_encode($uploadsPayload), ENT_QUOTES, 'UTF-8');
+                                
+                                // Format Data
+                                
+                                // 1. Name: Lastname, Firstname
+                                $lname = method_exists($student, 'getLastName') ? $student->getLastName() : '';
+                                $fname = method_exists($student, 'getFirstName') ? $student->getFirstName() : '';
+                                if ($lname && $fname) {
+                                    $nameDisplay = $lname . ', ' . $fname;
+                                } else {
+                                    $nameDisplay = $student->getFullName(); 
+                                }
+
+                                // 2. Department Name
+                                $dId = method_exists($student, 'getDepartmentId') ? $student->getDepartmentId() : null;
+                                $deptName = ($dId && isset($deptMap[$dId])) ? $deptMap[$dId] : '<span class="text-muted">-</span>';
+
+                                // 3. Last Login (Handling DateTime object)
+                                $lastLoginRaw = method_exists($student, 'getLastLogin') ? $student->getLastLogin() : null;
+                                $lastLoginDisplay = '<span class="text-muted small">Never</span>';
+
+                                if ($lastLoginRaw instanceof DateTime) {
+                                    $lastLoginDisplay = $lastLoginRaw->format("m/d/Y g:i A");
+                                } elseif (is_string($lastLoginRaw) && !empty($lastLoginRaw)) {
+                                    $lastLoginDisplay = date("m/d/Y g:i A", strtotime($lastLoginRaw));
+                                }
+
+                                // 4. Files Badge
+                                $fileCount = count($userUploads);
+                                $filesDisplay = $fileCount > 0 
+                                    ? '<span class="badge bg-primary">' . $fileCount . '</span>' 
+                                    : '<span class="text-muted small">None</span>';
 
                                 echo '<tr data-uploads="' . $jsonUploads . '">';
                                 echo '<td class="dt-control text-center" style="cursor:pointer; color: #007bff;"><i class="fas fa-plus-circle"></i></td>';
-                                echo '<td>' . $user->getFullName() . '</td>';
-                                echo '<td>' . $user->getEmail() . '</td>';
-                                echo '<td class="text-center"><span class="badge bg-secondary">' . count($userUploads) . '</span></td>';
+                                echo '<td class="font-weight-bold">' . $nameDisplay . '</td>';
+                                echo '<td>' . $student->getEmail() . '</td>';
+                                echo '<td>' . $deptName . '</td>';
+                                echo '<td class="text-center">' . $filesDisplay . '</td>';
+                                echo '<td>' . $lastLoginDisplay . '</td>';
                                 echo '</tr>';
                             }
                         ?>
@@ -171,7 +272,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
             </div>
             <div class="col-lg-3">
                 <label for="rubrics" class="text-muted small text-uppercase font-weight-bold mb-1">Rubric</label>
-                <select id="rubrics" name="rubrics" class="form-control">
+                <select id="rubrics" name="rubrics" class="form-control" required>
                     <option value="" selected disabled>Select Rubric...</option>
                     <?php 
                         $rubrics = $rubricsDao->getAllRubricTemplates();
@@ -189,22 +290,30 @@ include_once PUBLIC_FILES . '/modules/header.php';
 </div>
 
 <script>
-    function onAssignmentChange() {
-        const assigned = document.getElementById("assigned");
-        window.location.replace("assignReviewers.php?onlyUnassigned=" + assigned.value);
+    function filterDepartments() {
+        const deptValue = document.getElementById("departments").value;
+        let url = "assignReviews.php?";
+        if (deptValue) {
+            url += "department=" + deptValue;
+        }
+        window.location.href = url;
     }
 
-    /**
-     * Generates the Child Table HTML
-     * rowData: DataTables row object
-     * tr: The raw DOM <tr> element
-     */
+    function updateUploadVisibility() {
+        const showAll = document.getElementById('filterStatus').value === 'all';
+        const assignedRows = document.querySelectorAll('.assigned-upload');
+        assignedRows.forEach(row => {
+            if (showAll) row.classList.remove('d-none');
+            else row.classList.add('d-none');
+        });
+    }
+
     function format(rowData, tr) {
-        // Retrieve the JSON data we stored in the data-uploads attribute
         var uploadsData = $(tr).data('uploads');
+        var showAll = document.getElementById('filterStatus').value === 'all';
         
         if (!uploadsData || uploadsData.length === 0) {
-            return '<div class="p-3">No uploads found.</div>';
+            return '<div class="p-3 text-muted">No uploads found.</div>';
         }
 
         var html = '<div class="p-3 bg-white border-left border-primary ml-3">';
@@ -214,29 +323,36 @@ include_once PUBLIC_FILES . '/modules/header.php';
         html += '<tbody>';
         
         uploadsData.forEach(function(upload) {
-            html += '<tr>';
-            html += '<td>' + upload.name + '</td>';
+            let rowClass = upload.isAssigned ? 'assigned-upload' : '';
+            let hiddenClass = (upload.isAssigned && !showAll) ? 'd-none' : '';
+            let statusBadge = upload.isAssigned ? ' <span class="badge bg-primary ml-2">Assigned</span>' : '';
+
+            html += '<tr class="' + rowClass + ' ' + hiddenClass + '">';
+            html += '<td>' + upload.name + statusBadge + '</td>';
             html += '<td>' + upload.date + '</td>';
             html += '<td class="text-center"><input class="form-check-input upload-checkbox position-static" type="checkbox" value="' + upload.id + '"></td>';
             html += '</tr>';
         });
 
-        html += '</tbody></table></div>';
+        html += '</tbody></table>';
+        html += '<div class="text-muted small mt-2 font-italic status-note">Toggle "Filter by Status" to see assigned uploads.</div>';
+        html += '</div>';
         return html;
     }
 
-    // Initialize DataTable
+    // Initialize DataTable matching columns exactly
     let table = new DataTable('#usersTable', {
         columns: [
-            { className: 'dt-control', orderable: false, data: null, defaultContent: '' },
-            { data: 'name' }, // Corresponds to student name column
-            { data: 'email' }, // Corresponds to email column
-            { data: 'count' }  // Corresponds to count column
+            { className: 'dt-control', orderable: false, data: null, defaultContent: '' }, // 0
+            { data: 'name' },        // 1
+            { data: 'email' },       // 2
+            { data: 'department' },  // 3
+            { data: 'files' },       // 4
+            { data: 'last_login' }   // 5
         ],
         order: [[1, 'asc']]
     });
     
-    // Toggle Child Row
     table.on('click', 'tbody td.dt-control', function (e) {
         let tr = e.target.closest('tr');
         let row = table.row(tr);
@@ -248,13 +364,9 @@ include_once PUBLIC_FILES . '/modules/header.php';
             if(icon) { icon.classList.remove('fa-minus-circle'); icon.classList.add('fa-plus-circle'); }
         }
         else {
-            // Pass the raw TR to get the data-attribute
             row.child(format(row.data(), tr)).show();
             tr.classList.add('shown');
             if(icon) { icon.classList.remove('fa-plus-circle'); icon.classList.add('fa-minus-circle'); }
-            
-            // Re-bind change events for new checkboxes that just appeared
-            // (Note: The delegated listener on uploadsTableBody handles this, but good to be aware)
         }
     });
 
@@ -264,10 +376,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
         });
     }
 
-    // --- SELECTION & ACTION BAR LOGIC ---
-
     function updateActionBarVisibility() {
-        // Need to query selector inside the specific table to catch dynamic rows
         const selectedCheckboxes = document.querySelectorAll('.upload-checkbox:checked');
         const actionBar = document.getElementById('assignmentActionBar');
         const countLabel = document.getElementById('selectionCount');
@@ -281,15 +390,11 @@ include_once PUBLIC_FILES . '/modules/header.php';
         }
     }
 
-    // Event Delegation: Listens on the table body for clicks on checkboxes
-    // This works even for checkboxes created dynamically in the child rows
     document.getElementById('uploadsTableBody').addEventListener('change', function(e) {
         if (e.target.classList.contains('upload-checkbox')) {
             updateActionBarVisibility();
         }
     });
-
-    // --- ASSIGNMENT SUBMISSION LOGIC ---
 
     document.getElementById('btnAssign').addEventListener('click', () => {
         const btn = document.getElementById('btnAssign');

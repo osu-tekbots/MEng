@@ -99,7 +99,7 @@ $navlinks = array(
 if($isLoggedIn) {
 	if (isset($_SESSION['userType'])){
     if($_SESSION['userIsAdmin']) {
-        $navlinks['ADMIN'] = ['Assign Reviewers'=> 'assignReviewers.php', 'Build Rubrics'=> 'createRubric.php'];
+        $navlinks['ADMIN'] = ['Assign Reviews'=> 'assignReviews.php', 'View Reviews'=> 'viewReviews.php', 'Build Rubrics'=> 'createRubric.php'];
     } 
     if($_SESSION['userIsReviewer']) {
       $navlinks['REVIEW'] = ['Reviewer Assignments' =>'reviewerAssignments.php', 'Evaluate Rubrics'=> 'evaluateRubrics.php'];
