@@ -54,7 +54,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
         <div class="row mb-4">
             <div class="col">
-                <h2>Reviewer Workload</h2>
+                <h2>View Reviews</h2>
                 <p class="text-muted">View reviewers and their currently assigned evaluations.</p>
             </div>
         </div>
