@@ -109,12 +109,12 @@ if($isLoggedIn) {
     }
 	}
     $navlinks['PROFILE'] = 'profile';
-    $navlinks['LOG OUT'] = 'logout';
+    $navlinks['LOG OUT'] = 'signout';
 } else {
     if($configManager->getEnvironment() == 'dev')
         $navlinks['LOG IN'] = 'masq/index.php';
     else
-        $navlinks['LOG IN'] = 'login';
+        $navlinks['LOG IN'] = 'signin';
 }
 
 ?>

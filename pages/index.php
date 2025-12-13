@@ -11,8 +11,8 @@ $css = array(
 use DataAccess\UsersDao;
 $usersDao = new UsersDao($dbConn, $logger);
 
-$userTypeHtml .= '';
-$userType .= '';
+$userTypeHtml = '';
+$userType = '';
 
 if ($isLoggedIn) {
     $userTypeHtml .= '<h1 class="hero-title d-none d-lg-block">MEng</h1>';

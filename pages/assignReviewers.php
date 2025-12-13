@@ -84,7 +84,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                             <option value="" selected disabled>All Departments</option>
                             <?php 
                                 foreach ($department_flags as $department_flag) {
-                                    echo '<option value="'. $department_flag->getId() .'">'. $department_flag->getFlagName() .'</option>';
+                                    echo '<option value="'. $department_flag->getId() .'">'. $department_flag->getName() .'</option>';
                                 }
                             ?>
                         </select>
@@ -128,7 +128,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                     $docType = $uploadsDao->getDocumentType($up->getId());
                                     $uploadsPayload[] = [
                                         'id' => $up->getId(),
-                                        'name' => $docType ? $docType->getFlagName() : 'Unknown Type',
+                                        'name' => $docType ? $docType->getName() : 'Unknown Type',
                                         'date' => $up->getDateUploaded()
                                     ];
                                 }

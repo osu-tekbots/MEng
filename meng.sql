@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Dec 02, 2025 at 09:45 AM
+-- Generation Time: Dec 13, 2025 at 10:47 PM
 -- Server version: 10.3.39-MariaDB-1:10.3.39+maria~ubu2004
 -- PHP Version: 8.3.26
 
@@ -59,7 +59,10 @@ CREATE TABLE `Evaluations` (
 --
 
 INSERT INTO `Evaluations` (`id`, `fk_student_id`, `fk_reviewer_id`, `fk_upload_id`, `date_created`) VALUES
-('3db8f1b4', 'jKieNkw1', 'jKieNkw1', 'pFUaze3Z', '2025-11-19 02:51:44');
+('0b0530cb', 'jKieNkw1', 'jKieNkw1', '6kVkVUjN', '2025-12-02 16:47:15'),
+('35d69251', 'jKieNkw1', 'jKieNkw1', 'pFUaze3Z', '2025-12-13 14:35:01'),
+('3db8f1b4', 'jKieNkw1', 'jKieNkw1', 'pFUaze3Z', '2025-11-19 02:51:44'),
+('5e6ca0fb', 'jKieNkw1', 'jKieNkw1', '6kVkVUjN', '2025-12-13 14:25:17');
 
 -- --------------------------------------------------------
 
@@ -69,8 +72,9 @@ INSERT INTO `Evaluations` (`id`, `fk_student_id`, `fk_reviewer_id`, `fk_upload_i
 
 CREATE TABLE `Evaluation_flags` (
   `id` int(11) NOT NULL,
-  `flag_name` varchar(32) NOT NULL,
-  `flag_type` enum('Status') NOT NULL,
+  `name` varchar(32) NOT NULL,
+  `arrangement` int(11) NOT NULL,
+  `type` enum('Status') NOT NULL,
   `is_active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -78,8 +82,11 @@ CREATE TABLE `Evaluation_flags` (
 -- Dumping data for table `Evaluation_flags`
 --
 
-INSERT INTO `Evaluation_flags` (`id`, `flag_name`, `flag_type`, `is_active`) VALUES
-(1, 'Is Complete', 'Status', 1);
+INSERT INTO `Evaluation_flags` (`id`, `name`, `arrangement`, `type`, `is_active`) VALUES
+(1, 'Submitted', 3, 'Status', 1),
+(2, 'Pending', 1, 'Status', 1),
+(3, 'Complete', 4, 'Status', 1),
+(4, 'Draft', 2, 'Status', 1);
 
 -- --------------------------------------------------------
 
@@ -91,8 +98,21 @@ CREATE TABLE `Evaluation_flag_assignments` (
   `id` int(11) NOT NULL,
   `fk_evaluation_id` varchar(8) NOT NULL,
   `fk_evaluation_flag_id` int(11) NOT NULL,
-  `flag_value` varchar(32) NOT NULL
+  `date_created` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `Evaluation_flag_assignments`
+--
+
+INSERT INTO `Evaluation_flag_assignments` (`id`, `fk_evaluation_id`, `fk_evaluation_flag_id`, `date_created`) VALUES
+(4, '0b0530cb', 4, '2025-12-13 09:22:31'),
+(5, '0b0530cb', 1, '2025-12-13 09:22:42'),
+(10, '3db8f1b4', 1, '2025-12-13 12:05:46'),
+(11, '5e6ca0fb', 2, '2025-12-13 22:25:17'),
+(12, '35d69251', 2, '2025-12-13 22:35:01'),
+(13, '35d69251', 1, '2025-12-13 22:45:13'),
+(14, '5e6ca0fb', 4, '2025-12-13 22:45:23');
 
 -- --------------------------------------------------------
 
@@ -113,7 +133,10 @@ CREATE TABLE `Evaluation_rubrics` (
 
 INSERT INTO `Evaluation_rubrics` (`id`, `fk_evaluation_id`, `name`, `date_created`) VALUES
 (3, '62ec7217', 'New template temp', '2025-11-19 02:51:01'),
-(4, '3db8f1b4', 'Engr 67 2025 Rubric', '2025-11-19 02:51:44');
+(4, '3db8f1b4', 'Engr 67 2025 Rubric', '2025-11-19 02:51:44'),
+(5, '0b0530cb', 'Engr 67 2025 Rubric', '2025-12-02 16:47:16'),
+(6, '5e6ca0fb', 'Input sanitization testing rubric', '2025-12-13 14:25:17'),
+(7, '35d69251', 'New template temp', '2025-12-13 14:35:01');
 
 -- --------------------------------------------------------
 
@@ -137,9 +160,16 @@ CREATE TABLE `Evaluation_rubric_items` (
 
 INSERT INTO `Evaluation_rubric_items` (`id`, `fk_evaluation_rubric_id`, `name`, `description`, `answer_type`, `answer_value`, `comments`) VALUES
 (7, 3, 'aefaef', '<p>awfaf</p>', 'boolean', NULL, NULL),
-(8, 4, 'What is the students gpa', '<p>Insert it as a <strong>number&nbsp;</strong></p>', 'number', '10', '<p>Its really good</p><p><i><strong>bold comment</strong></i></p>'),
+(8, 4, 'What is the students gpa', '<p>Insert it as a <strong>number&nbsp;</strong></p>', 'number', '5', '<p>Its really good</p><p><i><strong>bold comment</strong></i></p>'),
 (9, 4, 'Is the student a grad student', '<p><strong>yes or no</strong> but include comments</p>', 'boolean', 'false', '<p>Man idk but not a grad student</p>'),
-(10, 4, 'describe the student', '<p>put text</p>', 'text', '<p>Very good student, idk</p><p>This is me testing some bold and wysvifg features</p><ul><li>student info</li><li>also student ingto</li><li><strong>heres a bold</strong></li></ul>', '');
+(10, 4, 'describe the student', '<p>put text</p>', 'text', '<p>Very good student, idk</p><p>This is me testing some bold and wysvifg features</p><ul><li>student info</li><li>also student ingto</li><li><strong>heres a bold</strong></li></ul>', ''),
+(11, 5, 'What is the students gpa', '<p>Insert it as a <strong>number&nbsp;</strong></p>', 'number', '0', '<p>This evaluation rubric item question needs to be reassigned to a text type, so the person can input the gpa. bing bong</p>'),
+(12, 5, 'Is the student a grad student', '<p><strong>yes or no</strong> but include comments</p>', 'boolean', 'true', ''),
+(13, 5, 'describe the student', '<p>put text</p>', 'text', '<p>ikmdwioemiowejmf</p>', ''),
+(14, 6, 'Shouldnt display anything <a href = \'https://google.com\'> google </a> ', '<p><strong>None of these should be displayed but this should be bolded:</strong></p><p>&lt;h2&gt; This is a heading &lt;/h2&gt;</p><p>&lt;input value = â€œThis should be an inputâ€&gt;</p><p>&nbsp;</p>', 'text', '', ''),
+(15, 6, '<php> break everything <?php>', '<p>&lt;img href = â€œhttps://en.wikipedia.org/wiki/File:View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_(cropped).jpgâ€&gt;</p><p>&lt;a&gt; This shouldnt be displayed as a link &lt;/a&gt;</p>', 'text', '', ''),
+(16, 6, 'Testing a bunch of breaks', '<p>&lt;br&gt;</p><p>hi</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>hi</p>', 'number', '0', ''),
+(17, 7, 'aefaef', '<p>awfaf</p>', 'boolean', NULL, '');
 
 -- --------------------------------------------------------
 
@@ -223,6 +253,7 @@ CREATE TABLE `Uploads` (
 --
 
 INSERT INTO `Uploads` (`id`, `fk_user_id`, `file_path`, `file_name`, `date_uploaded`) VALUES
+('6kVkVUjN', 'jKieNkw1', '/jKieNkw1/1/', 'A3_code_review_final.pdf', '2025-12-02 16:33:04'),
 ('pFUaze3Z', 'jKieNkw1', '/jKieNkw1/2/', 'MEng Database draft (9).pdf', '2025-08-16 18:11:23');
 
 -- --------------------------------------------------------
@@ -233,8 +264,9 @@ INSERT INTO `Uploads` (`id`, `fk_user_id`, `file_path`, `file_name`, `date_uploa
 
 CREATE TABLE `Upload_flags` (
   `id` int(11) NOT NULL,
-  `flag_name` varchar(32) NOT NULL,
-  `flag_type` enum('doc_type','status') NOT NULL,
+  `name` varchar(32) NOT NULL,
+  `arrangement` int(11) NOT NULL,
+  `type` enum('doc_type','status') NOT NULL,
   `is_active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -242,9 +274,9 @@ CREATE TABLE `Upload_flags` (
 -- Dumping data for table `Upload_flags`
 --
 
-INSERT INTO `Upload_flags` (`id`, `flag_name`, `flag_type`, `is_active`) VALUES
-(1, 'Computer Science Thesis', 'doc_type', 1),
-(2, 'Mechanical Engineering Thesis', 'doc_type', 1);
+INSERT INTO `Upload_flags` (`id`, `name`, `arrangement`, `type`, `is_active`) VALUES
+(1, 'Computer Science Thesis', 0, 'doc_type', 1),
+(2, 'Mechanical Engineering Thesis', 0, 'doc_type', 1);
 
 -- --------------------------------------------------------
 
@@ -264,7 +296,8 @@ CREATE TABLE `Upload_flag_assignments` (
 --
 
 INSERT INTO `Upload_flag_assignments` (`id`, `fk_upload_id`, `fk_upload_flag_id`, `flag_value`) VALUES
-(4, 'pFUaze3Z', 2, NULL);
+(4, 'pFUaze3Z', 2, NULL),
+(6, '6kVkVUjN', 1, NULL);
 
 -- --------------------------------------------------------
 
@@ -298,8 +331,9 @@ INSERT INTO `Users` (`id`, `uuid`, `osu_id`, `first_name`, `last_name`, `onid`, 
 
 CREATE TABLE `User_flags` (
   `id` int(11) NOT NULL,
-  `flag_name` varchar(32) NOT NULL,
-  `flag_type` enum('Role','Department') NOT NULL,
+  `name` varchar(32) NOT NULL,
+  `arrangement` int(11) NOT NULL,
+  `type` enum('Role','Department') NOT NULL,
   `is_active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -307,11 +341,11 @@ CREATE TABLE `User_flags` (
 -- Dumping data for table `User_flags`
 --
 
-INSERT INTO `User_flags` (`id`, `flag_name`, `flag_type`, `is_active`) VALUES
-(1, 'Developer', 'Role', 1),
-(2, 'Student', 'Role', 1),
-(3, 'Admin', 'Role', 1),
-(4, 'Reviewer', 'Role', 1);
+INSERT INTO `User_flags` (`id`, `name`, `arrangement`, `type`, `is_active`) VALUES
+(1, 'Developer', 0, 'Role', 1),
+(2, 'Student', 0, 'Role', 1),
+(3, 'Admin', 0, 'Role', 1),
+(4, 'Reviewer', 0, 'Role', 1);
 
 -- --------------------------------------------------------
 
@@ -365,6 +399,7 @@ ALTER TABLE `Evaluation_flags`
 --
 ALTER TABLE `Evaluation_flag_assignments`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_eval_flag` (`fk_evaluation_id`,`fk_evaluation_flag_id`),
   ADD KEY `evaluation_flag_assignments_evaluations` (`fk_evaluation_id`),
   ADD KEY `evaluation_flag_assignments_evaluation_flags` (`fk_evaluation_flag_id`) USING BTREE;
 
@@ -456,25 +491,25 @@ ALTER TABLE `Document_types`
 -- AUTO_INCREMENT for table `Evaluation_flags`
 --
 ALTER TABLE `Evaluation_flags`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `Evaluation_flag_assignments`
 --
 ALTER TABLE `Evaluation_flag_assignments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `Evaluation_rubrics`
 --
 ALTER TABLE `Evaluation_rubrics`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `Evaluation_rubric_items`
 --
 ALTER TABLE `Evaluation_rubric_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `Rubric_item_templates`
@@ -498,7 +533,7 @@ ALTER TABLE `Upload_flags`
 -- AUTO_INCREMENT for table `Upload_flag_assignments`
 --
 ALTER TABLE `Upload_flag_assignments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `User_flags`

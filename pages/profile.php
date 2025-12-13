@@ -13,10 +13,10 @@ $departments = [];
 
 if ($userFlags) {
     foreach ($userFlags as $flag) {
-        if ($flag->getFlagType() === 'Role') {
-            $roles[] = $flag->getFlagName();
-        } elseif ($flag->getFlagType() === 'Department') {
-            $departments[] = $flag->getFlagName();
+        if ($flag->getType() === 'Role') {
+            $roles[] = $flag->getName();
+        } elseif ($flag->getType() === 'Department') {
+            $departments[] = $flag->getName();
         }
     }
 }

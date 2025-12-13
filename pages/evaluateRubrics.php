@@ -32,6 +32,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $updated = 0;
 
     if (!empty($evaluationId)) {
+
+        //Deal with setting the flag, should be pending when first created
+        if(isset($_POST['action'])) {
+            if($_POST['action'] === 'submit'){
+                $evaluationsDao -> setStatusFlagForEvaluation($evaluationId, 3);
+                //Magic number 3 corresponds to "Submitted" status flag
+            } else if($_POST['action'] === 'save'){
+                $evaluationsDao -> setStatusFlagForEvaluation($evaluationId, 2);
+                //Magic number 2 corresponds to "Draft" status flag
+            }
+        }
+
         $postedTemplate = $evaluationsDao->getEvaluationRubricFromEvaluationId($evaluationId);
         if ($postedTemplate && !empty($postedTemplate->items)) {
             foreach ($postedTemplate->items as $item) {
@@ -71,14 +83,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $logger -> info('User ID ' . $_SESSION['userID'] . ' has ' . count($evaluations) . ' evaluations.');
 
 $selectedTemplate = null;
+$selectedUpload = '';
 if (isset($_GET['evaluationId'])) {
-    //Redundant code 
-    //$selectedEvaluation = $evaluationsDao->getEvaluationById($_GET['evaluationId']);
+    
+    $selectedUpload = $uploadsDao -> getUpload($evaluationsDao -> getEvaluationById($_GET['evaluationId']) -> getFkUploadId());
+
     $selectedTemplate = $evaluationsDao->getEvaluationRubricFromEvaluationId($_GET['evaluationId']);
 
     if ($logger && $selectedTemplate) {
         //$logger->info('Selected Evaluation ID: ' . $selectedEvaluation->getId());
-        $logger->info('Selected Evaluation Rubric ID: ' . $selectedTemplate->getId());
+        $logger->info('Selected Evaluation ID: ' . $_GET['evaluationId']);
+        $logger->info('Selected upload: ' . $selectedUpload -> getFilePath().$selectedUpload->getFileName());
+
     }
 }
 
@@ -192,7 +208,7 @@ function renderAnswerInput($item) {
                         $upload = $uploadsDao->getUpload($evaluation->getFkUploadId());
                         $evaluationRubric = $evaluationsDao -> getEvaluationRubricFromEvaluationId($evaluation -> getId());
 
-                        $evaluationName = $student->getFirstName() . '_' . $student-> getLastName() . "-" . $evaluationRubric->getName() ."-".$upload -> getFileName();
+                        $evaluationName = '['.$student->getFirstName() . '_' . $student-> getLastName() . "][" . $evaluationRubric->getName() ."][".$upload -> getFileName()."]";
 
                     ?>
                     <option value="<?php echo $evaluation->getId(); ?>" <?php if ($selectedTemplate && $evaluation->getId() == $selectedTemplate->getFkEvaluationId()) echo 'selected'; ?>>
@@ -203,7 +219,19 @@ function renderAnswerInput($item) {
     </div>
 
     <?php if ($selectedTemplate): ?>
-        <h3>Evaluating rubric: <?php echo htmlspecialchars($selectedTemplate->getName()); ?></h3>
+
+            <div class="d-flex align-items-center justify-content-between">
+                <h3 class="mb-0">
+                    Evaluating rubric: <?php echo htmlspecialchars($selectedTemplate->getName()); ?>
+                </h3>
+
+                <a class="fs-5 fw-semibold text-decoration-none"
+                href="<?php echo htmlspecialchars('./uploads' . $selectedUpload->getFilePath() . $selectedUpload->getFileName()); ?>">
+                    <?php echo htmlspecialchars($selectedUpload->getFileName()); ?>
+                </a>
+
+            </div>
+            <br>
             <form method="POST" action="" id="rubricAnswersForm">
                 <input type="hidden" name="templateId" value="<?php echo $selectedTemplate->getId(); ?>">
                 <input type="hidden" name="evaluationId" value="<?php echo htmlspecialchars($selectedTemplate->getFkEvaluationId()); ?>">
@@ -215,25 +243,32 @@ function renderAnswerInput($item) {
 
                     <div class="row mb-5">
                         <!-- Left column: Name and Description (12/12) -->
-                        <div class="card col-4">
-                            <!-- Item Name -->
-                            <div class="card-header mb-1 ">
-                                <?php echo $item->getName(); ?>
+                        <div class="card col-12">
+                            <div class="card-header mb-1 d-flex align-items-center">
+                                <div class="me-3">
+                                    <strong><?= htmlspecialchars($item->getName()) ?></strong>
+                                </div>
+
+                                <?php if (strtolower($item->getAnswerType()) !== 'text'): ?>
+                                    <div class="ms-auto flex-shrink-0">
+                                        <?= renderAnswerInput($item) ?>
+                                    </div>
+                                <?php endif; ?>
                             </div>
 
-                            <!-- Item Description -->
                             <div class="card-body">
-                                <?php echo $item->getDescription(); ?>
+                                <?= $item->getDescription() ?>
                             </div>
                         </div>
                     
                     <!-- Answer:: -->
 
-                        <!-- Renders answer inline with question unless answer is text, then
+                        <!-- Renders answer inline with question if answer is text, then
                          Full width answer textarea -->
-                        <div class= <?php echo(($item -> getAnswerType() == "text")?("col-12 mt-2"):("col-7 mt-2"));?>>
-                            <?php renderAnswerInput($item); ?>
-                           
+                        <div class= "col-12 mt-2">
+                            <?php if (strtolower($item->getAnswerType()) === 'text'): ?>
+                                <?= renderAnswerInput($item) ?>
+                            <?php endif; ?>
                         </div>
 
                     <!-- Comment:: -->
@@ -253,7 +288,8 @@ function renderAnswerInput($item) {
 
                 <?php endforeach; ?>
                 <div class="mb-3">
-                    <button type="submit" class="btn btn-primary">Save Responses</button>
+                    <button type="submit" name = "action" value = "save" class="btn btn-primary">Save Responses</button>
+                    <button type="submit" name = "action" value = "submit" class="btn btn-primary">Submit Responses</button>
                 </div>
             </form>
     <?php endif; ?>

@@ -35,6 +35,43 @@ class EvaluationsDao {
     }
 
     /**
+     * Builds a complete Evaluation object from a database row, including associated evaluation flags.
+     *
+     * @param string[] $row a row from the database containing evaluation information
+     * @return \Model\Evaluation
+     */
+    public function buildEvaluationObjectFromRow($row) {
+        $evaluation = self::ExtractEvaluationFromRow($row);
+        $evaluation -> setEvaluationFlags($this->getEvaluationFlagsForEvaluation($evaluation->getId()));
+        return $evaluation;
+    }
+
+    /**
+     * Gets every evaluation flag an evaluation is associated with.
+     *
+     * @param ID $evaluationId the id of the evaluation
+     * @return EvaluationFlag[]|boolean an array of Evaluation Flag objects if the query execution succeeds, false otherwise.
+     */
+    public function getEvaluationFlagsForEvaluation($evaluationId) {
+        try {
+            //Gets all evaluation flags assigned to a specific evaluation from eval flags assignments table
+            $sql = 'SELECT *  FROM Evaluation_flags 
+                    JOIN Evaluation_flag_assignments on Evaluation_flags.id = Evaluation_flag_assignments.fk_evaluation_flag_id
+                    WHERE Evaluation_flag_assignments.fk_evaluation_id = :evaluationId';
+            $params = array(
+                ':evaluationId' => $evaluationId
+            );
+            $result = $this->conn->query($sql, $params);
+
+            return \array_map('self::ExtractEvaluationFlagFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to get evaluation flags for evaluation: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Gets an evaluation object by id the database.
      *
      * @param int $id the id of the evaluation
@@ -49,7 +86,7 @@ class EvaluationsDao {
             );
             $result = $this->conn->query($sql, $params);
 
-            return self::ExtractEvaluationFromRow($result[0]);
+            return self::buildEvaluationObjectFromRow($result[0]);
         } catch (\Exception $e) {
             $this->logError('Failed to add new evaluation: ' . $e->getMessage());
 
@@ -72,13 +109,15 @@ class EvaluationsDao {
             );
             $result = $this->conn->query($sql, $params);
 
-            return \array_map('self::ExtractEvaluationFromRow', $result);
+            return \array_map('self::buildEvaluationObjectFromRow', $result);
         } catch (\Exception $e) {
             $this->logError('Failed to add new evaluation: ' . $e->getMessage());
 
             return false;
         }
     }
+
+
 
     /**
      * Gets evaluation objects by reviewer's userId the database.
@@ -95,13 +134,14 @@ class EvaluationsDao {
             );
             $result = $this->conn->query($sql, $params);
 
-            return \array_map('self::ExtractEvaluationFromRow', $result);
+            return \array_map('self::buildEvaluationObjectFromRow', $result);
         } catch (\Exception $e) {
             $this->logError('Failed to add new evaluation: ' . $e->getMessage());
 
             return false;
         }
     }
+
 
     public function getEvaluationRubricsByReviewerUserId($userId) {
         try {
@@ -121,29 +161,6 @@ class EvaluationsDao {
         }
     }
 
-    /**
-     * Adds a new evaluation object to the database.
-     * REMOVED try/catch so errors bubble up to handler.
-     * FIXED table name typo (Evaluations).
-     *
-     * @param \Model\Evaluation $evaluation the evaluation to add to the database
-     * @return boolean true if the query execution succeeds, false otherwise.
-     */
-    public function addNewEvaluation($evaluation) {
-        $sql = 'INSERT INTO Evaluations ';
-        $sql .= '(id, fk_student_id, fk_reviewer_id, fk_upload_id, date_created) ';
-        $sql .= 'VALUES (:id, :fk_student_id, :fk_reviewer_id, :fk_upload_id, :date_created)';
-        $params = array(
-            ':id' => $evaluation->getId(),
-            ':fk_student_id' => $evaluation->getFkStudentId(),
-            ':fk_reviewer_id' => $evaluation->getFkReviewerId(),
-            ':fk_upload_id' => $evaluation->getFkUploadId(),
-            ':date_created' => $evaluation->getDateCreated()
-        );
-        $this->conn->execute($sql, $params);
-
-        return true;
-    }
 
     public function getEvaluationRubricFromEvaluationId($evaluationId) {
         try {
@@ -185,8 +202,105 @@ class EvaluationsDao {
     }
 
     /**
+     * Adds a new evaluation object to the database.
+     * REMOVED try/catch so errors bubble up to handler.
+     * FIXED table name typo (Evaluations).
+     *
+     * @param \Model\Evaluation $evaluation the evaluation to add to the database
+     * @return boolean true if the query execution succeeds, false otherwise.
+     */
+    public function addNewEvaluation($evaluation) {
+        $sql = 'INSERT INTO Evaluations ';
+        $sql .= '(id, fk_student_id, fk_reviewer_id, fk_upload_id, date_created) ';
+        $sql .= 'VALUES (:id, :fk_student_id, :fk_reviewer_id, :fk_upload_id, :date_created)';
+        $params = array(
+            ':id' => $evaluation->getId(),
+            ':fk_student_id' => $evaluation->getFkStudentId(),
+            ':fk_reviewer_id' => $evaluation->getFkReviewerId(),
+            ':fk_upload_id' => $evaluation->getFkUploadId(),
+            ':date_created' => $evaluation->getDateCreated()
+        );
+        $this->conn->execute($sql, $params);
+
+        return true;
+    }
+
+    /**
+     * Adds an evaluation flag to an evaluation.
+     *
+     * @param string $evaluationId the id of the evaluation
+     * @param int $evaluationFlagId the id of the evaluation flag
+     * @return boolean true if the query execution succeeds, false otherwise.
+     */
+    public function addEvaluationFlagToEvaluation($evaluationId, $evaluationFlagId) {
+        try {
+            $sql = 'INSERT INTO Evaluation_flag_assignments 
+                (fk_evaluation_id, fk_evaluation_flag_id) 
+                VALUES (:evaluationId, :evaluationFlagId)';
+
+            $params = array(
+                ':evaluationId' => $evaluationId,
+                ':evaluationFlagId' => $evaluationFlagId
+            );
+            $this->conn->execute($sql, $params);
+
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to add evaluation flag to evaluation: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Gets a status evaluation flag by its arrangement value.
+     *
+     * @param int $arrangement the arrangement value of the status evaluation flag
+     * @return EvaluationFlag|boolean an EvaluationFlag object if the query execution succeeds, false otherwise.
+     * 
+     * Will crash if multiple flags with same arrangement exist.
+     */
+    public function getStatusEvaluationFlagByArrangement($arrangement) {
+        try {
+            $sql = 'SELECT * FROM Evaluation_flags ';
+            $sql .= 'WHERE type = :type AND arrangement = :arrangement';
+            $params = array(
+                ':type' => 'status',
+                ':arrangement' => $arrangement
+            );
+            $result = $this->conn->query($sql, $params);
+
+            return self::ExtractEvaluationFlagFromRow($result[0]);
+        } catch (\Exception $e) {
+            $this->logError('Failed to get status evaluation flag by arrangement: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+
+    /**
+     * Sets the status flag for an evaluation based on arrangement.
+     *
+     * @param string $evaluationId the id of the evaluation
+     * @param int $arrangement the arrangement value of the status evaluation flag to set
+     * @return boolean true if the query execution succeeds, false otherwise.
+     */
+    public function setStatusFlagForEvaluation($evaluationId, $arrangement) {
+        $flag = $this->getStatusEvaluationFlagByArrangement($arrangement);
+        if (!$flag) {
+            $this->logError('No status flag found for arrangement: ' . $arrangement);
+            return false;
+        }
+
+        return $this->addEvaluationFlagToEvaluation($evaluationId, $flag->getId());
+    }
+
+    
+    /**
      * Creates a new Evaluation object from foreign keys.
-     * REMOVED try/catch so errors bubble up.
+     * Assigns pending flag to evaluation upon creation.
+     * 
      */
     public function createEvaluation($studentId, $reviewerId, $uploadId) {
         // 1. Generate a random 8-character ID
@@ -202,9 +316,18 @@ class EvaluationsDao {
                     ->setFkUploadId($uploadId)
                     ->setDateCreated($dateCreated);
 
+        $evaluationFlag = $this->getStatusEvaluationFlagByArrangement(1); // 1 corresponds to "Pending" status flag
+        if ($evaluationFlag) {
+            $evaluation->setEvaluationFlags([$evaluationFlag]);
+        } else {
+            $this->logError('No status flag found for arrangement: 1');
+        }
+
         // 4. Persist to Database
         if ($this->addNewEvaluation($evaluation)) {
-            return $evaluation;
+            if($this->addEvaluationFlagToEvaluation($id, $evaluationFlag->getId())) {
+                return $evaluation;
+            }
         }
 
         return false;
@@ -309,8 +432,9 @@ class EvaluationsDao {
      */
     public static function ExtractEvaluationFlagFromRow($row) {
         $evaluationflag = new EvaluationFlag($row['id']);
-        $evaluationflag->setFlagName($row['flag_name'])
-            ->setFlagType($row['flag_type'])
+        $evaluationflag->setName($row['name'])
+            ->setType($row['type'])
+            ->setArrangement($row['arrangement'])
             ->setIsActive($row['is_active']);
         
         return $evaluationflag;
