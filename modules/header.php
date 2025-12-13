@@ -104,17 +104,14 @@ if($isLoggedIn) {
     if($_SESSION['userIsReviewer']) {
       $navlinks['REVIEW'] = ['Reviewer Assignments' =>'reviewerAssignments.php', 'Evaluate Rubrics'=> 'evaluateRubrics.php'];
     } 
-    if($_SESSION['userIsStudent']) {
-      $navlinks['UPLOAD'] = 'studentUpload.php';
-    }
 	}
     $navlinks['PROFILE'] = 'profile';
-    $navlinks['LOG OUT'] = 'logout';
+    $navlinks['LOG OUT'] = 'signout';
 } else {
     if($configManager->getEnvironment() == 'dev')
         $navlinks['LOG IN'] = 'masq/index.php';
     else
-        $navlinks['LOG IN'] = 'login';
+        $navlinks['LOG IN'] = 'signin';
 }
 
 ?>

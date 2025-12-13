@@ -192,6 +192,53 @@ class UploadsDao {
     }
 
     /**
+     * Fetches document types relevant to specific departments.
+     * Assumes your DocumentTypes table has a column like 'fk_allowed_department_id'
+     * OR that you want to filter based on logic.
+     * * @param array $departmentIds Array of integers (Flag IDs) for the user's departments
+     * @return DocumentType[]|boolean
+     */
+    public function getDocumentTypesForDepartments($departmentIds) {
+        try {
+            // If the user has no departments, pass a dummy value (like -1) to prevent SQL syntax errors
+            // or simply return only global documents.
+            if (empty($departmentIds)) {
+                $departmentIds = [-1]; 
+            }
+
+            // Create a comma-separated string of IDs for the IN clause
+            $inQuery = implode(',', array_fill(0, count($departmentIds), '?'));
+
+            // QUERY EXPLANATION:
+            // 1. We select all document types
+            // 2. We filter where the document is 'Global' (department_id IS NULL)
+            // 3. OR where the document is assigned to one of the user's departments
+            // NOTE: You must verify the column name 'fk_department_flag_id' matches your database!
+            $sql = "SELECT * FROM Document_Types 
+                    WHERE fk_department_flag_id IS NULL 
+                    OR fk_department_flag_id IN ($inQuery)";
+
+            // Prepare and Execute
+            // We cannot use the simple $conn->query() with named params for dynamic IN clauses easily,
+            // so strictly, we might need a raw prepare if your DB wrapper supports it.
+            // However, sticking to your existing pattern using the generic execute:
+            
+            // Note: If your DatabaseConnection wrapper doesn't support '?', 
+            // you might need to manually sanitize and inject the IDs or loop strictly.
+            // Assuming standard PDO-like behavior:
+            
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($departmentIds);
+            $result = $stmt->fetchAll();
+
+            return \array_map('self::ExtractDocumentTypeFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch filtered document types: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Adds a new upload object to the database.
      *
      * @param \Model\Upload $upload the upload to add to the database

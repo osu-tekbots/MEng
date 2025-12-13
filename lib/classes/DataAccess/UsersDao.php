@@ -404,7 +404,7 @@ class UsersDao {
         try {
             $sql = 'SELECT User_flags.* FROM User_flags ';
             $sql .= 'LEFT JOIN User_flag_assignments ';
-            $sql .= 'ON User_flags.id = User_flag_assignments.fk_flag_id ';
+            $sql .= 'ON User_flags.id = User_flag_assignments.fk_user_flag_id ';
             $sql .= 'WHERE User_flag_assignments.fk_user_id = :id';
 
             $params = array(':id' => $id);
@@ -467,7 +467,7 @@ class UsersDao {
             $sql .= 'first_name = :first_name, ';
             $sql .= 'last_name = :last_name, ';
             $sql .= 'onid = :onid, ';
-			$sql .= 'email = :email, ';
+			$sql .= 'email = :email ';
             $sql .= 'WHERE id = :id';
             $params = array(
                 ':uuid' => $user->getUuid(),
@@ -484,6 +484,52 @@ class UsersDao {
         } catch (\Exception $e) {
             $this->logError('Failed to update user: ' . $e->getMessage());
 
+            return false;
+        }
+    }
+
+    /**
+     * Fetches all role user flags
+     *
+     * @return UserFlag[]|boolean
+     */
+    public function getAllRoleFlags() {
+        try {
+            $sql = 'SELECT * FROM User_flags WHERE flag_type = "Role"';
+            $result = $this->conn->query($sql);
+            return \array_map('self::ExtractUserFlagFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch role flags: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Assigns a flag to a user.
+     */
+    public function addUserFlag($userId, $flagId) {
+        try {
+            $sql = 'INSERT INTO User_flag_assignments (fk_user_id, fk_user_flag_id) VALUES (:uid, :fid)';
+            $params = array(':uid' => $userId, ':fid' => $flagId);
+            $this->conn->execute($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to add user flag: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Removes a flag from a user.
+     */
+    public function removeUserFlag($userId, $flagId) {
+        try {
+            $sql = 'DELETE FROM User_flag_assignments WHERE fk_user_id = :uid AND fk_user_flag_id = :fid';
+            $params = array(':uid' => $userId, ':fid' => $flagId);
+            $this->conn->execute($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to remove user flag: ' . $e->getMessage());
             return false;
         }
     }

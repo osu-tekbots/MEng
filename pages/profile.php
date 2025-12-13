@@ -22,24 +22,73 @@ $js = array(
 include_once PUBLIC_FILES . '/modules/header.php';
 
 // 4. Fetch User Data
-$user = $usersDao->getUser($_SESSION['userID']);
-$userFlags = $usersDao->getUserFlags($_SESSION['userID']); 
+$userSelect = isset($_GET['userId']) && !empty($_GET['userId']) ? $_GET['userId'] : false;
+if (!$userSelect) {
+    $user = $usersDao->getUser($_SESSION['userID']);
+    $userFlags = $usersDao->getUserFlags($_SESSION['userID']); 
+    $hasPermissions = true;
+} else {
+    $user = $usersDao->getUser($userSelect);
+    $userFlags = $usersDao->getUserFlags($userSelect); 
+    if (($_SESSION['userID'] == $userSelect) || ($_SESSION['userIsAdmin'])) {
+        $hasPermissions = true;
+    } else {
+        $hasPermissions = false;
+    }
+}
 
-// 5. Fetch Upload Data
-$documentTypes = $uploadsDao->getAllDocumentTypes();
+
+
+if (!$hasPermissions || !$user) {
+    echo '<div class="container-fluid">
+            <div class="container mt-5 mb-5">
+                
+                <div class="row mb-4">
+                    <div class="col">
+                        <h2>My Profile</h2>
+                        <p class="text-muted">Manage your personal information, document submissions, and view your system permissions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>';
+    die();
+}
+
+// 5. Fetch Upload Data (FILTERED)
+
+// A. Gather the User's Department IDs
+$userDeptIds = [];
+if ($userFlags) {
+    foreach ($userFlags as $flag) {
+        if ($flag->getFlagType() === 'Department') {
+            $userDeptIds[] = $flag->getId();
+        }
+    }
+}
+
+// B. Fetch Document Types
+// If user is Admin, they should probably see ALL types.
+if (isset($_SESSION['userIsAdmin']) && $_SESSION['userIsAdmin']) {
+    $documentTypes = $uploadsDao->getAllDocumentTypes();
+} else {
+    // Regular users see only Global + Their Department types
+    $documentTypes = $uploadsDao->getDocumentTypesForDepartments($userDeptIds);
+}
+
+// C. Fetch Previous Uploads (Standard Logic)
 $previousUpload = $uploadsDao->getUserUploadByFlag($_SESSION['userID'], $selectedDocumentType);
 
 // 6. Process Flags/Roles
-$roles = [];
-$departments = [];
+$allRoles = $usersDao->getAllRoleFlags();
+$allDepartments = $usersDao->getAllDepartmentFlags();
 
-if ($userFlags) {
+// Robustly build the array of IDs checking for validity
+$userFlagIds = [];
+if ($userFlags && is_array($userFlags)) {
     foreach ($userFlags as $flag) {
-        if ($flag->getFlagType() === 'Role') {
-            $roles[] = $flag->getFlagName();
-        } elseif ($flag->getFlagType() === 'Department') {
-            $departments[] = $flag->getFlagName();
-        }
+        // Cast to string to ensure strictly safe comparison later, 
+        // though in_array is usually loose enough.
+        $userFlagIds[] = (string)$flag->getId();
     }
 }
 ?>
@@ -71,28 +120,28 @@ if ($userFlags) {
                         <h5 class="mb-0">Personal Information</h5>
                     </div>
                     <div class="card-body">
-                        <form action="profile.php" method="POST">
+                        <form id="formEditProfile">
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="firstName">First Name</label>
                                     <input type="text" class="form-control" id="firstName" name="firstName" 
-                                           value="<?php echo $user->getFirstName(); ?>" required>
+                                        value="<?php echo $user->getFirstName(); ?>" required>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="lastName">Last Name</label>
                                     <input type="text" class="form-control" id="lastName" name="lastName" 
-                                           value="<?php echo $user->getLastName(); ?>" required>
+                                        value="<?php echo $user->getLastName(); ?>" required>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="email">Email Address</label>
                                 <input type="email" class="form-control" id="email" name="email" 
-                                       value="<?php echo $user->getEmail(); ?>" required>
+                                    value="<?php echo $user->getEmail(); ?>" required>
                             </div>
                             
                             <hr class="mt-4 mb-4">
                             
-                            <button type="submit" name="updateProfile" class="btn btn-primary">
+                            <button type="submit" id="btnEditProfileSubmit" class="btn btn-primary">
                                 Save Changes
                             </button>
                         </form>
@@ -201,26 +250,44 @@ if ($userFlags) {
                         
                         <h6 class="text-muted small text-uppercase font-weight-bold mb-2">Departments</h6>
                         <div class="mb-3">
-                            <?php if (count($departments) > 0): ?>
-                                <?php foreach ($departments as $dept): ?>
-                                    <span class="badge badge-info p-2 mr-1"><?php echo $dept; ?></span>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <span class="text-muted font-italic">No departments assigned.</span>
-                            <?php endif; ?>
+                            <?php foreach ($allDepartments as $dept): ?>
+                                <?php 
+                                    $hasFlag = in_array($dept->getId(), $userFlagIds);
+                                    $btnStyle = $hasFlag ? 'btn-info' : 'btn-outline-info';
+                                    $action = $hasFlag ? 'remove' : 'add';
+                                ?>
+                                <button type="button" 
+                                        class="btn btn-sm <?php echo $btnStyle; ?> mb-1 btn-flag-toggle"
+                                        data-flag-id="<?php echo $dept->getId(); ?>"
+                                        data-user-id="<?php echo $user->getId(); ?>"
+                                        data-action="<?php echo $action; ?>"
+                                        data-type="info" 
+                                        <?php echo $btnDisabled; ?>>
+                                    <?php echo $dept->getFlagName(); ?>
+                                </button>
+                            <?php endforeach; ?>
                         </div>
 
                         <hr>
 
                         <h6 class="text-muted small text-uppercase font-weight-bold mb-2">User Roles</h6>
                         <div>
-                            <?php if (count($roles) > 0): ?>
-                                <?php foreach ($roles as $role): ?>
-                                    <span class="badge badge-secondary p-2 mr-1"><?php echo $role; ?></span>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <span class="text-muted font-italic">No specific roles assigned.</span>
-                            <?php endif; ?>
+                            <?php foreach ($allRoles as $role): ?>
+                                <?php 
+                                    $hasFlag = in_array($role->getId(), $userFlagIds);
+                                    $btnStyle = $hasFlag ? 'btn-secondary' : 'btn-outline-secondary';
+                                    $action = $hasFlag ? 'remove' : 'add';
+                                ?>
+                                <button type="button" 
+                                        class="btn btn-sm <?php echo $btnStyle; ?> mb-1 btn-flag-toggle"
+                                        data-flag-id="<?php echo $role->getId(); ?>"
+                                        data-user-id="<?php echo $user->getId(); ?>"
+                                        data-action="<?php echo $action; ?>"
+                                        data-type="secondary"
+                                        <?php echo $btnDisabled; ?>>
+                                    <?php echo $role->getFlagName(); ?>
+                                </button>
+                            <?php endforeach; ?>
                         </div>
 
                     </div>
