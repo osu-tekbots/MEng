@@ -46,7 +46,7 @@ foreach ($allUploads as $upload) {
 $department_flags = $usersDao->getAllDepartmentFlags();
 $deptMap = [];
 foreach ($department_flags as $dept) {
-    $deptMap[$dept->getId()] = $dept->getFlagName();
+    $deptMap[$dept->getId()] = $dept->getName();
 }
 
 require_once PUBLIC_FILES . '/lib/osu-identities-api.php';
@@ -142,7 +142,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                             <?php 
                                 foreach ($department_flags as $dept) {
                                     $selected = ($filterDepartment == $dept->getId()) ? 'selected' : '';
-                                    echo '<option value="'. $dept->getId() .'" '.$selected.'>'. $dept->getFlagName() .'</option>';
+                                    echo '<option value="'. $dept->getId() .'" '.$selected.'>'. $dept->getName() .'</option>';
                                 }
                             ?>
                         </select>
@@ -195,7 +195,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
                                     $uploadsPayload[] = [
                                         'id' => $up->getId(),
-                                        'name' => $docType ? $docType->getFlagName() : 'Unknown Type',
+                                        'name' => $docType ? $docType->getName() : 'Unknown Type',
                                         'date' => $dateDisplay, // Uses the formatted date string
                                         'isAssigned' => $isAssigned
                                     ];

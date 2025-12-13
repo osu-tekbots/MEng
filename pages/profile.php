@@ -60,7 +60,7 @@ if (!$hasPermissions || !$user) {
 $userDeptIds = [];
 if ($userFlags) {
     foreach ($userFlags as $flag) {
-        if ($flag->getFlagType() === 'Department') {
+        if ($flag->getType() === 'Department') {
             $userDeptIds[] = $flag->getId();
         }
     }
@@ -168,7 +168,7 @@ if ($userFlags && is_array($userFlags)) {
                                                 if ($documentType->getId() == $selectedDocumentType) {
                                                     echo "selected";
                                                 }
-                                                echo ">" . $documentType->getFlagName() . "</option>";
+                                                echo ">" . $documentType->getName() . "</option>";
                                             }
                                         ?>
                                     </select>
@@ -263,7 +263,7 @@ if ($userFlags && is_array($userFlags)) {
                                         data-action="<?php echo $action; ?>"
                                         data-type="info" 
                                         <?php echo $btnDisabled; ?>>
-                                    <?php echo $dept->getFlagName(); ?>
+                                    <?php echo $dept->getName(); ?>
                                 </button>
                             <?php endforeach; ?>
                         </div>
@@ -285,7 +285,7 @@ if ($userFlags && is_array($userFlags)) {
                                         data-action="<?php echo $action; ?>"
                                         data-type="secondary"
                                         <?php echo $btnDisabled; ?>>
-                                    <?php echo $role->getFlagName(); ?>
+                                    <?php echo $role->getName(); ?>
                                 </button>
                             <?php endforeach; ?>
                         </div>

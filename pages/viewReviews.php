@@ -37,7 +37,7 @@ foreach ($reviewers as $reviewer) {
             // B. Fetch Document Type
             $uploadId = $eval->getFkUploadId();
             $docTypeObj = $uploadsDao->getDocumentType($uploadId);
-            $docType = $docTypeObj ? $docTypeObj->getFlagName() : 'Unknown Document';
+            $docType = $docTypeObj ? $docTypeObj->getName() : 'Unknown Document';
 
             // C. Fetch Reviewer Display Name
             // Logic: Use Name, but if they never logged in (no last login?), show email? 
@@ -107,7 +107,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                             <?php 
                                 foreach ($department_flags as $dept) {
                                     $selected = ($filterDepartment == $dept->getId()) ? 'selected' : '';
-                                    echo '<option value="'. $dept->getId() .'" '.$selected.'>'. $dept->getFlagName() .'</option>';
+                                    echo '<option value="'. $dept->getId() .'" '.$selected.'>'. $dept->getName() .'</option>';
                                 }
                             ?>
                         </select>
