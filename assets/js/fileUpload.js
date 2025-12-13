@@ -1,5 +1,5 @@
-
 let changesDetected = false;
+
 function onEditProfileFormInputChange() {
     if (!changesDetected) {
         $('#btnEditProfileSubmit').attr('disabled', false);
@@ -8,14 +8,16 @@ function onEditProfileFormInputChange() {
 }
 $('#formEditProfile input[type=file]').change(onEditProfileFormInputChange);
 
-function onUploadDocumentFormSubmit() {
+function onUploadDocumentFormSubmit(event) {
+    if (event) event.preventDefault(); // Added preventDefault
+
     // Capture the form
     let form = new FormData(document.getElementById('formUploadDocument'));
 
     let bodyDocumentUpload = new FormData();
 
-    previousUpload = false;
-    newUpload = false;
+    let previousUpload = false;
+    let newUpload = false;
 
     for (const [key, value] of form.entries()) {
         if (key == 'userUpload' && value.size > 0) {
@@ -42,7 +44,9 @@ function onUploadDocumentFormSubmit() {
             .then(res => {
                 snackbar('Successfully updated', 'success');
                 $('#btnUploadLoader').hide();
-                setTimeout(function() { location.reload(); }, 1000);
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
             })
             .catch(err => {
                 snackbar(err.message, 'error');
@@ -54,7 +58,9 @@ function onUploadDocumentFormSubmit() {
             .then(res => {
                 snackbar('Successfully uploaded', 'success');
                 $('#btnUploadLoader').hide();
-                setTimeout(function() { location.reload(); }, 1000);
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
             })
             .catch(err => {
                 snackbar(err.message, 'error');
@@ -68,12 +74,12 @@ function onUploadDocumentFormSubmit() {
     return false;
 }
 
+// Updated to pass the event implicitly
 $('#formUploadDocument').on('submit', onUploadDocumentFormSubmit);
-document.getElementById('formUploadDocument').addEventListener('submit', function(event) {
-    event.preventDefault();
-});
 
-function onUploadDelete() {
+
+function onUploadDelete(event) {
+    if (event) event.preventDefault(); // Added preventDefault
 
     let bodyDocumentUpload = new FormData();
     const documentType = document.getElementById("documentType");
@@ -89,7 +95,9 @@ function onUploadDelete() {
         .then(res => {
             snackbar('Successfully deleted', 'success');
             $('#btnUploadLoader').hide();
-            setTimeout(function() { location.reload(); }, 1000);
+            setTimeout(function() {
+                location.reload();
+            }, 1000);
         })
         .catch(err => {
             snackbar(err.message, 'error');
@@ -99,7 +107,8 @@ function onUploadDelete() {
 
 $('#aUploadDelete').on('click', onUploadDelete);
 
-function onUploadDownload() {
+function onUploadDownload(event) {
+    if (event) event.preventDefault(); // Added preventDefault
 
     let bodyDocumentUpload = new FormData();
     const uploadId = document.getElementById("previousUploadId");
@@ -175,7 +184,7 @@ $('#aUploadDownload').on('click', onUploadDownload);
  */
 function onEditProfileFormSubmit(event) {
     // 1. Prevent default HTML form submission
-    event.preventDefault();
+    if (event) event.preventDefault(); // Already existed, kept consistent
 
     // 2. Gather data
     // Since we aren't sending files, we create a simple JSON object
@@ -212,7 +221,9 @@ $('#formEditProfile').on('submit', onEditProfileFormSubmit);
 /**
  * Handles Permission Toggle Buttons
  */
-$('.btn-flag-toggle').on('click', function() {
+$('.btn-flag-toggle').on('click', function(event) {
+    if (event) event.preventDefault(); // Added preventDefault
+
     const btn = $(this);
     
     // Prevent double-clicking

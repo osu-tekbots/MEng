@@ -67,7 +67,8 @@ if ($userFlags) {
 }
 
 // B. Fetch Document Types
-// If user is Admin, they should probably see ALL types.
+// If user is Admin, they should probably see ALL types so they can manage anything.
+// Otherwise, restrict based on the TARGET USER'S departments.
 if (isset($_SESSION['userIsAdmin']) && $_SESSION['userIsAdmin']) {
     $documentTypes = $uploadsDao->getAllDocumentTypes();
 } else {
@@ -75,8 +76,9 @@ if (isset($_SESSION['userIsAdmin']) && $_SESSION['userIsAdmin']) {
     $documentTypes = $uploadsDao->getDocumentTypesForDepartments($userDeptIds);
 }
 
-// C. Fetch Previous Uploads (Standard Logic)
-$previousUpload = $uploadsDao->getUserUploadByFlag($_SESSION['userID'], $selectedDocumentType);
+// C. Fetch Previous Uploads (FIXED)
+// We use $user->getId() (the profile being viewed) instead of $_SESSION['userID']
+$previousUpload = $uploadsDao->getUserUploadByFlag($user->getId(), $selectedDocumentType);
 
 // 6. Process Flags/Roles
 $allRoles = $usersDao->getAllRoleFlags();
@@ -304,9 +306,11 @@ if ($userFlags && is_array($userFlags)) {
      * Reloads profile.php with the selected type in the query string.
      */
     function onDocumentTypeChange() {
-        const documentType = document.getElementById("documentType");
-        // Updated redirect URL to profile.php
-        window.location.replace("profile.php?documentType=" + documentType.value);
+        const documentType = document.getElementById("documentType").value;
+        // Grab the ID from the hidden input already present in your form
+        const userId = document.getElementById("userId").value; 
+
+        window.location.replace("profile.php?documentType=" + documentType + "&userId=" + userId);
     }
 </script>
 

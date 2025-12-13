@@ -335,7 +335,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
         });
 
         html += '</tbody></table>';
-        html += '<div class="text-muted small mt-2 font-italic status-note">Toggle "Filter by Status" to see assigned uploads.</div>';
+        html += '<div class="text-muted small mt-2 font-italic status-note">Toggle "Filter by Status" to see previously assigned uploads.</div>';
         html += '</div>';
         return html;
     }
