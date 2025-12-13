@@ -277,6 +277,33 @@ class UsersDao {
     }
 
     /**
+     * Fetches all users who have the Student flag AND the specific department flag.
+     *
+     * @param int $departmentFlagId The ID of the department flag
+     * @return User[]|boolean An array of User objects or false on failure
+     */
+    public function getStudentsByDepartment($departmentFlagId) {
+        try {
+            $sql = 'SELECT Users.* FROM Users ';
+            // Join for the Student Flag (ID 2)
+            $sql .= 'JOIN User_flag_assignments as ufa_student ON Users.id = ufa_student.fk_user_id ';
+            // Join for the Department Flag (Selected ID)
+            $sql .= 'JOIN User_flag_assignments as ufa_dept ON Users.id = ufa_dept.fk_user_id ';
+            
+            $sql .= 'WHERE ufa_student.fk_user_flag_id = 2 ';
+            $sql .= 'AND ufa_dept.fk_user_flag_id = :dept_id';
+
+            $params = array(':dept_id' => $departmentFlagId);
+            $result = $this->conn->query($sql, $params);
+
+            return \array_map('self::ExtractUserFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch students by department: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Fetches all users with the admin flag
      *
      * @return User[]|boolean an array of User objects if the fetch succeeds, false otherwise
@@ -321,6 +348,33 @@ class UsersDao {
     }
 
     /**
+     * Fetches all users who have the Reviewer flag AND the specific department flag.
+     *
+     * @param int $departmentFlagId The ID of the department flag
+     * @return User[]|boolean An array of User objects or false on failure
+     */
+    public function getReviewersByDepartment($departmentFlagId) {
+        try {
+            $sql = 'SELECT Users.* FROM Users ';
+            // Join for the Reviewer Flag (ID 4)
+            $sql .= 'JOIN User_flag_assignments as ufa_reviewer ON Users.id = ufa_reviewer.fk_user_id ';
+            // Join for the Department Flag (Selected ID)
+            $sql .= 'JOIN User_flag_assignments as ufa_dept ON Users.id = ufa_dept.fk_user_id ';
+            
+            $sql .= 'WHERE ufa_reviewer.fk_user_flag_id = 4 ';
+            $sql .= 'AND ufa_dept.fk_user_flag_id = :dept_id';
+
+            $params = array(':dept_id' => $departmentFlagId);
+            $result = $this->conn->query($sql, $params);
+
+            return \array_map('self::ExtractUserFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch reviewers by department: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Fetches all department user flags
      *
      * @return UserFlag[]|boolean an array of UserFlag objects if the fetch succeeds, false otherwise
@@ -350,7 +404,7 @@ class UsersDao {
         try {
             $sql = 'SELECT User_flags.* FROM User_flags ';
             $sql .= 'LEFT JOIN User_flag_assignments ';
-            $sql .= 'ON User_flags.id = User_flag_assignments.fk_flag_id ';
+            $sql .= 'ON User_flags.id = User_flag_assignments.fk_user_flag_id ';
             $sql .= 'WHERE User_flag_assignments.fk_user_id = :id';
 
             $params = array(':id' => $id);
@@ -413,7 +467,7 @@ class UsersDao {
             $sql .= 'first_name = :first_name, ';
             $sql .= 'last_name = :last_name, ';
             $sql .= 'onid = :onid, ';
-			$sql .= 'email = :email, ';
+			$sql .= 'email = :email ';
             $sql .= 'WHERE id = :id';
             $params = array(
                 ':uuid' => $user->getUuid(),
@@ -430,6 +484,52 @@ class UsersDao {
         } catch (\Exception $e) {
             $this->logError('Failed to update user: ' . $e->getMessage());
 
+            return false;
+        }
+    }
+
+    /**
+     * Fetches all role user flags
+     *
+     * @return UserFlag[]|boolean
+     */
+    public function getAllRoleFlags() {
+        try {
+            $sql = 'SELECT * FROM User_flags WHERE flag_type = "Role"';
+            $result = $this->conn->query($sql);
+            return \array_map('self::ExtractUserFlagFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch role flags: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Assigns a flag to a user.
+     */
+    public function addUserFlag($userId, $flagId) {
+        try {
+            $sql = 'INSERT INTO User_flag_assignments (fk_user_id, fk_user_flag_id) VALUES (:uid, :fid)';
+            $params = array(':uid' => $userId, ':fid' => $flagId);
+            $this->conn->execute($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to add user flag: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Removes a flag from a user.
+     */
+    public function removeUserFlag($userId, $flagId) {
+        try {
+            $sql = 'DELETE FROM User_flag_assignments WHERE fk_user_id = :uid AND fk_user_flag_id = :fid';
+            $params = array(':uid' => $userId, ':fid' => $flagId);
+            $this->conn->execute($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to remove user flag: ' . $e->getMessage());
             return false;
         }
     }

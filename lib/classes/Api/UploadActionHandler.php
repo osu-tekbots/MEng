@@ -218,9 +218,6 @@ class UploadActionHandler extends ActionHandler {
             "/";
         
         $ok = unlink($filepath . $previousUploadId . ".pdf");
-        if (!$ok) {
-            $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Failed to delete document'));
-        }
 
         $ok = $this->uploadsDao->deleteUpload($previousUploadId);
         if (!$ok) {
@@ -231,6 +228,52 @@ class UploadActionHandler extends ActionHandler {
             Response::OK,
             'Successfully deleted document'
         ));
+    }
+
+    public function handleDownloadDocument() {
+        // 1. Get the upload ID (Support both standard POST and JSON input)
+        $uploadId = $_POST['uploadId'] ?? null;
+        
+        // Fallback: If $_POST is empty (often happens if JS sends Content-Type: application/json),
+        // try reading the raw input stream.
+        if (empty($uploadId)) {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $uploadId = $input['uploadId'] ?? null;
+        }
+
+        if (empty($uploadId)) {
+            $this->respond(new Response(Response::BAD_REQUEST, 'Must include upload ID'));
+        }
+
+        // 2. Fetch the upload object
+        $upload = $this->uploadsDao->getUpload($uploadId);
+        if (!$upload) {
+            $this->respond(new Response(Response::NOT_FOUND, 'File not found in database'));
+        }
+
+        // 3. Construct the physical path
+        $fullPath = $this->configManager->get('server.upload_file_path') . 
+                    $upload->getFilePath() . 
+                    $upload->getId() . ".pdf";
+
+        // 4. Verify file exists
+        if (!file_exists($fullPath)) {
+            $this->respond(new Response(Response::NOT_FOUND, 'File not found on server'));
+        }
+
+        // 5. Read file and Encode to Base64 (The crucial change)
+        // Instead of streaming the raw binary (which breaks JSON.parse), we wrap it in JSON.
+        $fileContent = file_get_contents($fullPath);
+        $base64Data = base64_encode($fileContent);
+
+        // 6. Return JSON response
+        $responseData = [
+            'filename' => $upload->getFileName(),
+            'mime' => 'application/pdf',
+            'fileData' => $base64Data
+        ];
+
+        $this->respond(new Response(Response::OK, json_encode($responseData)));
     }
 
     /**
@@ -259,6 +302,9 @@ class UploadActionHandler extends ActionHandler {
                 
             case 'deleteDocument':
                 $this->handleDeleteDocument();
+
+            case 'downloadDocument':
+                $this->handleDownloadDocument();
 
             default:
                 $this->respond(new Response(Response::BAD_REQUEST, 'Invalid action on upload resource'));
