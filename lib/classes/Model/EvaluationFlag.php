@@ -6,13 +6,18 @@ class EvaluationFlag {
     private $id;
 
     /** @var string */
-    private $flagName;
+    private $name;
 
     /** @var string */
-    private $flagType;
+    private $type;
+
+    /** @var int*/
+    private $arrangement;
 
     /** @var bool */
     private $isActive;
+
+
 
     /**
      * Constructor
@@ -44,44 +49,65 @@ class EvaluationFlag {
     }
 
     /**
-     * Get the value of flagName
+     * Get the value of name
      *
      * @return string
      */
-    public function getFlagName() {
-        return $this->flagName;
+    public function getName() {
+        return $this->name;
     }
 
     /**
-     * Set the value of flagName
+     * Set the value of name
      *
-     * @param string $flagName
+     * @param string $name
      * @return self
      */
-    public function setFlagName($flagName) {
-        $this->flagName = $flagName;
+    public function setName($name) {
+        $this->name = $name;
         return $this;
     }
 
     /**
-     * Get the value of flagType
+     * Get the value of type
      *
      * @return string
      */
-    public function getFlagType() {
-        return $this->flagType;
+    public function getType() {
+        return $this->type;
     }
 
     /**
-     * Set the value of flagType
+     * Set the value of type
      *
-     * @param string $flagType
+     * @param string $type
      * @return self
      */
-    public function setFlagType($flagType) {
-        $this->flagType = $flagType;
+    public function setType($type) {
+        $this->type = $type;
         return $this;
     }
+
+    /**
+     * Get the value of arrangement
+     *
+     * @return int
+     */
+    public function getArrangement() {
+        return $this->arrangement;
+    }
+
+    /**
+     * Set the value of arrangement
+     *
+     * @param int $arrangement
+     * @return self
+     */
+    public function setArrangement($arrangement) {
+        $this->arrangement = $arrangement;
+        return $this;
+    }
+
 
     /**
      * Get the value of isActive

@@ -46,7 +46,7 @@ $tableHTML.="
 						<tr>
 							<th>Evaluation</th>
 							<th>Upload Link</th>
-                            <th>Review Due Date</th>
+                            <th>Student</th>
                             <th>Date Created</th>
                             <th>Status</th>
 						</tr>
@@ -73,18 +73,19 @@ include_once PUBLIC_FILES . '/modules/header.php';
 <?php 
 //PHP Helper Functions
 function getTableRow($evaluation, $student, $upload, $evaluationRubric) {
-    $studentName = $student->getFirstName() . '_' . $student-> getLastName();
-    $evaluationLink = "<a href='evaluateRubrics.php?evaluationId=" . $evaluation->getId() . "'>" 
-        . $studentName . "-" . $evaluationRubric->getName() ."-".$upload -> getFileName()."</a>";
+    $studentName = $student->getFirstName() . ' ' . $student-> getLastName();
+    $evaluationLink = "<a href='evaluateRubrics.php?evaluationId=" . $evaluation->getId() . "'>".(
+        ($evaluationRubric != false) ? $evaluationRubric -> getName() : "Not set")."</a>";
     $uploadLink = "<a href='./uploads" . $upload->getFilePath() .$upload->getFileName()."'>" . $upload->getFileName() . "</a>";
-    $reviewDueDate = ""; // Placeholder for now
     $dateCreated = $evaluation->getDateCreated();
-    $status = "Not Started"; // Placeholder for now
+
+    $flag = $evaluation -> getHighestStatusFlag();
+    $status = ($flag != null ? $flag -> getName() : "No Status"); 
     return "
         <tr>
             <td>$evaluationLink</td>
             <td>$uploadLink</td>
-            <td>$reviewDueDate</td>
+            <td>$studentName</td>
             <td>$dateCreated</td>
             <td>$status</td>
         </tr>

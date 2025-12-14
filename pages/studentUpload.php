@@ -55,7 +55,7 @@ $previousUpload = $uploadsDao->getUserUploadByFlag($_SESSION['userID'], $selecte
                                         if ($documentType->getId() == $selectedDocumentType) {
                                             echo "selected";
                                         }
-                                        echo ">" . $documentType->getFlagName() . "</option>";
+                                        echo ">" . $documentType->getName() . "</option>";
                                     }
                                 ?>
                             </select>

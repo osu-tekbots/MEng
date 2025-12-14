@@ -19,6 +19,10 @@ class Evaluation {
     /** @var string */
     private $dateCreated;
 
+    /** @var array  */
+    private $evaluationFlags = [];
+    //Array of EvaluationFlag objects associated with this evaluation
+
     /**
      * Constructor
      *
@@ -129,6 +133,54 @@ class Evaluation {
      */
     public function setDateCreated($dateCreated) {
         $this->dateCreated = $dateCreated;
+        return $this;
+    }
+
+    /**
+     * Get the value of evaluationFlags
+     *
+     * @return array of EvaluationFlag
+     */
+    public function getEvaluationFlags() {
+        return $this->evaluationFlags;
+    }
+
+    /**
+     * Returns the highest status EvaluationFlag associated with this Evaluation
+     * Returns null if no status flag is found
+     *
+     * @return EvaluationFlag|null
+     */
+    public function getHighestStatusFlag() {
+        $maxFlag = null;
+        foreach ($this->evaluationFlags as $flag) {
+            if ($flag->getType() === 'Status') {
+                if( $maxFlag === null || $flag->getArrangement() > $maxFlag->getArrangement() ) {
+                    $maxFlag = $flag;
+                }
+            }
+        }
+        return $maxFlag;
+    }
+    /**
+     * Set the value of evaluationFlags
+     *
+     * @param array of EvaluationFlag $evaluationFlags
+     * @return self
+     */
+    public function setEvaluationFlags($evaluationFlags) {
+        $this->evaluationFlags = $evaluationFlags;
+        return $this;
+    }
+
+    /**
+     * Add an EvaluationFlag to the evaluationFlags array
+     *
+     * @param EvaluationFlag $evaluationFlag
+     * @return self
+     */
+    public function addEvaluationFlag($evaluationFlag) {
+        $this->evaluationFlags[] = $evaluationFlag;
         return $this;
     }
 }

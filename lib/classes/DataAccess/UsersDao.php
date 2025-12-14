@@ -382,7 +382,7 @@ class UsersDao {
     public function getAllDepartmentFlags() {
         try {
             $sql = 'SELECT User_flags.* FROM User_flags ';
-            $sql .= 'WHERE User_flags.flag_type = "Department"';
+            $sql .= 'WHERE User_flags.type = "Department"';
 
             $result = $this->conn->query($sql);
 
@@ -561,8 +561,9 @@ class UsersDao {
      */
     public static function ExtractUserFlagFromRow($row) {
 		$userflag = new UserFlag($row['id']);
-        $userflag->setFlagName($row['flag_name'])
-            ->setFlagType($row['flag_type'])
+        $userflag->setName($row['name'])
+            ->setType($row['type'])
+            ->setArrangement($row['arrangement'])
             ->setIsActive($row['is_active']);
         
         return $userflag;

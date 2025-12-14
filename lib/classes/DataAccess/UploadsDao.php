@@ -180,7 +180,7 @@ class UploadsDao {
     public function getAllDocumentTypes() {
         try {
             $sql = 'SELECT * FROM Upload_flags ';
-            $sql .= 'WHERE flag_type = "doc_type"';
+            $sql .= 'WHERE type = "doc_type"';
             $result = $this->conn->query($sql);
 
             return \array_map('self::ExtractUploadFlagFromRow', $result);
@@ -375,8 +375,9 @@ class UploadsDao {
      */
     public static function ExtractUploadFlagFromRow($row) {
         $uploadflag = new UploadFlag($row['id']);
-        $uploadflag->setFlagName($row['flag_name'])
-            ->setFlagType($row['flag_type'])
+        $uploadflag->setName($row['name'])
+            ->setType($row['type'])
+            ->setArrangement($row['arrangement'])
             ->setIsActive($row['is_active']);
         
         return $uploadflag;
