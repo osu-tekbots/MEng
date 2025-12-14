@@ -61,7 +61,7 @@ class UserFlag {
      * @param string $name
      * @return self
      */
-    public function setFlagName($name) {
+    public function setName($name) {
         $this->name = $name;
         return $this;
     }
