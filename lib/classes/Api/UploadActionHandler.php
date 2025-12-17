@@ -51,13 +51,17 @@ class UploadActionHandler extends ActionHandler {
         }
 
         // Construct the path
-        mkdir($this->configManager->get('server.upload_file_path') . "/$userId" . "/$documentType", 0777, true); 
+        $basePath = $this->configManager->get('server.upload_file_path');
+        $targetDir = "$basePath/$userId/$documentType";
 
-        $filepath = 
-            $this->configManager->get('server.upload_file_path') . 
-            "/$userId" .
-            "/$documentType" .
-            "/";
+        // Check if directory exists; if not, create it
+        if (!is_dir($targetDir)) {
+            if (!mkdir($targetDir, 0777, true)) {
+                $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Failed to create upload directory'));
+            }
+        }
+
+        $filepath = $targetDir . "/";
         
         // Make sure we have a file
         if (!isset($_FILES['userUpload'])) {

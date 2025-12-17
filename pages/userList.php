@@ -54,8 +54,8 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                     // Filter just the "Role" type flags (ignoring Departments for this column)
                                     if ($flags) {
                                         foreach ($flags as $flag) {
-                                            if ($flag->getFlagType() == 'Role') {
-                                                $roles[] = $flag->getFlagName();
+                                            if ($flag->getType() == 'Role') {
+                                                $roles[] = $flag->getName();
                                             }
                                         }
                                     }

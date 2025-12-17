@@ -279,12 +279,11 @@ class UploadsDao {
         try {
 
             $sql = 'INSERT INTO Upload_flag_assignments ';
-            $sql .= '(fk_upload_id, fk_upload_flag_id, flag_value) ';
-            $sql .= 'VALUES (:fk_upload_id,:fk_upload_flag_id,:flag_value)';
+            $sql .= '(fk_upload_id, fk_upload_flag_id) ';
+            $sql .= 'VALUES (:fk_upload_id,:fk_upload_flag_id)';
             $params = array(
                 ':fk_upload_id' => $uploadId,
-                ':fk_upload_flag_id' => $uploadFlagId,
-                ':flag_value' => $flagValue
+                ':fk_upload_flag_id' => $uploadFlagId
             );
             $this->conn->execute($sql, $params);
 

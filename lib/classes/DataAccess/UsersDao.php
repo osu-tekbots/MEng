@@ -495,7 +495,7 @@ class UsersDao {
      */
     public function getAllRoleFlags() {
         try {
-            $sql = 'SELECT * FROM User_flags WHERE flag_type = "Role"';
+            $sql = 'SELECT * FROM User_flags WHERE type = "Role"';
             $result = $this->conn->query($sql);
             return \array_map('self::ExtractUserFlagFromRow', $result);
         } catch (\Exception $e) {
