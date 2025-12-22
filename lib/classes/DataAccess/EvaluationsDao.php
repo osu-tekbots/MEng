@@ -5,6 +5,7 @@ use Model\Evaluation;
 use Model\EvaluationRubricItem;
 use Model\EvaluationRubric;
 use Model\EvaluationFlag;
+use Model\EvaluationFlagAssignment;
 
 /**
  * Contains logic for database interactions with evaluations data in the database. 
@@ -72,6 +73,30 @@ class EvaluationsDao {
     }
 
     /**
+     * Gets an evaluation flag by its id.
+     *
+     * @param int $id the id of the evaluation flag
+     * @return \Model\EvaluationFlag|boolean an EvaluationFlag object if the query execution succeeds, false otherwise.
+     */
+    public function getEvaluationFlag($id) {
+        try {
+            $sql = 'SELECT * FROM Evaluation_flags WHERE id = :id';
+            $params = array(':id' => $id);
+            $result = $this->conn->query($sql, $params);
+
+            if (empty($result)) {
+                return false;
+            }
+
+            return self::ExtractEvaluationFlagFromRow($result[0]);
+        } catch (\Exception $e) {
+            $this->logError('Failed to get evaluation flag by id: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Gets an evaluation object by id the database.
      *
      * @param int $id the id of the evaluation
@@ -116,8 +141,6 @@ class EvaluationsDao {
             return false;
         }
     }
-
-
 
     /**
      * Gets evaluation objects by reviewer's userId the database.
@@ -273,6 +296,39 @@ class EvaluationsDao {
             return self::ExtractEvaluationFlagFromRow($result[0]);
         } catch (\Exception $e) {
             $this->logError('Failed to get status evaluation flag by arrangement: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Gets the status item (evaluation_flag_assignments) of the highest arrangement associated with the evaluation id.
+     *
+     * @param string $evaluationId the id of the evaluation
+     * @return EvaluationFlagAssignment|boolean an EvaluationFlagAssignment object if the query execution succeeds, false otherwise.
+     */
+    public function getHighestStatusAssignmentByEvaluationId($evaluationId) {
+        try {
+            // Select the assignment fields, join with flags to access arrangement, filter by ID and Type 'Status'
+            $sql = 'SELECT efa.* FROM Evaluation_flag_assignments efa ';
+            $sql .= 'JOIN Evaluation_flags ef ON efa.fk_evaluation_flag_id = ef.id ';
+            $sql .= 'WHERE efa.fk_evaluation_id = :evaluationId AND ef.type = :type ';
+            $sql .= 'ORDER BY ef.arrangement DESC ';
+            $sql .= 'LIMIT 1';
+
+            $params = array(
+                ':evaluationId' => $evaluationId,
+                ':type' => 'Status'
+            );
+            $result = $this->conn->query($sql, $params);
+
+            if (empty($result)) {
+                return false;
+            }
+
+            return self::ExtractEvaluationFlagAssignmentFromRow($result[0]);
+        } catch (\Exception $e) {
+            $this->logError('Failed to get highest status assignment by evaluation id: ' . $e->getMessage());
 
             return false;
         }
@@ -438,6 +494,20 @@ class EvaluationsDao {
             ->setIsActive($row['is_active']);
         
         return $evaluationflag;
+    }
+
+    /**
+     * Creates a new Evaluation Flag Assignment object by extracting the information from a row in the database.
+     *
+     * @param string[] $row a row from the database containing evaluation flag assignment information
+     * @return \Model\EvaluationFlagAssignment
+     */
+    public static function ExtractEvaluationFlagAssignmentFromRow($row) {
+        $assignment = new EvaluationFlagAssignment($row['id']);
+        $assignment->setFkEvaluationId($row['fk_evaluation_id'])
+            ->setFkEvaluationFlagId($row['fk_evaluation_flag_id']);
+
+        return $assignment;
     }
 
     /**

@@ -12,7 +12,7 @@ $uploadsDao = new UploadsDao($dbConn, $logger);
 // 1. Determine Server-Side Filters (Department Only)
 $filterDepartment = isset($_GET['department']) && $_GET['department'] != '' ? $_GET['department'] : null;
 
-// 2. Fetch Reviewers (We use this to find evaluations since there is no getAllEvaluations)
+// 2. Fetch Reviewers
 $reviewers = [];
 if ($filterDepartment) {
     $reviewers = $usersDao->getReviewersByDepartment($filterDepartment);
@@ -40,23 +40,29 @@ foreach ($reviewers as $reviewer) {
             $docType = $docTypeObj ? $docTypeObj->getName() : 'Unknown Document';
 
             // C. Fetch Reviewer Display Name
-            // Logic: Use Name, but if they never logged in (no last login?), show email? 
-            // Simplified: We usually just show "Name (Email)" to be safe, or just Name.
-            // Based on prompt: "Reviewer Name (email if reviewer never logged in)"
             $reviewerName = $reviewer->getFullName();
             if (empty(trim($reviewerName)) || $reviewer->getLastLogin() == null) {
                 $reviewerName = $reviewer->getEmail();
             }
 
             // D. Determine Status & Completion Date
-            // We check if a rubric exists for this evaluation.
-            $rubric = $evaluationsDao->getEvaluationRubricFromEvaluationId($eval->getId());
-            
             $status = 'Pending';
+            
+            // Use the new function to get the highest status assignment
+            $statusAssignment = $evaluationsDao->getHighestStatusAssignmentByEvaluationId($eval->getId());
+            if ($statusAssignment) {
+                // Fetch the flag name using the ID from the assignment
+                $flag = $evaluationsDao->getEvaluationFlag($statusAssignment->getFkEvaluationFlagId());
+                if ($flag) {
+                    $status = $flag->getName();
+                }
+            }
+
+            // We still check for a rubric to determine the completion date (if applicable)
+            $rubric = $evaluationsDao->getEvaluationRubricFromEvaluationId($eval->getId());
             $dateCompleted = '';
 
             if ($rubric) {
-                $status = 'Completed'; // Assuming existence of rubric means it was submitted
                 $rawDate = $rubric->getDateCreated();
                 if ($rawDate) {
                     $dateCompleted = date("m/d/Y g:i A", strtotime($rawDate));
@@ -129,8 +135,8 @@ include_once PUBLIC_FILES . '/modules/header.php';
                     <tbody>
                         <?php 
                             foreach ($flatEvaluations as $row) {
-                                // Status Badge Logic
-                                $badgeClass = ($row['status'] == 'Completed') ? 'bg-success' : 'bg-warning';
+                                // Status Badge Logic - Updated to check for "Complete" (DB value) vs "Completed"
+                                $badgeClass = ($row['status'] == 'Complete') ? 'bg-success' : 'bg-warning';
                                 
                                 echo '<tr>';
                                 echo '<td>' . htmlspecialchars($row['student_name']) . '</td>';
