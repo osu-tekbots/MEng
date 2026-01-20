@@ -105,7 +105,7 @@ class UploadActionHandler extends ActionHandler {
             $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Failed to assign flag to document database object'));
         }
 
-        $ok = move_uploaded_file($fileTmpName, $filepath . $upload->getId() . ".pdf");
+        $ok = move_uploaded_file($fileTmpName, $filepath . $upload->getId() );
         if (!$ok) {
             $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Failed to upload document'));
         }

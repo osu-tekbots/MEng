@@ -226,7 +226,7 @@ function renderAnswerInput($item) {
                 </h3>
 
                 <a class="fs-5 fw-semibold text-decoration-none"
-                href="<?php echo htmlspecialchars('./uploads' . $selectedUpload->getFilePath() . $selectedUpload->getFileName()); ?>">
+                href="<?php echo htmlspecialchars('./uploads' . $selectedUpload->getFilePath() . $selectedUpload->getId() ); ?>" download="<?php echo $selectedUpload->getFileName();?>">
                     <?php echo htmlspecialchars($selectedUpload->getFileName()); ?>
                 </a>
 

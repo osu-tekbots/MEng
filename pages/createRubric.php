@@ -8,6 +8,11 @@ $js = array(
    "https://cdn.ckeditor.com/ckeditor5/31.1.0/classic/ckeditor.js"
 );
 
+//TODO: Make this a 2 dimesional array
+//$allowedTypes = ['number'->"Number Scale", 'boolean'->"True/False", 'text'->"Text Entry"];
+
+$allowedTypes = ['number', 'boolean', 'text'];
+
 $rubricsDao = new RubricsDao($dbConn, $logger);
 
 // Handle form submissions (add/edit/delete/copy)
@@ -31,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($templateId) { 
             $template->setId($templateId);
         }
-        $allowedTypes = ['number', 'boolean', 'text'];
+
         if (!empty($_POST['itemName']) && $templateId !== null) {
             foreach ($_POST['itemName'] as $i => $name) {
                 if(trim($name) === '') {
