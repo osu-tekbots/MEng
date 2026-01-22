@@ -20,8 +20,7 @@ $css = array(
 $js = array(
 	'https://code.jquery.com/jquery-3.5.1.min.js',
 	'https://cdn.datatables.net/1.10.21/js/jquery.dataTables.js',
-	'https://cdn.datatables.net/buttons/1.6.2/js/dataTables.buttons.js',
-	"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+	'https://cdn.datatables.net/buttons/1.6.2/js/dataTables.buttons.js'
 );
 
 $evaluationsDao = new EvaluationsDao($dbConn, $logger);//Need entire evaluations object to extract necessary info for the rest
@@ -76,7 +75,7 @@ function getTableRow($evaluation, $student, $upload, $evaluationRubric) {
     $studentName = $student->getFirstName() . ' ' . $student-> getLastName();
     $evaluationLink = "<a href='evaluateRubrics.php?evaluationId=" . $evaluation->getId() . "'>".(
         ($evaluationRubric != false) ? $evaluationRubric -> getName() : "Not set")."</a>";
-    $uploadLink = "<a href='./uploads" . $upload->getFilePath() .$upload->getFileName()."'>" . $upload->getFileName() . "</a>";
+    $uploadLink = "<a download='" . $upload->getFileName() . "' href='./uploads" . $upload->getFilePath() .$upload->getId()."'>" . $upload->getFileName() . "</a>";
     $dateCreated = $evaluation->getDateCreated();
 
     $flag = $evaluation -> getHighestStatusFlag();

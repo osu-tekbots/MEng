@@ -146,9 +146,24 @@ function renderAnswerInput($item) {
         <?php break;
 
         /* ---------------------------------------------------------
-           NUMBER, 1-5 qualitative scale
+           NUMBER
         --------------------------------------------------------- */
         case "number": ?>
+            <?php $val = $item->getValue(); ?>
+            <div class="d-flex gap-2 flex-wrap">
+                <input type="number"
+                    class="form-control item-answer"
+                    id="<?= $id ?>_answer"
+                    name="<?= htmlspecialchars($name) ?>"
+                    value="<?= htmlspecialchars($val ?? '') ?>"
+                >
+            </div>
+        <?php break;
+
+        /* ---------------------------------------------------------
+           Likert5, 1-5 qualitative scale
+        --------------------------------------------------------- */
+        case "likert5": ?>
             <?php $val = $item->getValue(); 
             $options = [
                 0 => "N/A",
@@ -175,6 +190,37 @@ function renderAnswerInput($item) {
                 <?php endforeach; ?>
             </div>
         <?php break;
+
+        /* ---------------------------------------------------------
+           Likert3, 1-3 qualitative scale
+        --------------------------------------------------------- */
+        case "likert3": ?>
+            <?php $val = $item->getValue(); 
+            $options = [
+                0 => "N/A",
+                1 => "Disagree",
+                2 => "Neutral",
+                3 => "Agree"
+            ];?>
+            <div class="likert-scale d-flex gap-2 flex-wrap">
+                <?php foreach ($options as $value => $label): ?>
+                    <div class="form-check">
+                        <input  class="form-check-input"
+                            type="radio"
+                            name="<?= htmlspecialchars($name) ?>"
+                            id="<?= $id ?>_<?= $value ?>"
+                            value="<?= $value ?>" 
+                            <?= ($val == $value ? 'checked' : '') ?>>
+
+                        <label class="form-check-label" for="<?= $id ?>_<?= $value ?>">
+                            <?= htmlspecialchars($label) ?>
+                        </label>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php break;
+
+
 
         /* ---------------------------------------------------------
            DEFAULT → TEXTAREA
@@ -208,7 +254,7 @@ function renderAnswerInput($item) {
                         $upload = $uploadsDao->getUpload($evaluation->getFkUploadId());
                         $evaluationRubric = $evaluationsDao -> getEvaluationRubricFromEvaluationId($evaluation -> getId());
 
-                        $evaluationName = '['.$student->getFirstName() . '_' . $student-> getLastName() . "][" . $evaluationRubric->getName() ."][".$upload -> getFileName()."]";
+                        $evaluationName = '['.$student->getFirstName() . '_' . $student-> getLastName() . "][" . $evaluationRubric->getName() ."]";
 
                     ?>
                     <option value="<?php echo $evaluation->getId(); ?>" <?php if ($selectedTemplate && $evaluation->getId() == $selectedTemplate->getFkEvaluationId()) echo 'selected'; ?>>

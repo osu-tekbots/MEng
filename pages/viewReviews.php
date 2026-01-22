@@ -34,10 +34,22 @@ foreach ($reviewers as $reviewer) {
             $student = $usersDao->getUser($eval->getFkStudentId());
             $studentName = $student ? $student->getFullName() : 'Unknown Student';
 
-            // B. Fetch Document Type
-            $uploadId = $eval->getFkUploadId();
-            $docTypeObj = $uploadsDao->getDocumentType($uploadId);
-            $docType = $docTypeObj ? $docTypeObj->getName() : 'Unknown Document';
+            // B. Fetch Student Department (CHANGED from Document Type)
+            $studentDepartment = 'None Assigned';
+            if ($student) {
+                // Get all flags for the student
+                $studentFlags = $usersDao->getUserFlags($student->getId());
+                if ($studentFlags) {
+                    foreach ($studentFlags as $flag) {
+                        // Check if the flag is a Department type
+                        if ($flag->getType() === 'Department') {
+                            $studentDepartment = $flag->getName();
+                            // Requirement: Only show one if multiple exist
+                            break; 
+                        }
+                    }
+                }
+            }
 
             // C. Fetch Reviewer Display Name
             $reviewerName = $reviewer->getFullName();
@@ -46,7 +58,7 @@ foreach ($reviewers as $reviewer) {
             }
 
             // D. Determine Status & Completion Date
-            $status = 'Pending';
+            $status = 'temp';
             
             // Use the new function to get the highest status assignment
             $statusAssignment = $evaluationsDao->getHighestStatusAssignmentByEvaluationId($eval->getId());
@@ -73,7 +85,7 @@ foreach ($reviewers as $reviewer) {
             $flatEvaluations[] = [
                 'id' => $eval->getId(),
                 'student_name' => $studentName,
-                'document_type' => $docType,
+                'student_department' => $studentDepartment, // Updated key
                 'reviewer_name' => $reviewerName,
                 'status' => $status,
                 'date_completed' => $dateCompleted
@@ -126,10 +138,10 @@ include_once PUBLIC_FILES . '/modules/header.php';
                     <thead class="thead-light">
                         <tr>
                             <th scope="col">Student Name</th>
-                            <th scope="col">Document Type</th>
-                            <th scope="col">Reviewer Name</th>
+                            <th scope="col">Student Department</th> <th scope="col">Reviewer Name</th>
                             <th scope="col">Status</th>
                             <th scope="col">Date Completed</th>
+                            <th scope="col">Export Data</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -140,10 +152,11 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                 
                                 echo '<tr>';
                                 echo '<td>' . htmlspecialchars($row['student_name']) . '</td>';
-                                echo '<td>' . htmlspecialchars($row['document_type']) . '</td>';
+                                echo '<td>' . htmlspecialchars($row['student_department']) . '</td>'; // Updated Data
                                 echo '<td>' . htmlspecialchars($row['reviewer_name']) . '</td>';
                                 echo '<td class="text-center"><span class="badge ' . $badgeClass . ' p-2">' . $row['status'] . '</span></td>';
                                 echo '<td>' . $row['date_completed'] . '</td>';
+                                echo '<td> <button type = "button" class = "btn btn-success"> Export </button> </td>';
                                 echo '</tr>';
                             }
                         ?>

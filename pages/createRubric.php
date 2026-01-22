@@ -9,9 +9,9 @@ $js = array(
 );
 
 //TODO: Make this a 2 dimesional array
-//$allowedTypes = ['number'->"Number Scale", 'boolean'->"True/False", 'text'->"Text Entry"];
+$allowedTypes = ['number'=>"Number Scale", 'boolean'=>"True/False", 'text'=>"Text Entry", 'likert5'=>"Likert Scale (1-5)", 'likert3'=>"Likert Scale (1-3)"];
 
-$allowedTypes = ['number', 'boolean', 'text'];
+//$allowedTypes = ['number', 'boolean', 'text', 'likert5'];
 
 $rubricsDao = new RubricsDao($dbConn, $logger);
 
@@ -44,8 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $desc = $_POST['itemDesc'][$i] ?? '';
                 $type = $_POST['itemType'][$i] ?? '';
-                if (!in_array($type, $allowedTypes)) {
-                    $type = $allowedTypes[0]; // fallback to ''
+                $logger->info('Type: ' . $type);
+
+                if (!isset($allowedTypes[$type])) {
+                    $type = key($allowedTypes); // fallback to first type
                 }
                 $rubricsDao->createRubricTemplateItem($templateId, $name, $desc, $type);
             }
@@ -94,7 +96,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$allowedTypes = ['number', 'boolean', 'text'];
 $templates = $rubricsDao->getAllRubricTemplates();
 /*
 if ($logger) {
@@ -166,10 +167,10 @@ function buildTemplateItemRow($allowedTypes, $item = null)
         <div class="col-md-4 d-flex gap-2">
 
             <select name="itemType[]" class="form-select" required>
-                <?php foreach ($allowedTypes as $type): ?>
+                <?php foreach ($allowedTypes as $type => $label): ?>
                     <option value="<?= htmlspecialchars($type) ?>"
                             <?= ($item && $item->getAnswerType() == $type) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($type) ?>
+                        <?= htmlspecialchars($label) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
