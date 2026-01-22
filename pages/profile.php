@@ -3,10 +3,12 @@ include_once '../bootstrap.php';
 
 use DataAccess\UsersDao;
 use DataAccess\UploadsDao;
+use DataAccess\EvaluationsDao; // [1] Add Namespace
 
 // 1. Setup DAOs
 $usersDao = new UsersDao($dbConn, $logger);
 $uploadsDao = new UploadsDao($dbConn, $logger);
+$evaluationsDao = new EvaluationsDao($dbConn, $logger); // [2] Initialize DAO
 
 // 2. Handle Document Type Logic (from studentUpload.php)
 $selectedDocumentType = isset($_GET['documentType']) && !empty($_GET['documentType']) ? $_GET['documentType'] : 1;
@@ -37,8 +39,6 @@ if (!$userSelect) {
     }
 }
 
-
-
 if (!$hasPermissions || !$user) {
     echo '<div class="container-fluid">
             <div class="container mt-5 mb-5">
@@ -66,19 +66,29 @@ if ($userFlags) {
     }
 }
 
-// B. Fetch Document Types
-// If user is Admin, they should probably see ALL types so they can manage anything.
-// Otherwise, restrict based on the TARGET USER'S departments.
-if (isset($_SESSION['userIsAdmin']) && $_SESSION['userIsAdmin']) {
     $documentTypes = $uploadsDao->getAllDocumentTypes();
-} else {
-    // Regular users see only Global + Their Department types
-    $documentTypes = $uploadsDao->getDocumentTypesForDepartments($userDeptIds);
-}
 
-// C. Fetch Previous Uploads (FIXED)
+// C. Fetch Previous Uploads
 // We use $user->getId() (the profile being viewed) instead of $_SESSION['userID']
 $previousUpload = $uploadsDao->getUserUploadByFlag($user->getId(), $selectedDocumentType);
+
+// [3] Check for existing evaluations associated with this upload
+$uploadLocked = false;
+if ($previousUpload) {
+    // Get all evaluations for this student
+    $studentEvaluations = $evaluationsDao->getEvaluationsByStudentUserId($user->getId());
+    
+    // Check if any evaluation links to the current upload ID
+    if ($studentEvaluations) {
+        foreach ($studentEvaluations as $eval) {
+            if ($eval->getFkUploadId() == $previousUpload->getId()) {
+                $uploadLocked = true;
+                break;
+            }
+        }
+    }
+}
+
 
 // 6. Process Flags/Roles
 $allRoles = $usersDao->getAllRoleFlags();
@@ -88,8 +98,7 @@ $allDepartments = $usersDao->getAllDepartmentFlags();
 $userFlagIds = [];
 if ($userFlags && is_array($userFlags)) {
     foreach ($userFlags as $flag) {
-        // Cast to string to ensure strictly safe comparison later, 
-        // though in_array is usually loose enough.
+        // Cast to string to ensure strictly safe comparison later
         $userFlagIds[] = (string)$flag->getId();
     }
 }
@@ -190,34 +199,53 @@ if ($userFlags && is_array($userFlags)) {
                                         <div class="col-md-6 text-right">
                                             <div class="btn-group" role="group">
                                                 <a id="aUploadDownload" class="btn btn-sm btn-outline-primary">Download</a>
-                                                <a id="aUploadDelete" class="btn btn-sm btn-outline-danger">Delete</a>
+                                                
+                                                <?php // [4] Conditional rendering for Delete Button ?>
+                                                <?php if ($uploadLocked): ?>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="File is currently under evaluation">
+                                                        <i class="fas fa-lock"></i> Locked
+                                                    </button>
+                                                <?php else: ?>
+                                                    <a id="aUploadDelete" class="btn btn-sm btn-outline-danger">Delete</a>
+                                                <?php endif; ?>
+
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             <?php endif; ?>
 
-                            <div class="form-group row">
-                                <label for="userUpload" class="col-sm-3 col-form-label text-muted small text-uppercase font-weight-bold" id="userUploadLabel">
-                                    New File (PDF)
-                                </label>
-                                <div class="col-sm-9">
-                                    <div class="custom-file">
-                                        <input name="userUpload" type="file" class="form-control pt-1" id="userUpload" accept=".pdf, application/pdf" style="height: auto;">
-                                        <small class="form-text text-muted">Please ensure your file is in PDF format.</small>
+                            <?php // [5] Conditional rendering for New File Input ?>
+                            <?php if ($uploadLocked): ?>
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-info-circle mr-2"></i> 
+                                    <strong>Submission Locked:</strong> An evaluation has already been generated for this document. You cannot upload a new version or delete the existing file while an evaluation is active.
+                                </div>
+                            <?php else: ?>
+                                <div class="form-group row">
+                                    <label for="userUpload" class="col-sm-3 col-form-label text-muted small text-uppercase font-weight-bold" id="userUploadLabel">
+                                        New File (PDF)
+                                    </label>
+                                    <div class="col-sm-9">
+                                        <div class="custom-file">
+                                            <input name="userUpload" type="file" class="form-control pt-1" id="userUpload" accept=".pdf, application/pdf" style="height: auto;">
+                                            <small class="form-text text-muted">Please ensure your file is in PDF format.</small>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            <?php endif; ?>
 
                         </div>
 
                         <div class="card-footer bg-white text-right">
-                            <div class="btn-upload-submit d-inline-block">
-                                <span class="loader mr-2" id="btnUploadLoader" style="display:none;"></span>
-                                <button type="submit" class="btn btn-primary" id="btnUploadSubmit">
-                                    <i class="fas fa-save mr-1"></i> Upload Document
-                                </button>
-                            </div>
+                            <?php if (!$uploadLocked): ?>
+                                <div class="btn-upload-submit d-inline-block">
+                                    <span class="loader mr-2" id="btnUploadLoader" style="display:none;"></span>
+                                    <button type="submit" class="btn btn-primary" id="btnUploadSubmit">
+                                        <i class="fas fa-save mr-1"></i> Upload Document
+                                    </button>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </form>
@@ -225,7 +253,6 @@ if ($userFlags && is_array($userFlags)) {
             </div>
 
             <div class="col-lg-4">
-                
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-light">
                         <h5 class="mb-0">System Identifiers</h5>
@@ -250,24 +277,38 @@ if ($userFlags && is_array($userFlags)) {
                     </div>
                     <div class="card-body">
                         
-                        <h6 class="text-muted small text-uppercase font-weight-bold mb-2">Departments</h6>
+                        <h6 class="text-muted small text-uppercase font-weight-bold mb-2">Department</h6>
                         <div class="mb-3">
-                            <?php foreach ($allDepartments as $dept): ?>
-                                <?php 
-                                    $hasFlag = in_array($dept->getId(), $userFlagIds);
-                                    $btnStyle = $hasFlag ? 'btn-info' : 'btn-outline-info';
-                                    $action = $hasFlag ? 'remove' : 'add';
-                                ?>
-                                <button type="button" 
-                                        class="btn btn-sm <?php echo $btnStyle; ?> mb-1 btn-flag-toggle"
-                                        data-flag-id="<?php echo $dept->getId(); ?>"
-                                        data-user-id="<?php echo $user->getId(); ?>"
-                                        data-action="<?php echo $action; ?>"
-                                        data-type="info" 
-                                        <?php echo $btnDisabled; ?>>
-                                    <?php echo $dept->getName(); ?>
-                                </button>
-                            <?php endforeach; ?>
+                            <?php 
+                                // Logic to determine the currently selected department (if any)
+                                // We check if the user has a flag that matches a department ID
+                                $currentDeptId = '';
+                                if ($userFlagIds) {
+                                    foreach ($allDepartments as $dept) {
+                                        if (in_array($dept->getId(), $userFlagIds)) {
+                                            $currentDeptId = $dept->getId();
+                                            break; // Enforce single selection by taking the first match
+                                        }
+                                    }
+                                }
+                            ?>
+
+                            <select class="form-control" 
+                                    id="departmentSelect" 
+                                    data-user-id="<?php echo $user->getId(); ?>"
+                                    data-current-dept="<?php echo $currentDeptId; ?>"
+                                    onchange="updateDepartment(this)"
+                                    <?php echo $btnDisabled ?? ''; ?>>
+                                
+                                <option value="">Select Department...</option>
+                                <?php foreach ($allDepartments as $dept): ?>
+                                    <option value="<?php echo $dept->getId(); ?>" 
+                                        <?php echo ($currentDeptId == $dept->getId()) ? 'selected' : ''; ?>>
+                                        <?php echo $dept->getName(); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small class="form-text text-muted">Select a single department for this user.</small>
                         </div>
 
                         <hr>
@@ -278,15 +319,15 @@ if ($userFlags && is_array($userFlags)) {
                                 <?php 
                                     $hasFlag = in_array($role->getId(), $userFlagIds);
                                     $btnStyle = $hasFlag ? 'btn-secondary' : 'btn-outline-secondary';
-                                    $action = $hasFlag ? 'remove' : 'add';
+                                    $action = $hasFlag ? 'remove' : 'add'; // Still needed for the generic buttons
                                 ?>
                                 <button type="button" 
                                         class="btn btn-sm <?php echo $btnStyle; ?> mb-1 btn-flag-toggle"
                                         data-flag-id="<?php echo $role->getId(); ?>"
                                         data-user-id="<?php echo $user->getId(); ?>"
-                                        data-action="<?php echo $action; ?>"
+                                        data-action="<?php echo $action; ?>" 
                                         data-type="secondary"
-                                        <?php echo $btnDisabled; ?>>
+                                        <?php echo $btnDisabled ?? ''; ?>>
                                     <?php echo $role->getName(); ?>
                                 </button>
                             <?php endforeach; ?>
@@ -307,10 +348,59 @@ if ($userFlags && is_array($userFlags)) {
      */
     function onDocumentTypeChange() {
         const documentType = document.getElementById("documentType").value;
-        // Grab the ID from the hidden input already present in your form
         const userId = document.getElementById("userId").value; 
 
         window.location.replace("profile.php?documentType=" + documentType + "&userId=" + userId);
+    }
+
+    /**
+     * Handles the logic to swap departments.
+     * Removes the previously selected department flag and adds the new one.
+     */
+    async function updateDepartment(selectElem) {
+        const userId = selectElem.getAttribute('data-user-id');
+        const oldDeptId = selectElem.getAttribute('data-current-dept');
+        const newDeptId = selectElem.value;
+        
+        // UPDATED: Point to the root '/users' endpoint which the UserActionHandler listens to
+        const endpoint = '/users'; 
+
+        // Disable select while processing to prevent rapid clicks
+        selectElem.disabled = true;
+
+        try {
+            // 1. Remove the old department (if one was previously set)
+            if (oldDeptId && oldDeptId !== "") {
+                await api.post(endpoint, { 
+                    action: 'toggleUserFlag', // MATCHES CASE IN handleRequest()
+                    operation: 'remove',      // MATCHES PARAM IN handleToggleFlag()
+                    userId: userId, 
+                    flagId: oldDeptId 
+                });
+            }
+
+            // 2. Add the new department (if the user didn't just select the placeholder)
+            if (newDeptId && newDeptId !== "") {
+                await api.post(endpoint, { 
+                    action: 'toggleUserFlag', // MATCHES CASE IN handleRequest()
+                    operation: 'add',         // MATCHES PARAM IN handleToggleFlag()
+                    userId: userId, 
+                    flagId: newDeptId 
+                });
+            }
+
+            // 3. Update the tracker so the next change knows what to remove
+            selectElem.setAttribute('data-current-dept', newDeptId);
+            
+            // Optional: Provide visual feedback
+            // alert('Department updated');
+
+        } catch (err) {
+            console.error("Failed to update department", err);
+            alert("An error occurred while saving the department selection. Please refresh the page.");
+        } finally {
+            selectElem.disabled = false;
+        }
     }
 </script>
 

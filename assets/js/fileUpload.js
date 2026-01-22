@@ -237,7 +237,7 @@ $('.btn-flag-toggle').on('click', function(event) {
 
     // Prepare API Body
     let body = {
-        action: 'toggleUserFlag',
+        action: 'toggleAdminUserFlag',
         userId: userId,
         flagId: flagId,
         operation: currentAction

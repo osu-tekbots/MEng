@@ -1,6 +1,16 @@
 /*
 Global Styles to apply to the entire site
 */
+
+select.form-control {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23343a40' d='M2 0L0 2h4zm0 5L0 3h4z'/%3E%3C/svg%3E") no-repeat right .75rem center;
+    background-size: 8px 10px;
+    padding-right: 1.5rem; /* Make space for the arrow so text doesn't overlap */
+}
+
 a:hover {
     text-decoration: none;
 }

@@ -91,6 +91,25 @@ class UserActionHandler extends ActionHandler {
         $flagId = $this->getFromBody('flagId');
         $operation = $this->getFromBody('operation'); // 'add' or 'remove'
 
+        $success = false;
+        if ($operation === 'add') {
+            $success = $this->usersDao->addUserFlag($userId, $flagId);
+        } else {
+            $success = $this->usersDao->removeUserFlag($userId, $flagId);
+        }
+
+        if ($success) {
+            $this->respond(new Response(Response::OK, 'Permission updated'));
+        } else {
+            $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Database update failed'));
+        }
+    }
+
+    public function handleAdminToggleFlag() {
+        $userId = $this->getFromBody('userId');
+        $flagId = $this->getFromBody('flagId');
+        $operation = $this->getFromBody('operation'); // 'add' or 'remove'
+
         // SECURITY: Only Admins can change flags
         if (!isset($_SESSION['userIsAdmin']) || !$_SESSION['userIsAdmin']) {
             $this->respond(new Response(Response::UNAUTHORIZED, 'Only admins can modify permissions.'));
@@ -135,6 +154,9 @@ class UserActionHandler extends ActionHandler {
 
             case 'toggleUserFlag':
                 $this->handleToggleFlag();
+
+            case 'toggleAdminUserFlag':
+                $this->handleAdminToggleFlag();
 
             default:
                 $this->respond(new Response(Response::BAD_REQUEST, 'Invalid action on user resource'));
