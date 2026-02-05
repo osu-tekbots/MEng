@@ -20,10 +20,12 @@ do
     FILE_PERMISSIONS=$(stat -c "%a" "$f")
 
     if [ -f "$f" ] && [ "$FILE_PERMISSIONS" != '664' ]; then
+        chmod 664 "$f"
+
         echo
         echo "ERROR: Found file '$f' with incorrect permissions '$FILE_PERMISSIONS'"
         echo "Would you like to update this file's permissions to rw-rw-r--?"
-        read -p "y/n: " yn < /dev/tty
+        #read -p "y/n: " yn < /dev/tty
 
         if [ "$yn" = "y" ]; then
             chmod 664 "$f"
@@ -33,10 +35,12 @@ do
     fi
 
     if [ -d "$f" ] && [ "$FILE_PERMISSIONS" != "2775" ]; then
+        chmod 775 "$f"
+
         echo
         echo "ERROR: Found directory '$f' with incorrect permissions '$FILE_PERMISSIONS'"
         echo "Would you like to update this directory's permissions to rwxrwxr-x (775)?"
-        read -p "y/n: " yn < /dev/tty
+        #read -p "y/n: " yn < /dev/tty
 
         if [ "$yn" = "y" ]; then
             chmod 775 "$f"

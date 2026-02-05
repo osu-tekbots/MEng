@@ -145,15 +145,13 @@ class UsersDao {
      * @return boolean true if the user is a developer, 
      * false otherwise
      */
-    public function userIsDeveloper($uuid) {
+    public function userIsDeveloper($user_id) {
         try {
-
-            $user = $this->getUserByUuid($uuid);
 
             $sql = 'SELECT * FROM User_flag_assignments ';
             $sql .= 'WHERE fk_user_flag_id = 1 ';
             $sql .= 'AND fk_user_id = :user_id ';
-            $params = array(':user_id' => $user->getId());
+            $params = array(':user_id' => $user_id);
             $result = $this->conn->query($sql, $params);
             if (!$result || \count($result) == 0) {
                 return false;
@@ -174,15 +172,13 @@ class UsersDao {
      * @return boolean true if the user is a student, 
      * false otherwise
      */
-    public function userIsStudent($uuid) {
+    public function userIsStudent($user_id) {
         try {
-
-            $user = $this->getUserByUuid($uuid);
 
             $sql = 'SELECT * FROM User_flag_assignments ';
             $sql .= 'WHERE fk_user_flag_id = 2 ';
             $sql .= 'AND fk_user_id = :user_id ';
-            $params = array(':user_id' => $user->getId());
+            $params = array(':user_id' => $user_id);
             $result = $this->conn->query($sql, $params);
             if (!$result || \count($result) == 0) {
                 return false;
@@ -203,15 +199,13 @@ class UsersDao {
      * @return boolean true if the user is an admin, 
      * false otherwise
      */
-    public function userIsAdmin($uuid) {
+    public function userIsAdmin($user_id) {
         try {
-
-            $user = $this->getUserByUuid($uuid);
 
             $sql = 'SELECT * FROM User_flag_assignments ';
             $sql .= 'WHERE fk_user_flag_id = 3 ';
             $sql .= 'AND fk_user_id = :user_id ';
-            $params = array(':user_id' => $user->getId());
+            $params = array(':user_id' => $user_id);
             $result = $this->conn->query($sql, $params);
             if (!$result || \count($result) == 0) {
                 return false;
@@ -219,7 +213,7 @@ class UsersDao {
 
             return true;
         } catch (\Exception $e) {
-            $this->logError('Failed to fetch single user by UUID: ' . $e->getMessage());
+            $this->logError('Failed to fetch single user: ' . $e->getMessage());
 
             return false;
         }
@@ -232,15 +226,13 @@ class UsersDao {
      * @return boolean true if the user is a reviewer, 
      * false otherwise
      */
-    public function userIsReviewer($uuid) {
+    public function userIsReviewer($user_id) {
         try {
-
-            $user = $this->getUserByUuid($uuid);
 
             $sql = 'SELECT * FROM User_flag_assignments ';
             $sql .= 'WHERE fk_user_flag_id = 4 ';
             $sql .= 'AND fk_user_id = :user_id ';
-            $params = array(':user_id' => $user->getId());
+            $params = array(':user_id' => $user_id);
             $result = $this->conn->query($sql, $params);
             if (!$result || \count($result) == 0) {
                 return false;
@@ -248,7 +240,7 @@ class UsersDao {
 
             return true;
         } catch (\Exception $e) {
-            $this->logError('Failed to fetch single user by UUID: ' . $e->getMessage());
+            $this->logError('Failed to fetch single user: ' . $e->getMessage());
 
             return false;
         }
@@ -429,7 +421,7 @@ class UsersDao {
             $this->logger->info("Adding new user");
 
             $sql = 'INSERT INTO Users ';
-            $sql .= '(id, uuid, first_name, last_name, onid, email, last_login ';
+            $sql .= '(id, uuid, first_name, last_name, onid, email, last_login) ';
             $sql .= 'VALUES (:id,:uuid,:first_name,:last_name,:onid,:email,:last_login)';
             $params = array(
                 ':id' => $user->getId(),
@@ -452,11 +444,7 @@ class UsersDao {
 
     /**
      * Updates an existing user in the database. 
-     * 
-     * This function only updates trivial user information, such as the type, first and last names, salutation, majors, 
-     * affiliations, and contact information.
-     *
-     * @param \Model\User $user the user to update
+     * * @param \Model\User $user the user to update
      * @return boolean true if the query execution succeeds, false otherwise.
      */
     public function updateUser($user) {
@@ -467,7 +455,8 @@ class UsersDao {
             $sql .= 'first_name = :first_name, ';
             $sql .= 'last_name = :last_name, ';
             $sql .= 'onid = :onid, ';
-			$sql .= 'email = :email ';
+            $sql .= 'email = :email, '; 
+            $sql .= 'last_login = :last_login '; 
             $sql .= 'WHERE id = :id';
             $params = array(
                 ':uuid' => $user->getUuid(),
@@ -475,7 +464,9 @@ class UsersDao {
                 ':first_name' => $user->getFirstName(),
                 ':last_name' => $user->getLastName(),
                 ':onid' => $user->getOnid(),
-				':email' => $user->getEmail(),
+                ':email' => $user->getEmail(),
+                // CORRECTED LINE BELOW: Removed the leading backslash '\'
+                ':last_login' => QueryUtils::FormatDate($user->getLastLogin()), 
                 ':id' => $user->getId()
             );
             $this->conn->execute($sql, $params);

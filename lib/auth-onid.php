@@ -66,8 +66,7 @@ function createUserIfNeeded($dbConn, $logger, $onid) {
             ->setOnid($onid)
             ->setFirstName($_SESSION['auth']['firstName'])
             ->setLastName($_SESSION['auth']['lastName'])
-            ->setEmail($_SESSION['auth']['email'])
-            ->setAuthProvider(new UserAuthProvider(UserAuthProvider::ONID, 'ONID'));
+            ->setEmail($_SESSION['auth']['email']);
 
         $ok = $usersDao->addNewUser($user);
         if (!$ok) {

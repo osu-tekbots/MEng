@@ -50,6 +50,15 @@ class EvaluationRubric {
     }
 
     /**
+     * Get the list of rubric items
+     *
+     * @return array EvaluationRubricItem[]
+     */
+    public function getItems() {
+        return $this->items;
+    }
+
+    /**
      * Get the value of fkEvaluationId
      *
      * @return string

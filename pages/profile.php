@@ -196,20 +196,21 @@ if ($userFlags && is_array($userFlags)) {
                                             <h6 class="mb-1"><i class="fas fa-file-pdf text-danger mr-2"></i> File Previously Uploaded</h6>
                                             <small class="text-muted">Manage your existing submission for this document type.</small>
                                         </div>
-                                        <div class="col-md-6 text-right">
-                                            <div class="btn-group" role="group">
-                                                <a id="aUploadDownload" class="btn btn-sm btn-outline-primary">Download</a>
-                                                
-                                                <?php // [4] Conditional rendering for Delete Button ?>
-                                                <?php if ($uploadLocked): ?>
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="File is currently under evaluation">
-                                                        <i class="fas fa-lock"></i> Locked
-                                                    </button>
-                                                <?php else: ?>
-                                                    <a id="aUploadDelete" class="btn btn-sm btn-outline-danger">Delete</a>
-                                                <?php endif; ?>
-
-                                            </div>
+                                        <div class="btn-group" role="group">
+                                            <a href="<?php echo htmlspecialchars('./uploads' . $previousUpload->getFilePath() . $previousUpload->getId()); ?>" 
+                                            download="<?php echo htmlspecialchars($previousUpload->getFileName()); ?>" 
+                                            class="btn btn-sm btn-outline-primary">
+                                            Download
+                                            </a>
+                                            
+                                            <?php // [4] Conditional rendering for Delete Button ?>
+                                            <?php if ($uploadLocked): ?>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="File is currently under evaluation">
+                                                    <i class="fas fa-lock"></i> Locked
+                                                </button>
+                                            <?php else: ?>
+                                                <a id="aUploadDelete" class="btn btn-sm btn-outline-danger">Delete</a>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>

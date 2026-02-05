@@ -5,6 +5,7 @@ use DataAccess\UsersDao;
 use DataAccess\EvaluationsDao;
 use DataAccess\UploadsDao;
 
+
 $usersDao = new UsersDao($dbConn, $logger);
 $evaluationsDao = new EvaluationsDao($dbConn, $logger);
 $uploadsDao = new UploadsDao($dbConn, $logger);
@@ -156,7 +157,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                 echo '<td>' . htmlspecialchars($row['reviewer_name']) . '</td>';
                                 echo '<td class="text-center"><span class="badge ' . $badgeClass . ' p-2">' . $row['status'] . '</span></td>';
                                 echo '<td>' . $row['date_completed'] . '</td>';
-                                echo '<td> <button type = "button" class = "btn btn-success"> Export </button> </td>';
+                                echo '<td> <button data-id = "' . $row['id'] . '"  class = "btn btn-success export-btn"> Export </button> </td>';
                                 echo '</tr>';
                             }
                         ?>
@@ -170,6 +171,77 @@ include_once PUBLIC_FILES . '/modules/header.php';
 </div>
 
 <script>
+    async function getEvaluationData(evaluationId) {
+        try {
+            const body = { 
+                evaluationId: evaluationId,
+                action: 'getEvaluationData'
+            };
+
+            const res = await api.post('/evaluations.php', body);
+            return res.message;   // ← this now reaches the caller
+        } catch (err) {
+            console.log('Error fetching evaluation data:', err);
+            throw err;
+        }
+        
+    }
+    async function getEvaluationInfo(evaluationId) {
+        try {
+            const body = { 
+                evaluationId: evaluationId,
+                action: 'getEvaluationInfo'
+            };
+
+            const res = await api.post('/evaluations.php', body);
+            return res.message;   // ← this now reaches the caller
+        } catch (err) {
+            console.log('Error fetching evaluation data:', err);
+            throw err;
+        }
+    }
+    document.querySelectorAll('.export-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            
+            const excelData = await getEvaluationData(e.target.getAttribute('data-id'));
+            const evaluationInfo = await getEvaluationInfo(e.target.getAttribute('data-id'));
+
+
+            const filename = evaluationInfo["studentOnid"] + '_' + evaluationInfo["rubricName"] + '.xlsx';
+            //NOTE; dont know why this works but it does... might want to change in the future
+            const response = await fetch('./downloaders/download.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filename: filename, 
+                    data: excelData
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            // 3. Convert the response to a Blob (Binary Large Object)
+            const blob = await response.blob();
+
+            // 4. Create a temporary 'blob' URL
+            const downloadUrl = window.URL.createObjectURL(blob);
+
+            // 5. Create a hidden <a> tag and programmatically click it
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename; // The filename for the browser
+            document.body.appendChild(link);
+            link.click();
+
+            // 6. Cleanup: remove the link and revoke the URL
+            link.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+        });
+    });
+    
     function filterDepartments() {
         const deptValue = document.getElementById("departments").value;
         let url = "?"; 

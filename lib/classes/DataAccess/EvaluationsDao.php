@@ -352,7 +352,36 @@ class EvaluationsDao {
         return $this->addEvaluationFlagToEvaluation($evaluationId, $flag->getId());
     }
 
-    
+    public function getEvaluationDataForExport($evaluationId) {
+        try {
+            $evaluationRubric = $this -> getEvaluationRubricFromEvaluationId($evaluationId);
+            $evaluationItems = $evaluationRubric ? $evaluationRubric->getItems() : [];
+
+            $jsonArray = [];
+
+        foreach ($evaluationItems as $item) {
+            $jsonArray[] = [
+                'Name' => $item->getName(),
+                'Description' => $item->getDescription(),
+                'Answer Type' => $item->getAnswerType(),
+                'Answer Value' => $item->getValue(),
+                'Comments' => $item->getComments(),
+            ];
+        }
+
+        // Convert to JSON
+        $jsonData = json_encode($jsonArray);
+        $this -> logError('Exported Evaluation Data: ' . $jsonData);
+        return $jsonData;
+
+        } catch (\Exception $e) {
+            $this->logError('Failed to get evaluation data for export: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+
     /**
      * Creates a new Evaluation object from foreign keys.
      * Assigns pending flag to evaluation upon creation.

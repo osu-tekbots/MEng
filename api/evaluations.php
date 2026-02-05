@@ -12,9 +12,10 @@ use Api\EvaluationActionHandler;
 $evaluationsDao = new EvaluationsDao($dbConn, $logger);
 $uploadsDao = new UploadsDao($dbConn, $logger);
 $rubricsDao = new RubricsDao($dbConn, $logger);
+$usersDao = new UsersDao($dbConn, $logger);
 
 // Initialize Handler
-$handler = new EvaluationActionHandler($evaluationsDao, $rubricsDao, $uploadsDao, $logger);
+$handler = new EvaluationActionHandler($evaluationsDao, $rubricsDao, $uploadsDao, $usersDao, $logger);
 
 // Authenticate
 if ($isLoggedIn) {

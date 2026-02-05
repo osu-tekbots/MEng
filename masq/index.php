@@ -97,9 +97,9 @@ function startMasquerade($user, $dao) {
     $_SESSION['site'] = 'MEng';
     $_SESSION['userID'] = $user->getId();
 
-    $userIsAdmin = $dao->userIsAdmin($user->getUuid());
-    $userIsStudent = $dao->userIsStudent($user->getUuid());
-    $userIsReviewer = $dao->userIsReviewer($user->getUuid());
+    $userIsAdmin = $dao->userIsAdmin($user->getId());
+    $userIsStudent = $dao->userIsStudent($user->getId());
+    $userIsReviewer = $dao->userIsReviewer($user->getId());
 
     $_SESSION['userIsAdmin'] = $userIsAdmin;
     $_SESSION['userIsStudent'] = $userIsStudent;

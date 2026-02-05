@@ -22,9 +22,9 @@ if ($isLoggedIn) {
     
     $user = $usersDao->getUserByOnid($_SESSION['auth']['id']);
 
-    $userIsAdmin = $usersDao->userIsAdmin($user->getUuid());
-    $userIsStudent = $usersDao->userIsStudent($user->getUuid());
-    $userIsReviewer = $usersDao->userIsReviewer($user->getUuid());
+    $userIsAdmin = $usersDao->userIsAdmin($user->getId());
+    $userIsStudent = $usersDao->userIsStudent($user->getId());
+    $userIsReviewer = $usersDao->userIsReviewer($user->getId());
 
     $userTypeHtml .= '<select class="form-select" id="changeUserType" onChange="onChangeUserType()">';
     if ($userIsAdmin) {

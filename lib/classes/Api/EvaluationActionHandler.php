@@ -15,11 +15,15 @@ class EvaluationActionHandler extends ActionHandler {
     /** @var \DataAccess\UploadsDao */
     private $uploadsDao;
 
-    public function __construct($evaluationsDao, $rubricsDao, $uploadsDao, $logger) {
+    /** @var \DataAccess\UsersDao */
+    private $usersDao;
+
+    public function __construct($evaluationsDao, $rubricsDao, $uploadsDao, $usersDao, $logger) {
         parent::__construct($logger);
         $this->evaluationsDao = $evaluationsDao;
         $this->rubricsDao = $rubricsDao;
         $this->uploadsDao = $uploadsDao;
+        $this->usersDao = $usersDao;  
     }
 
     public function handleAssignEvaluations() {
@@ -84,6 +88,48 @@ class EvaluationActionHandler extends ActionHandler {
         }
     }
 
+    public function handleGetEvaluationData() {
+        $evaluationId = $this->getFromBody('evaluationId');
+
+        if (empty($evaluationId)) {
+            $this->respond(new Response(Response::BAD_REQUEST, 'Missing evaluation ID.'));
+            return;
+        }
+
+        try {
+            $evaluationData = $this->evaluationsDao->getEvaluationDataForExport($evaluationId);
+            $this->respond(new Response(Response::OK, $evaluationData));
+        } catch (\Exception $e) {
+            $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Error fetching evaluation data: ' . $e->getMessage()));
+        }
+    }
+
+    public function handleGetEvaluationInfo() {
+        $evaluationId = $this->getFromBody('evaluationId');
+
+        if (empty($evaluationId)) {
+            $this->respond(new Response(Response::BAD_REQUEST, 'Missing evaluation ID.'));
+            return;
+        }
+        try {
+            $evaluationRubric = $this->evaluationsDao->getEvaluationRubricFromEvaluationId($evaluationId);
+            $evaluation = $this->evaluationsDao->getEvaluationById($evaluationId);
+            $student = $this-> usersDao->getUser($evaluation->getFkStudentId());
+            $reviewer = $this->usersDao->getUser($evaluation->getFkReviewerId());
+            
+            $evaluationInfo = [
+                'rubricName' => $evaluationRubric->getName(),
+                'studentName' => $student->getFullName(),
+                'studentOnid' => $student->getOnid(),
+                'reviewerName' => $reviewer->getFullName()
+            ]; 
+
+            $this->respond(new Response(Response::OK, $evaluationInfo));
+        } catch (\Exception $e) {
+            $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Error fetching evaluation info: ' . $e->getMessage()));
+        }
+    }
+
     public function handleRequest() {
         if(!isset($this->requestBody['action'])){
              $this->respond(new Response(Response::BAD_REQUEST, 'Missing action parameter'));
@@ -94,6 +140,15 @@ class EvaluationActionHandler extends ActionHandler {
             case 'assignEvaluations':
                 $this->handleAssignEvaluations();
                 break;
+
+            case 'getEvaluationData':
+                $this -> handleGetEvaluationData();
+                break;
+
+            case 'getEvaluationInfo':
+                $this -> handleGetEvaluationInfo();
+                break;
+                
 
             default:
                 $this->respond(new Response(Response::BAD_REQUEST, 'Invalid action on evaluation resource'));

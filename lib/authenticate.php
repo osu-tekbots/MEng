@@ -19,9 +19,9 @@ if(isset($_SESSION['site']) && $_SESSION['site'] == 'MEng') {
                 
                 $logger->trace('Updating $_SESSION for this site using ONID: '.$_SESSION['auth']['id'].' (came from '.($_SESSION['site'] ?? 'no site').')');
                 $user = $usersDao->getUserByOnid($_SESSION['auth']['id']);
-                $userIsAdmin = $usersDao->userIsAdmin($user->getUuid());
-                $userIsStudent = $usersDao->userIsStudent($user->getUuid());
-                $userIsReviewer = $usersDao->userIsReviewer($user->getUuid());
+                $userIsAdmin = $usersDao->userIsAdmin($user->getId());
+                $userIsStudent = $usersDao->userIsStudent($user->getId());
+                $userIsReviewer = $usersDao->userIsReviewer($user->getId());
                 
                 $_SESSION['site'] = 'MEng';
                 $_SESSION['userID'] = $user->getId();
