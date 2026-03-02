@@ -6,19 +6,13 @@ class EvaluationRubricItem {
     private $id;
 
     /** @var int */
-    private $fkEvaluationRubricId;
+    private $fkEvaluationId;
 
-    /** @var string */
-    private $name;
+    /** @var RubricItem */
+    private $rubricItem;
 
-    /** @var string */
-    private $description;
-
-    /** @var string */
-    private $answerType;
-
-    /** @var string */
-    private $answerValue;
+    /** @var RubricItemOption */
+    private $rubricItemOption;
 
     /** @var string */
     private $comments;
@@ -53,102 +47,62 @@ class EvaluationRubricItem {
     }
 
     /**
-     * Get the value of fkEvaluationRubricId
+     * Get the value of fkEvaluationId
      *
      * @return int
      */
-    public function getFkEvaluationRubricId() {
-        return $this->fkEvaluationRubricId;
+    public function getFkEvaluationId() {
+        return $this->fkEvaluationId;
     }
 
     /**
-     * Set the value of fkEvaluationRubricId
+     * Set the value of fkEvaluationId
      *
-     * @param int $fkEvaluationRubricId
+     * @param int $fkEvaluationId
      * @return self
      */
-    public function setFkEvaluationRubricId($fkEvaluationRubricId) {
-        $this->fkEvaluationRubricId = $fkEvaluationRubricId;
+    public function setFkEvaluationId($fkEvaluationId) {
+        $this->fkEvaluationId = $fkEvaluationId;
         return $this;
     }
 
     /**
-     * Get the value of name
+     * Get the value of rubricItem
      *
-     * @return string
+     * @return RubricItem
      */
-    public function getName() {
-        return $this->name;
+    public function getRubricItem() {
+        return $this->rubricItem;
     }
 
     /**
-     * Set the value of name
+     * Set the value of rubricItem
      *
-     * @param string $name
+     * @param RubricItem $rubricItem
      * @return self
      */
-    public function setName($name) {
-        $this->name = $name;
+    public function setRubricItem($rubricItem) {
+        $this->rubricItem = $rubricItem;
         return $this;
     }
 
     /**
-     * Get the value of description
+     * Get the value of rubricItemOption
      *
-     * @return string
+     * @return RubricItemOption
      */
-    public function getDescription() {
-        return $this->description;
+    public function getRubricItemOption() {
+        return $this->rubricItemOption;
     }
 
     /**
-     * Set the value of description
+     * Set the value of rubricItemOption
      *
-     * @param string $description
+     * @param RubricItemOption $rubricItemOption
      * @return self
      */
-    public function setDescription($description) {
-        $this->description = $description;
-        return $this;
-    }
-
-    /**
-     * Get the value of answerType
-     *
-     * @return string
-     */
-    public function getAnswerType() {
-        return $this->answerType;
-    }
-
-    /**
-     * Set the value of answerType
-     *
-     * @param string $answerType
-     * @return self
-     */
-    public function setAnswerType($answerType) {
-        $this->answerType = $answerType;
-        return $this;
-    }
-
-    /**
-     * Get the value of value
-     *
-     * @return string
-     */
-    public function getValue() {
-        return $this->answerValue;
-    }
-
-    /**
-     * Set the value of value
-     *
-     * @param string $value
-     * @return self
-     */
-    public function setValue($value) {
-        $this->answerValue = $value;
+    public function setRubricItemOption($rubricItemOption) {
+        $this->rubricItemOption = $rubricItemOption;
         return $this;
     }
 

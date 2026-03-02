@@ -1,12 +1,12 @@
 <?php
 namespace Model;
 
-class RubricItemTemplate {
+class RubricItem {
     /** @var int */
     private $id;
 
     /** @var int */
-    private $fkRubricTemplateId;
+    private $fkRubricId;
 
     /** @var string */
     private $name;
@@ -14,13 +14,19 @@ class RubricItemTemplate {
     /** @var string */
     private $description;
 
-    /** @var string */
-    private $answerType;
+    /** @var bool */
+    private $commentRequired;
+
+	/**
+     * @var array RubricItemOption[]
+	 * Left as public for ease of use.
+     */
+    public $items = [];
 
     /**
      * Constructor
      *
-     * @param int|null $id Optional ID for initializing the rubric template item.
+     * @param int|null $id Optional ID for initializing the rubric  item.
      */
     public function __construct($id = null) {
         if ($id !== null) {
@@ -49,22 +55,22 @@ class RubricItemTemplate {
     }
 
     /**
-     * Get the value of fkRubricTemplateId
+     * Get the value of fkRubricId
      *
      * @return int
      */
-    public function getFkRubricTemplateId() {
-        return $this->fkRubricTemplateId;
+    public function getFkRubricId() {
+        return $this->fkRubricId;
     }
 
     /**
-     * Set the value of fkRubricTemplateId
+     * Set the value of fkRubricId
      *
-     * @param int $fkRubricTemplateId
+     * @param int $fkRubricId
      * @return self
      */
-    public function setFkRubricTemplateId($fkRubricTemplateId) {
-        $this->fkRubricTemplateId = $fkRubricTemplateId;
+    public function setFkRubricId($fkRubricId) {
+        $this->fkRubricId = $fkRubricId;
         return $this;
     }
 
@@ -109,22 +115,53 @@ class RubricItemTemplate {
     }
 
     /**
-     * Get the value of answerType
+     * Get the value of commentRequired
      *
-     * @return string
+     * @return bool
      */
-    public function getAnswerType() {
-        return $this->answerType;
+    public function getCommentRequired() {
+        return $this->commentRequired;
     }
 
     /**
-     * Set the value of answerType
+     * Set the value of commentRequired
      *
-     * @param string $answerType One of the valid enum values for the rubric item type
+     * @param bool $commentRequired
      * @return self
      */
-    public function setAnswerType($answerType) {
-        $this->answerType = $answerType;
+    public function setCommentRequired($commentRequired) {
+        $this->commentRequired = $commentRequired;
+        return $this;
+    }
+	
+	/**
+     * Get the array of items
+     *
+     * @return array RubricItem[]
+     */
+    public function getItemOptions() {
+        return $this->items;
+    }
+
+    /**
+     * Set the array of items
+     *
+     * @param array $items
+     * @return self
+     */
+    public function setItemOptions($items) {
+        $this->items = $items;
+        return $this;
+    }
+
+    /**
+     * Add an item to the items array
+     *
+     * @param RubricItem $item
+     * @return self
+     */
+    public function addItemOptions($item) {
+        $this->items[] = $item;
         return $this;
     }
 }

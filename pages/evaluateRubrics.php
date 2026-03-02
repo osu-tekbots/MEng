@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $postedTemplate = $evaluationsDao->getEvaluationRubricFromEvaluationId($evaluationId);
+        $postedTemplate = $evaluationsDao->getRubricFromEvaluationId($evaluationId);
         if ($postedTemplate && !empty($postedTemplate->items)) {
             foreach ($postedTemplate->items as $item) {
                 $itemId = $item->getId();
@@ -88,7 +88,7 @@ if (isset($_GET['evaluationId'])) {
     
     $selectedUpload = $uploadsDao -> getUpload($evaluationsDao -> getEvaluationById($_GET['evaluationId']) -> getFkUploadId());
 
-    $selectedTemplate = $evaluationsDao->getEvaluationRubricFromEvaluationId($_GET['evaluationId']);
+    $selectedTemplate = $evaluationsDao->getRubricFromEvaluationId($_GET['evaluationId']);
 
     if ($logger && $selectedTemplate) {
         //$logger->info('Selected Evaluation ID: ' . $selectedEvaluation->getId());
@@ -252,12 +252,12 @@ function renderAnswerInput($item) {
                     <?php 
                         $student = $usersDao->getUser($evaluation->getFkStudentId());
                         $upload = $uploadsDao->getUpload($evaluation->getFkUploadId());
-                        $evaluationRubric = $evaluationsDao -> getEvaluationRubricFromEvaluationId($evaluation -> getId());
+                        $evaluationRubric = $evaluationsDao -> getRubricFromEvaluationId($evaluation -> getId());
 
                         $evaluationName = '['.$student->getFirstName() . '_' . $student-> getLastName() . "][" . $evaluationRubric->getName() ."]";
 
                     ?>
-                    <option value="<?php echo $evaluation->getId(); ?>" <?php if ($selectedTemplate && $evaluation->getId() == $selectedTemplate->getFkEvaluationId()) echo 'selected'; ?>>
+                    <option value="<?php echo $evaluation->getId(); ?>" <?php if (isset($_GET['evaluationId']) && $evaluation->getId() == $_GET['evaluationId']) echo 'selected'; ?>>
                         <?php echo $evaluationName?> </option>
                 <?php endforeach; ?>
             </select>
@@ -280,7 +280,7 @@ function renderAnswerInput($item) {
             <br>
             <form method="POST" action="" id="rubricAnswersForm">
                 <input type="hidden" name="templateId" value="<?php echo $selectedTemplate->getId(); ?>">
-                <input type="hidden" name="evaluationId" value="<?php echo htmlspecialchars($selectedTemplate->getFkEvaluationId()); ?>">
+                <input type="hidden" name="evaluationId" value="<?php echo htmlspecialchars($_GET['evaluationId']); ?>">
                 
                 <!--Evaluation questions + answer box-->
 

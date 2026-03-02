@@ -275,7 +275,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                 <select id="rubrics" name="rubrics" class="form-control" required>
                     <option value="" selected disabled>Select Rubric...</option>
                     <?php 
-                        $rubrics = $rubricsDao->getAllRubricTemplates();
+                        $rubrics = $rubricsDao->getAllRubrics();
                         foreach ($rubrics as $rubric) {
                             echo '<option value="'. $rubric->getId() .'">'. $rubric->getName() .'</option>';
                         }

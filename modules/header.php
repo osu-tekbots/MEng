@@ -124,6 +124,8 @@ if($isLoggedIn) {
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <base href="<?php echo $baseUrl ?>" />
     <title><?php echo $title; ?></title>
+	
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     
     <?php
     // Include the CSS Stylesheets

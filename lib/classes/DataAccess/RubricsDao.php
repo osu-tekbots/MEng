@@ -1,8 +1,9 @@
 <?php
 namespace DataAccess;
 
-use Model\RubricTemplate;
-use Model\RubricItemTemplate;
+use Model\Rubric;
+use Model\RubricItem;
+use Model\RubricItemOption;
 use Model\EvaluationRubric;
 use Model\EvaluationRubricItem;
 
@@ -23,226 +24,451 @@ class RubricsDao {
         $this->echoOnError = $echoOnError;
     }
 
-    // --- RUBRIC TEMPLATE METHODS ---
-
-    public function getAllRubricTemplates() {
+    // --- RUBRIC METHODS ---
+//In use and tested (2/17/2026: Don)
+    public function getAllRubrics() {
         try {
-            $sql = 'SELECT * FROM Rubric_templates';
+            $sql = 'SELECT * FROM Rubrics';
             $result = $this->conn->query($sql);
-            $templates = array();
+            $rubrics = array();
             foreach ($result as $row) {
-                $template = self::ExtractRubricTemplateFromRow($row);
-                $template->items = $this->getRubricTemplateItems($template->getId());
-                $templates[] = $template;
+                $rubric = self::ExtractRubricFromRow($row);
+                $rubric->items = $this->getRubricItems($rubric->getId());
+                $rubrics[] = $rubric;
             }
-            return $templates;
+            return $rubrics;
         } catch (\Exception $e) {
-            $this->logError('Failed to get all rubric templates: ' . $e->getMessage());
+            $this->logError('Failed to get all rubrics: ' . $e->getMessage());
             return array();
         }
     }
-
-    public function getRubricTemplateById($id) {
+//In use and tested (2/17/2026: Don)
+    public function getRubricById($id) {
         try {
-            $sql = 'SELECT * FROM Rubric_templates WHERE id = :id';
+            $sql = 'SELECT * FROM Rubrics WHERE id = :id';
             $params = [':id' => $id];
             $result = $this->conn->query($sql, $params);
-            if (!$result || count($result) === 0) return false;
-            $template = self::ExtractRubricTemplateFromRow($result[0]);
-            $template->items = $this->getRubricTemplateItems($id);
-            return $template;
+            if (!$result || count($result) == 0) return false;
+            
+			$rubric = self::ExtractRubricFromRow($result[0]);
+			
+            $rubric->items = $this->getRubricItems($id);
+			
+            return $rubric;
         } catch (\Exception $e) {
-            $this->logError('Failed to get rubric template: ' . $e->getMessage());
+            $this->logError('Failed to get rubric : ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Adds a new RubricTemplate to the database.
-     * @param RubricTemplate $template
+     * Adds a new Rubric to the database.
+     * @param Rubric $rubric
      * @return bool
      */
-    public function addNewRubricTemplate($template) {
+    public function addNewRubric($rubric) {
         try {
-            $sql = 'INSERT INTO Rubric_templates (id, name, last_used, last_modified) VALUES (:id, :name, :last_used, :last_modified)';
+            $sql = 'INSERT INTO Rubrics (id, name, last_used, last_modified) VALUES (:id, :name, :last_used, :last_modified)';
             $params = [
-                ':id' => $template->getId(),
-                ':name' => $template->getName(),
-                ':last_used' => $template->getLastUsed(),
-                ':last_modified' => $template->getLastModified()
+                ':id' => $rubric->getId(),
+                ':name' => $rubric->getName(),
+                ':last_used' => $rubric->getLastUsed(),
+                ':last_modified' => $rubric->getLastModified()
             ];
             $this->conn->execute($sql, $params);
             return true; 
         } catch (\Exception $e) {
-            $this->logError('Failed to add new rubric template: ' . $e->getMessage());
+            $this->logError('Failed to add new rubric : ' . $e->getMessage());
             return false;
         }
     }
 
      /**
-     * Updates a RubricTemplate in the database.
-     * @param RubricTemplate $template
+     * Updates a Rubricin the database.
+     * @param Rubric $rubric
      * @return bool
      */
-    public function updateRubricTemplate($template) {
+    public function updateRubric($rubric) {
         try {
-            $sql = 'UPDATE Rubric_templates SET name = :name, last_used = :last_used, last_modified = :last_modified WHERE id = :id';
+            $sql = 'UPDATE Rubrics SET name = :name, last_used = :last_used, last_modified = :last_modified WHERE id = :id';
             $params = [
-                ':id' => $template->getId(),
-                ':name' => $template->getName(),
-                ':last_used' => $template->getLastUsed(),
-                ':last_modified' => $template->getLastModified()
+                ':id' => $rubric->getId(),
+                ':name' => $rubric->getName(),
+                ':last_used' => $rubric->getLastUsed(),
+                ':last_modified' => $rubric->getLastModified()
             ];
             $this->conn->execute($sql, $params);
             return true;
         } catch (\Exception $e) {
-            $this->logError('Failed to update rubric template: ' . $e->getMessage());
+            $this->logError('Failed to update rubric : ' . $e->getMessage());
             return false;
         }
     }
 
      /**
-     * Gets the last inserted rubric template id.
+     * Gets the last inserted rubric id.
      * @return int|null
      */
-    public function getLastInsertedRubricTemplateId() {
+    public function getLastInsertedRubricId() {
         try {
-            $sql = 'SELECT id FROM Rubric_templates ORDER BY id DESC LIMIT 1';
+            $sql = 'SELECT id FROM Rubrics ORDER BY id DESC LIMIT 1';
             $result = $this->conn->query($sql);
             if ($result && count($result) > 0) {
                 return $result[0]['id'];
             }
         } catch (\Exception $e) {
-            $this->logError('Failed to get last inserted rubric template id: ' . $e->getMessage());
+            $this->logError('Failed to get last inserted rubric id: ' . $e->getMessage());
         }
         return null;
     }
 
-    //public function deleteRubricTemplate($id), todo
+    //public function deleteRubric($id), todo
 
     ////////////////////////////////
-    /// Rubric template item functions
+    /// Rubric  item functions
     ////////////////////////////////
 
-    public function getRubricTemplateItems($templateId) {
+
+//In use and tested (2/17/2026: Don)
+    public function getRubricItems($rubricId) {
         try {
-            $sql = 'SELECT * FROM Rubric_item_templates WHERE fk_rubric_template_id = :tid';
-            $params = [':tid' => $templateId];
+            $sql = 'SELECT * FROM Rubric_items WHERE fk_rubric_id = :id';
+            $params = [':id' => $rubricId];
             $result = $this->conn->query($sql, $params);
-            return array_map('self::ExtractRubricTemplateItemFromRow', $result);
+			
+			$items = null;
+			foreach ($result as $row){
+				$item = self::ExtractRubricItemFromRow($row);
+				$item->items = $this->getRubricItemOptionsByItemId($item->getId());
+				$items[] = $item;
+			}
+            return $items;
         } catch (\Exception $e) {
-            $this->logError('Failed to get rubric template items: ' . $e->getMessage());
+            $this->logError('Failed to get rubric items: ' . $e->getMessage());
             return [];
         }
     }
 
+    public function getRubricItemById($id) {
+        try {
+            $sql = 'SELECT * FROM Rubric_items WHERE id = :id';
+            $params = [':id' => $id];
+            $result = $this->conn->query($sql, $params);
+            if (!$result || count($result) === 0) return false;
+            return self::ExtractRubricItemFromRow($result[0]);
+        } catch (\Exception $e) {
+            $this->logError('Failed to get rubric item by id: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     /**
-     * Creates a rubric template item given description, name, and answer type.
-     * @param int $templateId
+     * Creates a rubric  item given description, name, and answer type.
+     * @param int $rubricId
      * @param string $name
      * @param string $description
-     * @param string $answerType
-     * @return RubricTemplateItem|false
+     * @param bool $commentRequired
+     * @return RubricItem|false
      */
-    public function createRubricTemplateItem($templateId, $name, $description, $answerType) {
-        $item = new \Model\RubricItemTemplate();
-        if (func_num_args() === 4 && $templateId !== null) {
-            $item->setFkRubricTemplateId($templateId);
+    public function createRubricItem($rubricId, $name, $description, $commentRequired) {
+        $item = new RubricItem();
+        if (func_num_args() === 4 && $rubricId !== null) {
+            $item->setFkRubricId($rubricId);
         }
-        $item->setFkRubricTemplateId($templateId)
+        $item->setFkRubricId($rubricId)
             ->setName($name)
             ->setDescription($description)
-            ->setAnswerType($answerType);
-        if ($this->addRubricTemplateItem($item)) {
+            ->setCommentRequired($commentRequired);
+        if ($this->addRubricItem($item)) {
             return $item;
         }
         return false;
     }
     
     /**
-     * Adds a new RubricTemplateItem to the database.
-     * @param RubricTemplateItem $item
+     * Adds a new RubricItem to the database.
+     * @param RubricItem $item
      * @return bool
      */
-    public function addRubricTemplateItem($item) {
+    public function addRubricItem($item) {
         try {
-            $sql = 'INSERT INTO Rubric_item_templates (id, fk_rubric_template_id, name, description, answer_type) VALUES (:id, :fk_rubric_template_id, :name, :description, :answer_type)';
+            $sql = 'INSERT INTO Rubric_items (id, fk_rubric_id, name, description, comment_required) VALUES (:id, :fk_rubric_id, :name, :description, :comment_required)';
             $params = [
                 ':id' => $item->getId(),
-                ':fk_rubric_template_id' => $item->getFkRubricTemplateId(),
+                ':fk_rubric_id' => $item->getFkRubricId(),
                 ':name' => $item->getName(),
                 ':description' => $item->getDescription(),
-                ':answer_type' => $item->getAnswerType()
+                ':comment_required' => $item->getCommentRequired()
                 ];
             $this->conn->execute($sql, $params);
             return true;
         } catch (\Exception $e) {
-            $this->logError('Failed to add rubric template item: ' . $e->getMessage());
+            $this->logError('Failed to add rubric item: ' . $e->getMessage());
         }
     }
 
     /**
-     * Updates a RubricTemplateItem in the database.
-     * @param RubricTemplateItem $item
+     * Updates a RubricItem in the database.
+     * @param RubricItem $item
      * @return bool
      */
-    public function updateRubricTemplateItem($item) {
+    public function updateRubricItem($item) {
          try {
-            $sql = 'UPDATE Rubric_item_templates SET name = :name, description = :description, answer_type = :answer_type WHERE id = :id';
+            $sql = 'UPDATE Rubric_items SET name = :name, description = :description, comment_required = :comment_required WHERE id = :id';
              $params = [
                 ':id' => $item->getId(),
                 ':name' => $item->getName(),
                 ':description' => $item->getDescription(),
-                ':answer_type' => $item->getAnswerType()
+                ':comment_required' => $item->getCommentRequired()
                 ];
             $this->conn->execute($sql, $params);
             return true;
         } catch (\Exception $e) {
-            $this->logError('Failed to update rubric template item: ' . $e->getMessage());
+            $this->logError('Failed to update rubric item: ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Deletes a RubricTemplateItem by id.
+     * Deletes a RubricItem by id.
      * @param int $id
      * @return bool
      */
-    public function deleteRubricTemplateItem($id) {
+    public function deleteRubricItem($id) {
         try {
-            $sql = 'DELETE FROM Rubric_item_templates WHERE id = :id';
+            $sql = 'DELETE FROM Rubric_items WHERE id = :id';
             $params = [':id' => $id];
             $this->conn->execute($sql, $params);
             return true;
         } catch (\Exception $e) {
-            $this->logError('Failed to delete rubric template item: ' . $e->getMessage());
+            $this->logError('Failed to delete rubric  item: ' . $e->getMessage());
             return false;
         }
     }
 
-   
-
-    // --- EVALUATION RUBRIC COPYING LOGIC ---
+    ////////////////////////////////
+    /// Rubric Item Option CRUD
+    ////////////////////////////////
 
     /**
-     * Copies a Rubric Template and its items into a new Evaluation Rubric instance.
-     * @param string $evaluationId The ID of the evaluation to assign this rubric to.
-     * @param int $rubricTemplateId The ID of the template to copy.
-     * @return bool True on success, false on failure.
+     * Gets a RubricItemOption by id.
+     * @param int $id
+     * @return RubricItemOption|false
      */
-    public function createRubricForEvaluation($evaluationId, $rubricTemplateId) {
+    public function getRubricItemOptionById($id) {
         try {
-            // 1. Fetch the Source Template
-            $template = $this->getRubricTemplateById($rubricTemplateId);
-            if (!$template) {
-                $this->logError("Rubric Template ID $rubricTemplateId not found.");
+            $sql = 'SELECT * FROM Rubric_item_options WHERE id = :id';
+            $params = [':id' => $id];
+            $result = $this->conn->query($sql, $params);
+            if (!$result || count($result) === 0) return false;
+            return self::ExtractRubricItemOptionFromRow($result[0]);
+        } catch (\Exception $e) {
+            $this->logError('Failed to get rubric item option by id: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+
+//In use and tested (2/17/2026: Don)	
+	/**
+     * Gets all RubricItemOptions by RubricItem id.
+     * @param int $id
+     * @return RubricItemOption[] | false
+     */
+    public function getRubricItemOptionsByItemId($id) {
+        try {
+            $sql = 'SELECT * FROM Rubric_item_options WHERE fk_rubric_item_id = :id ORDER BY Title ASC';
+            $params = [':id' => $id];
+            $result = $this->conn->query($sql, $params);
+            if (!$result || count($result) === 0) return false;
+            $options = Array();
+			foreach ($result as $row) {
+                $option = self::ExtractRubricItemOptionFromRow($row);
+                $options[] = $option;
+            }
+            return $options;
+        } catch (\Exception $e) {
+            $this->logError('Failed to get rubric item option by id: ' . $e->getMessage());
+            return false;
+        }
+    }
+	
+	/**
+     * Gets all RubricItemOption by Rubric id.
+     * @param int $id
+     * @return RubricItemOption[] | false
+     */
+    public function getRubricItemOptionByRubricId($id) {
+        try {
+            $sql = 'SELECT * FROM Rubric_item_options WHERE fk_rubric_item_id = :id ORDER BY Title ASC';
+            $params = [':id' => $id];
+            $result = $this->conn->query($sql, $params);
+            if (!$result || count($result) === 0) return false;
+            $options = Array();
+			foreach ($result as $row) {
+                $option = self::ExtractRubricItemOptionFromRow($row);
+                $options[] = $option;
+            }
+            return $options;
+        } catch (\Exception $e) {
+            $this->logError('Failed to get rubric item option by id: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Creates a new RubricItemOption with the given values.
+     * @param int $fkRubricItemId
+     * @param string $value
+     * @param string $title
+     * @return RubricItemOption|false
+     */
+    public function createRubricItemOption($fkRubricItemId, $value, $title) {
+        $option = new \Model\RubricItemOption();
+        $option->setFkRubricItemId($fkRubricItemId)
+            ->setValue($value)
+            ->setTitle($title);
+        if ($this->addRubricItemOption($option)) {
+            return $option;
+        }
+        return false;
+    }
+
+    /**
+     * Adds a new RubricItemOption to the database.
+     * @param RubricItemOption $option
+     * @return bool
+     */
+    public function addRubricItemOption($option) {
+        try {
+            $sql = 'INSERT INTO Rubric_item_options (id, fk_rubric_item_id, value, title) VALUES (:id, :fk_rubric_item_id, :value, :title)';
+            $params = [
+                ':id' => $option->getId(),
+                ':fk_rubric_item_id' => $option->getFkRubricItemId(),
+                ':value' => $option->getValue(),
+                ':title' => $option->getTitle()
+            ];
+            $this->conn->execute($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to add rubric item option: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Updates a RubricItemOption in the database.
+     * @param RubricItemOption $option
+     * @return bool
+     */
+    public function updateRubricItemOption($option) {
+        try {
+            $sql = 'UPDATE Rubric_item_options SET fk_rubric_item_id = :fk_rubric_item_id, value = :value, title = :title WHERE id = :id';
+            $params = [
+                ':id' => $option->getId(),
+                ':fk_rubric_item_id' => $option->getFkRubricItemId(),
+                ':value' => $option->getValue(),
+                ':title' => $option->getTitle()
+            ];
+            $this->conn->execute($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to update rubric item option: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Deletes a RubricItemOption by id.
+     * @param int $id
+     * @return bool
+     */
+    public function deleteRubricItemOption($id) {
+        try {
+            $sql = 'DELETE FROM Rubric_item_options WHERE id = :id';
+            $params = [':id' => $id];
+            $this->conn->execute($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to delete rubric item option: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /*
+    Removed after big db change
+    public function addNewEvaluationRubricItem($item) {
+        try {
+            $sql = 'INSERT INTO Evaluation_rubric_items (fk_evaluation_rubric_id, name, description, answer_type) 
+                    VALUES (:rubricId, :name, :desc, :type)';
+            $params = [
+                ':rubricId' => $item->getFkEvaluationRubricId(),
+                ':name' => $item->getName(),
+                ':desc' => $item->getDescription(),
+                ':type' => $item->getAnswerType()
+            ];
+            $this->conn->execute($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to add evaluation rubric item: ' . $e->getMessage());
+            return false;
+        }
+    }
+    */
+//In use and tested (2/17/2026: Don)
+    public static function ExtractRubricFromRow($row) {
+        $rubric = new Rubric($row['id']);
+        $rubric->setName($row['name'])
+            ->setLastUsed($row['last_used'])
+            ->setLastModified($row['last_modified']);
+        return $rubric;
+    }
+//In use and tested (2/17/2026: Don)
+    public static function ExtractRubricItemFromRow($row) {
+        $item = new RubricItem($row['id']);
+        $item->setFkRubricId($row['fk_rubric_id'])
+            ->setName($row['name'])
+            ->setDescription($row['description'])
+            ->setCommentRequired($row['comment_required']);
+        return $item;
+    }
+//In use and tested (2/17/2026: Don)
+    public static function ExtractRubricItemOptionFromRow($row) {
+        $option = new RubricItemOption($row['id']);
+        $option->setFkRubricItemId($row['fk_rubric_item_id'])
+            ->setValue($row['value'])
+            ->setTitle($row['title']);
+        return $option;
+    }
+
+    private function logError($message) {
+        if ($this->logger != null) {
+            $this->logger->error($message);
+        }
+    }
+   
+    /*
+    // --- OLD EVALUATION RUBRIC LOGIC ---
+
+    /**
+     * Copies a Rubric  and its items into a new Evaluation Rubric instance.
+     * @param string $evaluationId The ID of the evaluation to assign this rubric to.
+     * @param int $rubricId The ID of the  to copy.
+     * @return bool True on success, false on failure.
+     
+    public function createRubricForEvaluation($evaluationId, $rubricId) {
+        try {
+            // 1. Fetch the Source 
+            $rubric = $this->getRubricById($rubricId);
+            if (!$rubric) {
+                $this->logError("Rubric  ID $rubricId not found.");
                 return false;
             }
 
             // 2. Create new EvaluationRubric Model
             $evalRubric = new EvaluationRubric();
             $evalRubric->setFkEvaluationId($evaluationId);
-            $evalRubric->setName($template->getName());
+            $evalRubric->setName($rubric->getName());
             $evalRubric->setDateCreated(date('Y-m-d H:i:s'));
 
             // 3. Save EvaluationRubric to DB
@@ -258,10 +484,10 @@ class RubricsDao {
             }
 
             // 5. Copy Items
-            $templateItems = $template->items; // Access public property populated by getRubricTemplateById
+            $rubricItems = $rubric->items; // Access public property populated by getRubricById
             
-            if (!empty($templateItems)) {
-                foreach ($templateItems as $tmplItem) {
+            if (!empty($rubricItems)) {
+                foreach ($rubricItems as $tmplItem) {
                     $newItem = new EvaluationRubricItem();
                     $newItem->setFkEvaluationRubricId($newRubricId);
                     $newItem->setName($tmplItem->getName());
@@ -298,24 +524,6 @@ class RubricsDao {
         }
     }
 
-    public function addNewEvaluationRubricItem($item) {
-        try {
-            $sql = 'INSERT INTO Evaluation_rubric_items (fk_evaluation_rubric_id, name, description, answer_type) 
-                    VALUES (:rubricId, :name, :desc, :type)';
-            $params = [
-                ':rubricId' => $item->getFkEvaluationRubricId(),
-                ':name' => $item->getName(),
-                ':desc' => $item->getDescription(),
-                ':type' => $item->getAnswerType()
-            ];
-            $this->conn->execute($sql, $params);
-            return true;
-        } catch (\Exception $e) {
-            $this->logError('Failed to add evaluation rubric item: ' . $e->getMessage());
-            return false;
-        }
-    }
-
     public function getLastInsertedEvaluationRubricId() {
         try {
             $sql = 'SELECT id FROM Evaluation_rubrics ORDER BY id DESC LIMIT 1';
@@ -329,13 +537,15 @@ class RubricsDao {
         return null;
     }
 
+    
+
     // --- STATIC EXTRACTORS ---
 
     /*
     Old versions
     public static function ExtractRubricFromRow($row) {
         $rubric = new Rubric($row['id']);
-        $rubric->setFkRubricTemplateId($row['fk_rubric_template_id'])
+        $rubric->setFkRubricId($row['fk_rubric_id'])
             ->setName($row['name'])
             ->setDateCreated($row['date_created'])
             ->setLastModified($row['last_modified']);
@@ -349,28 +559,6 @@ class RubricsDao {
             ->setDescription($row['description'])
             ->setAnswerType($row['answer_type']);
         return $item;
-    }*/
-
-    public static function ExtractRubricTemplateFromRow($row) {
-        $template = new RubricTemplate($row['id']);
-        $template->setName($row['name'])
-            ->setLastUsed($row['last_used'])
-            ->setLastModified($row['last_modified']);
-        return $template;
     }
-
-    public static function ExtractRubricTemplateItemFromRow($row) {
-        $item = new RubricItemTemplate($row['id']);
-        $item->setFkRubricTemplateId($row['fk_rubric_template_id'])
-            ->setName($row['name'])
-            ->setDescription($row['description'])
-            ->setAnswerType($row['answer_type']);
-        return $item;
-    }
-
-    private function logError($message) {
-        if ($this->logger != null) {
-            $this->logger->error($message);
-        }
-    }
+    */
 }

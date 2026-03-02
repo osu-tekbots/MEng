@@ -57,7 +57,7 @@ $evaluations = $evaluationsDao->getEvaluationsByReviewerUserId($_SESSION['userID
 foreach($evaluations as $evaluation) {
     $student = $usersDao->getUser($evaluation->getFkStudentId());
     $upload = $uploadsDao->getUpload($evaluation->getFkUploadId());
-    $evaluationRubric = $evaluationsDao -> getEvaluationRubricFromEvaluationId($evaluation -> getId());
+    $evaluationRubric = $evaluationsDao -> getRubricFromEvaluationId($evaluation -> getId());
 
     $tableHTML.= getTableRow($evaluation, $student, $upload, $evaluationRubric);
     

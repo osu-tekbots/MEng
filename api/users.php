@@ -8,9 +8,11 @@ include_once '../bootstrap.php';
 use Api\Response;
 use DataAccess\UsersDao;
 use Api\UserActionHandler;
+use DataAccess\DatabaseConnection;
 
-$usersDao = new UsersDao($dbConn, $logger);
-$handler = new UserActionHandler($usersDao, $logger);
+
+//$usersDao = new UsersDao($dbConn, $logger);
+$handler = new UserActionHandler($dbConn, $logger);
 
 if ($isLoggedIn) {
     $handler->handleRequest();

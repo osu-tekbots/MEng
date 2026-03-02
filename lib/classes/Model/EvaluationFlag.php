@@ -17,8 +17,6 @@ class EvaluationFlag {
     /** @var bool */
     private $isActive;
 
-
-
     /**
      * Constructor
      *

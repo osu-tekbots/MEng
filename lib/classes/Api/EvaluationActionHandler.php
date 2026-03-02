@@ -1,6 +1,10 @@
 <?php
 namespace Api;
 
+use DataAccess\EvaluationsDao;
+use DataAccess\RubricsDao;
+use DataAccess\UploadsDao;
+use DataAccess\UsersDao
 use Model\Evaluation;
 use Api\Response; 
 
@@ -18,12 +22,12 @@ class EvaluationActionHandler extends ActionHandler {
     /** @var \DataAccess\UsersDao */
     private $usersDao;
 
-    public function __construct($evaluationsDao, $rubricsDao, $uploadsDao, $usersDao, $logger) {
+    public function __construct($dbConn, $logger) {
         parent::__construct($logger);
-        $this->evaluationsDao = $evaluationsDao;
-        $this->rubricsDao = $rubricsDao;
-        $this->uploadsDao = $uploadsDao;
-        $this->usersDao = $usersDao;  
+        $this->evaluationsDao = new EvaluationsDao($dbConn);
+        $this->rubricsDao = new RubricsDao($dbConn);
+        $this->uploadsDao = new UploadsDao($dbConn);
+        $this->usersDao = new UsersDao($dbConn);  
     }
 
     public function handleAssignEvaluations() {
@@ -62,16 +66,7 @@ class EvaluationActionHandler extends ActionHandler {
 
             foreach ($reviewerIds as $reviewerId) {
                 try {
-                    $newEval = $this->evaluationsDao->createEvaluation($studentId, $reviewerId, $uploadId);
-
-                    if ($newEval) {
-                        $success = $this->rubricsDao->createRubricForEvaluation($newEval->getId(), $rubricId);
-                        if ($success) {
-                            $count++;
-                        } else {
-                            $errors[] = "Rubric copy failed for Eval ID: " . $newEval->getId();
-                        }
-                    }
+                    $newEval = $this->evaluationsDao->createEvaluation($studentId, $reviewerId, $uploadId, $rubricId);
 
                 } catch (\Exception $e) {
                     $errors[] = "DB Error (Student: $studentId, Reviewer: $reviewerId): " . $e->getMessage();
@@ -104,6 +99,7 @@ class EvaluationActionHandler extends ActionHandler {
         }
     }
 
+
     public function handleGetEvaluationInfo() {
         $evaluationId = $this->getFromBody('evaluationId');
 
@@ -112,13 +108,13 @@ class EvaluationActionHandler extends ActionHandler {
             return;
         }
         try {
-            $evaluationRubric = $this->evaluationsDao->getEvaluationRubricFromEvaluationId($evaluationId);
             $evaluation = $this->evaluationsDao->getEvaluationById($evaluationId);
+            $rubric = $this -> rubricsDao -> getRubricById($evaluation->getFkRubricId());
             $student = $this-> usersDao->getUser($evaluation->getFkStudentId());
             $reviewer = $this->usersDao->getUser($evaluation->getFkReviewerId());
             
             $evaluationInfo = [
-                'rubricName' => $evaluationRubric->getName(),
+                'rubricName' => $rubric->getName(),
                 'studentName' => $student->getFullName(),
                 'studentOnid' => $student->getOnid(),
                 'reviewerName' => $reviewer->getFullName()

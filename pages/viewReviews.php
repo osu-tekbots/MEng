@@ -72,11 +72,11 @@ foreach ($reviewers as $reviewer) {
             }
 
             // We still check for a rubric to determine the completion date (if applicable)
-            $rubric = $evaluationsDao->getEvaluationRubricFromEvaluationId($eval->getId());
+            $rubric = $evaluationsDao->getRubricFromEvaluationId($eval->getId());
             $dateCompleted = '';
 
             if ($rubric) {
-                $rawDate = $rubric->getDateCreated();
+                $rawDate = $rubric->getLastModified();
                 if ($rawDate) {
                     $dateCompleted = date("m/d/Y g:i A", strtotime($rawDate));
                 }

@@ -2,8 +2,8 @@
 namespace DataAccess;
 
 use Model\Evaluation;
+use Model\Rubric;
 use Model\EvaluationRubricItem;
-use Model\EvaluationRubric;
 use Model\EvaluationFlag;
 use Model\EvaluationFlagAssignment;
 
@@ -165,30 +165,31 @@ class EvaluationsDao {
         }
     }
 
-
-    public function getEvaluationRubricsByReviewerUserId($userId) {
+    //Kind of a rubric dao function 
+    public function getRubricsByReviewerUserId($userId) {
         try {
             $evaluations = $this->getEvaluationsByReviewerUserId($userId);
             $rubrics = [];
             foreach ($evaluations as $evaluation) {
-                $rubric = $this->getEvaluationRubricFromEvaluationId($evaluation->getId());
+                $rubric = $this->getRubricFromEvaluationId($evaluation->getId());
                 if ($rubric) {
                     $rubrics[] = $rubric;
                 }
             }
-            return $rubrics;
+            return $rubric;
         } catch (\Exception $e) {
-            $this->logError('Failed to get evaluation rubrics from reviewer id: ' . $e->getMessage());
+            $this->logError('Failed to get rubrics from reviewer id: ' . $e->getMessage());
 
             return false;
         }
     }
 
 
-    public function getEvaluationRubricFromEvaluationId($evaluationId) {
+    public function getRubricFromEvaluationId($evaluationId) {
         try {
-            $sql = 'SELECT * FROM Evaluation_rubrics ';
-            $sql .= 'WHERE fk_evaluation_id = :evaluationId';
+            $sql = 'SELECT * FROM Rubrics 
+                    JOIN Evaluations on Rubrics.id = Evaluations.fk_rubric_id;
+                    WHERE Evaluations.id = :evaluationId';
             $params = array(
                 ':evaluationId' => $evaluationId
             );
@@ -197,28 +198,55 @@ class EvaluationsDao {
             // $this -> logError(json_encode($result[0]));
             if (!$result) return false;
             
-            $template = $this -> ExtractEvaluationRubricFromRow($result[0]);
-            $template -> items = $this->getEvaluationRubricTemplateItems($template->getId());
-            return $template;
+            $rubric = $this -> ExtractRubricFromRow($result[0]);
+            $rubric->items = $this->getRubricItems($rubric->getId());
+            return $rubric;
         } catch (\Exception $e) {
-            $this->logError('Failed to get evaluation rubric from evaluation id: ' . $e->getMessage());
+            $this->logError('Failed to get rubric from evaluation id: ' . $e->getMessage());
 
             return false;
         }
     }
 
-    public function getEvaluationRubricTemplateItems($evaluationRubricId) {
+    public function getRubricItems($rubricId) {
+        try {
+            $sql = 'SELECT * FROM Rubric_items WHERE fk_rubric_id = :id';
+            $params = [':id' => $rubricId];
+            $result = $this->conn->query($sql, $params);
+            return array_map('self::ExtractRubricItemFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to get rubric items: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function buildEvaluationRubricItemObjectFromRow($row) {
+        $item = new EvaluationRubricItem($row['id']);
+
+        $item->setFkEvaluationRubricId($row['fk_evaluation_id']);
+        $item -> setComments($row['comments']);
+
+        $fkRubricItem = $this -> getRubricItemById($row['fk_rubric_item_id']);
+        $fkRubricItemOption = $this -> getRubricItemOptionById($row['fk_rubric_item_option_id']);
+
+        $item->setFkRubricItem($fkRubricItem);
+        $item->setFkRubricItemOption($fkRubricItemOption);
+
+        return $item;
+    }
+
+    public function getEvaluationRubricItemsForEvaluation($evaluationId) {
         try {
             $sql = 'SELECT * FROM Evaluation_rubric_items ';
-            $sql .= 'WHERE fk_evaluation_rubric_id = :evaluationRubricId';
+            $sql .= 'WHERE fk_evaluation_id = :evaluationId';
             $params = array(
-                ':evaluationRubricId' => $evaluationRubricId
+                ':evaluationId' => $evaluationId
             );
             $result = $this->conn->query($sql, $params);
 
-            return \array_map('self::ExtractEvaluationRubricItemFromRow', $result);
+            return \array_map('self::buildEvaluationRubricItemObjectFromRow', $result);
         } catch (\Exception $e) {
-            $this->logError('Failed to get evaluation rubric template items: ' . $e->getMessage());
+            $this->logError('Failed to get evaluation rubric rubric items: ' . $e->getMessage());
 
             return false;
         }
@@ -234,13 +262,14 @@ class EvaluationsDao {
      */
     public function addNewEvaluation($evaluation) {
         $sql = 'INSERT INTO Evaluations ';
-        $sql .= '(id, fk_student_id, fk_reviewer_id, fk_upload_id, date_created) ';
-        $sql .= 'VALUES (:id, :fk_student_id, :fk_reviewer_id, :fk_upload_id, :date_created)';
+        $sql .= '(id, fk_student_id, fk_reviewer_id, fk_upload_id, fk_rubric_id, date_created) ';
+        $sql .= 'VALUES (:id, :fk_student_id, :fk_reviewer_id, :fk_upload_id, :fk_rubric_id, :date_created)';
         $params = array(
             ':id' => $evaluation->getId(),
             ':fk_student_id' => $evaluation->getFkStudentId(),
             ':fk_reviewer_id' => $evaluation->getFkReviewerId(),
             ':fk_upload_id' => $evaluation->getFkUploadId(),
+            ':fk_rubric_id' => $evaluation->getFkRubricId(),
             ':date_created' => $evaluation->getDateCreated()
         );
         $this->conn->execute($sql, $params);
@@ -354,18 +383,20 @@ class EvaluationsDao {
 
     public function getEvaluationDataForExport($evaluationId) {
         try {
-            $evaluationRubric = $this -> getEvaluationRubricFromEvaluationId($evaluationId);
-            $evaluationItems = $evaluationRubric ? $evaluationRubric->getItems() : [];
+            $evaluationItems = $this->getEvaluationRubricItemsForEvaluation($evaluationId);
 
             $jsonArray = [];
 
-        foreach ($evaluationItems as $item) {
+        foreach ($evaluationItems as $evaluationItem) {
+            $item = $evaluationItem -> getRubricItem();
+            $option = $evaluationItem -> getRubricItemOption();
             $jsonArray[] = [
                 'Name' => $item->getName(),
                 'Description' => $item->getDescription(),
-                'Answer Type' => $item->getAnswerType(),
-                'Answer Value' => $item->getValue(),
-                'Comments' => $item->getComments(),
+                'Answer Title' => $option->getTitle(),
+                'Answer Value' => $option->getValue(),
+                'Comments' => $evaluationItem->getComments(),
+                'Comments Required' => $item->getCommentsRequired()
             ];
         }
 
@@ -381,13 +412,12 @@ class EvaluationsDao {
         }
     }
 
-
     /**
      * Creates a new Evaluation object from foreign keys.
      * Assigns pending flag to evaluation upon creation.
      * 
      */
-    public function createEvaluation($studentId, $reviewerId, $uploadId) {
+    public function createEvaluation($studentId, $reviewerId, $uploadId, $rubricId) {
         // 1. Generate a random 8-character ID
         $id = bin2hex(random_bytes(4));
 
@@ -399,7 +429,8 @@ class EvaluationsDao {
         $evaluation->setFkStudentId($studentId)
                     ->setFkReviewerId($reviewerId)
                     ->setFkUploadId($uploadId)
-                    ->setDateCreated($dateCreated);
+                    ->setDateCreated($dateCreated)
+                    ->setFkRubricId($rubricId);
 
         $evaluationFlag = $this->getStatusEvaluationFlagByArrangement(1); // 1 corresponds to "Pending" status flag
         if ($evaluationFlag) {
@@ -418,36 +449,6 @@ class EvaluationsDao {
         return false;
     }
 
-    /**
-     * Assigns a specific rubric template to an evaluation.
-     * Note: In a full system, this might involve copying rubric items. 
-     * Here we assume a direct link or simple creation for the sake of the assignment flow.
-     */
-    public function assignRubricToEvaluation($evaluationId, $rubricTemplateId) {
-        try {
-            // We need to fetch the template name to insert into Evaluation_rubrics
-            // or simply link them. This SQL assumes we are creating a new rubric instance
-            // linked to the evaluation based on the selected ID.
-            $sql = 'INSERT INTO Evaluation_rubrics (id, fk_evaluation_id, name, date_created) 
-                    SELECT :id, :evalId, name, NOW() 
-                    FROM Rubrics WHERE id = :rubricId';
-            
-            $id = bin2hex(random_bytes(4));
-            
-            $params = array(
-                ':id' => $id,
-                ':evalId' => $evaluationId,
-                ':rubricId' => $rubricTemplateId
-            );
-
-            $this->conn->execute($sql, $params);
-            return true;
-        } catch (\Exception $e) {
-            $this->logError('Failed to assign rubric: ' . $e->getMessage());
-            return false;
-        }
-    }
-
     /*
         Updates the value and comments of an evaluation rubric item. 
         Expected that the rubric item is already in the database.
@@ -456,9 +457,9 @@ class EvaluationsDao {
     */
     public function setEvaluationRubricItem($evaluationRubricItem) {
         try {
-            $sql = 'UPDATE Evaluation_rubric_items SET answer_value = :value, comments = :comments WHERE id = :id';
+            $sql = 'UPDATE Evaluation_rubric_items SET fk_rubric_item_id = :fk_rubric_item_id, comments = :comments WHERE id = :id';
             $params = array(
-                ':value' => $evaluationRubricItem->getValue(),
+                ':fk_rubric_item_id' => $evaluationRubricItem->getRubricItem()->getId(),
                 ':id' => $evaluationRubricItem->getId(),
                 ':comments' => $evaluationRubricItem->getComments()
             );
@@ -474,7 +475,7 @@ class EvaluationsDao {
     public static function ExtractEvaluationRubricItemFromRow($row) {
         $item = new EvaluationRubricItem($row['id']);
         //$this->logError(json_encode($row));
-        $item->setFkEvaluationRubricId($row['fk_evaluation_rubric_id'])
+        $item->setFkEvaluationRubricId($row['fk_evaluation_id'])
                 ->setName($row['name'])
                 ->setDescription($row['description'])
                 ->setAnswerType($row['answer_type'])
@@ -484,13 +485,13 @@ class EvaluationsDao {
         return $item;
     }
 
-    public static function ExtractEvaluationRubricFromRow($row) {
-        $evaluationrubric = new EvaluationRubric($row['id']);
-        $evaluationrubric->setFkEvaluationId($row['fk_evaluation_id'])
-            ->setName($row['name'])
-            ->setDateCreated($row['date_created']);
-
-        return $evaluationrubric;
+    //Duplicate function from Rubrics Dao; makes more sense to just return rubric id for eval dao functions
+    public static function ExtractRubricFromRow($row) {
+        $rubric = new Rubric($row['id']);
+        $rubric->setName($row['name'])
+            ->setLastUsed($row['last_used'])
+            ->setLastModified($row['last_modified']);
+        return $rubric;
     }
 
     /**
@@ -504,6 +505,7 @@ class EvaluationsDao {
         $evaluation->setFkStudentId($row['fk_student_id'])
             ->setFkReviewerId($row['fk_reviewer_id'])
             ->setFkUploadId($row['fk_upload_id'])
+            ->setFkRubricId($row['fk_rubric_id'])
             ->setDateCreated($row['date_created']);
         
         return $evaluation;

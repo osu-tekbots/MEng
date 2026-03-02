@@ -1,6 +1,7 @@
 <?php
 namespace Api;
 
+use DataAccess\UsersDao;
 use Model\User;
 
 /**
@@ -17,9 +18,9 @@ class UserActionHandler extends ActionHandler {
      * @param \DataAccess\UsersDao $dao the data access object for users
      * @param \Util\Logger $logger the logger to use for logging information about actions
      */
-    public function __construct($usersDao, $logger) {
+    public function __construct($dbConn, $logger) {
         parent::__construct($logger);
-        $this->usersDao = $usersDao;
+        $this->usersDao = new UsersDao($dbConn);
     }
 
     /**
@@ -93,7 +94,8 @@ class UserActionHandler extends ActionHandler {
 
         $success = false;
         if ($operation === 'add') {
-            $success = $this->usersDao->addUserFlag($userId, $flagId);
+            //What if this flag already exists?
+			$success = $this->usersDao->addUserFlag($userId, $flagId);
         } else {
             $success = $this->usersDao->removeUserFlag($userId, $flagId);
         }

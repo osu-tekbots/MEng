@@ -17,6 +17,9 @@ class Evaluation {
     private $fkUploadId;
 
     /** @var string */
+    private $fkRubricId;
+
+    /** @var string */
     private $dateCreated;
 
     /** @var array  */
@@ -113,6 +116,26 @@ class Evaluation {
      */
     public function setFkUploadId($fkUploadId) {
         $this->fkUploadId = $fkUploadId;
+        return $this;
+    }
+
+    /**
+     * Get the value of fkRubricId
+     *
+     * @return string
+     */
+    public function getfkRubricId() {
+        return $this->fkRubricId;
+    }
+
+    /**
+     * Set the value of fkRubricId
+     *
+     * @param string $fkRubricId
+     * @return self
+     */
+    public function setFkRubricId($fkRubricId) {
+        $this->fkRubricId = $fkRubricId;
         return $this;
     }
 
