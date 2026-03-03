@@ -4,7 +4,7 @@ namespace Api;
 use DataAccess\EvaluationsDao;
 use DataAccess\RubricsDao;
 use DataAccess\UploadsDao;
-use DataAccess\UsersDao
+use DataAccess\UsersDao;
 use Model\Evaluation;
 use Api\Response; 
 
@@ -77,9 +77,9 @@ class EvaluationActionHandler extends ActionHandler {
         if ($count > 0 && empty($errors)) {
             $this->respond(new Response(Response::OK, "Successfully created $count evaluations."));
         } elseif ($count > 0 && !empty($errors)) {
-            $this->respond(new Response(Response::OK, "Created $count evaluations with errors: " . implode('; ', $errors)));
+            $this->respond(new Response(Response::OK, "Created $count evaluations with errors: " . json_encode($errors)));
         } else {
-            $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, "Failed. Errors: " . implode('; ', $errors)));
+            $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, "Failed. Errors: " . json_encode($errors)));
         }
     }
 

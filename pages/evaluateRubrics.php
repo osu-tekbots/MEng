@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Prefer loading the selected evaluation rubric so we process every item
     $evaluationId = $_POST['evaluationId'] ?? '';
     $answers = $_POST['answers'] ?? [];
+    //Answers needs to hold ids for options? Or we can just hold the rubric items whole
     $comments = $_POST['comments'] ?? [];
 
     $logger -> info(json_encode($_POST));
@@ -44,9 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $postedTemplate = $evaluationsDao->getRubricFromEvaluationId($evaluationId);
-        if ($postedTemplate && !empty($postedTemplate->items)) {
-            foreach ($postedTemplate->items as $item) {
+        $postedRubric = $evaluationsDao->getRubricFromEvaluationId($evaluationId);
+        if ($postedRubric && !empty($postedRubric->items)) {
+            foreach ($postedRubric->items as $item) {
                 $itemId = $item->getId();
 
                 // Lookup posted values by raw id key. Use null if absent (eg. unchecked radio)

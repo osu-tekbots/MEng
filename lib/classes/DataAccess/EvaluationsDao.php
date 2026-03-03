@@ -219,6 +219,15 @@ class EvaluationsDao {
             return [];
         }
     }
+    //DUPLICATE FROM RubricsDao; consider refactor to avoid code duplication
+    public static function ExtractRubricItemFromRow($row) {
+        $item = new RubricItem($row['id']);
+        $item->setFkRubricId($row['fk_rubric_id'])
+            ->setName($row['name'])
+            ->setDescription($row['description'])
+            ->setCommentRequired($row['comment_required']);
+        return $item;
+    }
 
     private function buildEvaluationRubricItemObjectFromRow($row) {
         $item = new EvaluationRubricItem($row['id']);
