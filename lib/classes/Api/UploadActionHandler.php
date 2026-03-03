@@ -2,6 +2,8 @@
 namespace Api;
 
 use Model\Upload;
+use DataAccess\UploadsDao;
+use DataAccess\UsersDao;
 
 /**
  * Defines the logic for how to handle AJAX requests made to modify upload information.
@@ -17,16 +19,10 @@ class UploadActionHandler extends ActionHandler {
     /** @var \Util\ConfigManager */
     private $configManager;
 
-    /**
-     * Constructs a new instance of the action handler for requests on upload resources.
-     *
-     * @param \DataAccess\UploadsDao $dao the data access object for uploads
-     * @param \Util\Logger $logger the logger to use for logging information about actions
-     */
-    public function __construct($uploadsDao, $usersDao, $configManager, $logger) {
+    public function __construct($dbConn, $configManager, $logger) {
         parent::__construct($logger);
-        $this->uploadsDao = $uploadsDao;
-        $this->usersDao = $usersDao;
+        $this->uploadsDao = new UploadsDao($dbConn);
+        $this->usersDao = new UsersDao($dbConn);
         $this->configManager = $configManager;
     }
 

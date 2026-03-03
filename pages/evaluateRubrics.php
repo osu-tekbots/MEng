@@ -7,6 +7,9 @@ use DataAccess\UsersDao;
 use Model\Evaluation;
 use Model\EvaluationRubric;
 use Model\EvaluationRubricItem;
+use Model\RubricItem;
+use Model\RubricItemOption;
+use DataAccess\RubricsDao;
 
 $js = array(
    "https://cdn.ckeditor.com/ckeditor5/31.1.0/classic/ckeditor.js"
@@ -16,7 +19,7 @@ $js = array(
 $evaluationsDao = new EvaluationsDao($dbConn, $logger);
 $usersDao = new UsersDao($dbConn, $logger); //Need first name, last name
 $uploadsDao = new UploadsDao($dbConn, $logger);//Need upload name and upload file path
-
+$rubricsDao = new RubricsDao($dbConn, $logger);
 //Evaluations assigned to reviewer
 $evaluations = $evaluationsDao->getEvaluationsByReviewerUserId($_SESSION['userID']);
 
@@ -48,29 +51,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $postedRubric = $evaluationsDao->getRubricFromEvaluationId($evaluationId);
         if ($postedRubric && !empty($postedRubric->items)) {
             foreach ($postedRubric->items as $item) {
-                $itemId = $item->getId();
+                $rubricItemId = $item->getId();
 
                 // Lookup posted values by raw id key. Use null if absent (eg. unchecked radio)
-                $value = array_key_exists($itemId, $answers) ? $answers[$itemId] : null;
-                $comment = array_key_exists($itemId, $comments) ? $comments[$itemId] : null;
+                $value = array_key_exists($rubricItemId, $answers) ? $answers[$rubricItemId] : null;
+                $comment = array_key_exists($rubricItemId, $comments) ? $comments[$rubricItemId] : null;
 
-                $evalItem = new EvaluationRubricItem($itemId);
-                $evalItem->setValue($value)
-                         ->setComments($comment);
-
-                if ($evaluationsDao->setEvaluationRubricItem($evalItem)) {
-                    $updated++;
-                }
-            }
-        } else {
-            // Fallback: process any posted answers (legacy)
-            foreach ($answers as $itemId => $value) {
-                $evalItem = new EvaluationRubricItem($itemId);
-                $evalItem->setValue($value)
-                         ->setComments($comments[$itemId] ?? null);
-
-                if ($evaluationsDao->setEvaluationRubricItem($evalItem)) {
-                    $updated++;
+                $evalItem = $evaluationsDao->getEvaluationRubricItemByEvalAndRubricItem($evaluationId, $rubricItemId);
+                
+                if ($evalItem) {
+                    $evalItem->setComments($comment);
+                    $optionModel = new RubricItemOption($value);
+                    $evalItem->setRubricItemOption($optionModel);
+                    if ($evaluationsDao->setEvaluationRubricItem($evalItem)) {
+                        $updated++;
+                    }
+                } else {
+                    $evalItem = new EvaluationRubricItem();
+                    $evalItem-> setFkEvaluationId($evaluationId);
+                    
+                    $itemModel = new RubricItem($rubricItemId);
+                    $evalItem->setRubricItem($itemModel);
+                    
+                    $optionModel = new RubricItemOption($value);
+                    $evalItem->setRubricItemOption($optionModel);
+                    $evalItem->setComments($comment);
+                    
+                    if ($evaluationsDao->insertEvaluationRubricItem($evalItem)) {
+                        $updated++;
+                    }
                 }
             }
         }
@@ -90,154 +99,54 @@ if (isset($_GET['evaluationId'])) {
     $selectedUpload = $uploadsDao -> getUpload($evaluationsDao -> getEvaluationById($_GET['evaluationId']) -> getFkUploadId());
 
     $selectedTemplate = $evaluationsDao->getRubricFromEvaluationId($_GET['evaluationId']);
-
     if ($logger && $selectedTemplate) {
-        //$logger->info('Selected Evaluation ID: ' . $selectedEvaluation->getId());
-        $logger->info('Selected Evaluation ID: ' . $_GET['evaluationId']);
-        $logger->info('Selected upload: ' . $selectedUpload -> getFilePath().$selectedUpload->getFileName());
 
+        $logger->info('Selected Evaluation ID: ' . $_GET['evaluationId']);
+        $logger->info('Selected Template Name: ' . $selectedTemplate->getName());
+        $logger->info('Selected Template Items: ' . count($selectedTemplate->items));
+        $logger->info('Selected upload: ' . $selectedUpload -> getFilePath().$selectedUpload->getFileName());
+        
+        // Debugging items list
+        if (isset($selectedTemplate->items) && !empty($selectedTemplate->items)) {
+            $logger->info('Rubric Template has ' . count($selectedTemplate->items) . ' items.');
+            // foreach($selectedTemplate->items as $idx => $ti) {
+            //      $logger->info('   Item ' . $idx . ': ID=' . $ti->getId() . ', Name=' . $ti->getName());
+            // }
+        } else {
+            $logger->error('Rubric Template items array is missing or empty.');
+        }
+
+    } else {
+        $logger->error('Failed to load selectedTemplate for evaluation ID: ' . $_GET['evaluationId']);
     }
 }
 
 include_once PUBLIC_FILES . '/modules/header.php';
 ?>
 
-<?php
-function renderAnswerInput($item) {
-    $type = $item->getAnswerType();
-    $rawId = $item->getId();
-    $id   = htmlspecialchars($rawId);
-    $name = 'answers[' . $rawId . ']';
-    switch ($type) {
 
-        /* ---------------------------------------------------------
-           TEXT INPUT
-        --------------------------------------------------------- */
-        case "text": ?>
-            <textarea
-                class="form-control item-answer"
-                id="<?= $id ?>_answer"
-                name="<?= htmlspecialchars($name) ?>"
-                rows="3"
-            ><?= htmlspecialchars($item->getValue() ?? '') ?></textarea>
-        <?php break;
-
-        /* ---------------------------------------------------------
-           BOOLEAN (TRUE / FALSE)
-        --------------------------------------------------------- */
-        case "boolean": ?>
-            <?php $val = $item->getValue(); ?>
-            <div class="form-check form-check-inline">
-                  <input class="form-check-input"
-                      type="radio"
-                      name="<?= htmlspecialchars($name) ?>"
-                       id="<?= $id ?>_true"
-                       value="true" <?= ($val === 'true' ? 'checked' : '') ?>>
-                <label class="form-check-label" for="<?= $id ?>_true">True</label>
-            </div>
-
-            <div class="form-check form-check-inline">
-                  <input class="form-check-input"
-                      type="radio"
-                      name="<?= htmlspecialchars($name) ?>"
-                       id="<?= $id ?>_false"
-                       value="false" <?= ($val === 'false' ? 'checked' : '') ?>>
-                <label class="form-check-label" for="<?= $id ?>_false">False</label>
-            </div>
-        <?php break;
-
-        /* ---------------------------------------------------------
-           NUMBER
-        --------------------------------------------------------- */
-        case "number": ?>
-            <?php $val = $item->getValue(); ?>
-            <div class="d-flex gap-2 flex-wrap">
-                <input type="number"
-                    class="form-control item-answer"
-                    id="<?= $id ?>_answer"
-                    name="<?= htmlspecialchars($name) ?>"
-                    value="<?= htmlspecialchars($val ?? '') ?>"
-                >
-            </div>
-        <?php break;
-
-        /* ---------------------------------------------------------
-           Likert5, 1-5 qualitative scale
-        --------------------------------------------------------- */
-        case "likert5": ?>
-            <?php $val = $item->getValue(); 
-            $options = [
-                0 => "N/A",
-                1 => "Strongly disagree",
-                2 => "Disagree",
-                3 => "Neutral",
-                4 => "Agree",
-                5 => "Strongly agree"
-            ];?>
-            <div class="likert-scale d-flex gap-2 flex-wrap">
-                <?php foreach ($options as $value => $label): ?>
-                    <div class="form-check">
-                        <input  class="form-check-input"
-                            type="radio"
-                            name="<?= htmlspecialchars($name) ?>"
-                            id="<?= $id ?>_<?= $value ?>"
-                            value="<?= $value ?>" 
-                            <?= ($val == $value ? 'checked' : '') ?>>
-
-                        <label class="form-check-label" for="<?= $id ?>_<?= $value ?>">
-                            <?= htmlspecialchars($label) ?>
-                        </label>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php break;
-
-        /* ---------------------------------------------------------
-           Likert3, 1-3 qualitative scale
-        --------------------------------------------------------- */
-        case "likert3": ?>
-            <?php $val = $item->getValue(); 
-            $options = [
-                0 => "N/A",
-                1 => "Disagree",
-                2 => "Neutral",
-                3 => "Agree"
-            ];?>
-            <div class="likert-scale d-flex gap-2 flex-wrap">
-                <?php foreach ($options as $value => $label): ?>
-                    <div class="form-check">
-                        <input  class="form-check-input"
-                            type="radio"
-                            name="<?= htmlspecialchars($name) ?>"
-                            id="<?= $id ?>_<?= $value ?>"
-                            value="<?= $value ?>" 
-                            <?= ($val == $value ? 'checked' : '') ?>>
-
-                        <label class="form-check-label" for="<?= $id ?>_<?= $value ?>">
-                            <?= htmlspecialchars($label) ?>
-                        </label>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php break;
-
-
-
-        /* ---------------------------------------------------------
-           DEFAULT → TEXTAREA
-        --------------------------------------------------------- */
-        default: ?>
-            <textarea
-                class="form-control item-answer"
-                id="<?= $id ?>_answer"
-                name="<?= htmlspecialchars($name) ?>"
-                rows="3"
-            ><?= htmlspecialchars($item->getValue() ?? '') ?></textarea>
-        <?php
-    }
+<style>
+.rubric-btn {
+    background-color: #f8f9fa;
+    color: #495057;
+    border: 2px solid #e9ecef;
+    transition: all 0.2s ease-in-out;
+    font-size: 1.05rem;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    cursor: pointer;
 }
-?>
-
+.rubric-btn:hover {
+    background-color: #4d99e6ff;
+    border-color: #4d99e6ff;
+}
+.btn-check:checked + .rubric-btn {
+    background-color: #198754 !important; /* Bootstrap Success Green */
+    color: white !important;
+    border-color: #198754 !important;
+    box-shadow: inset 0 3px 5px rgba(0,0,0,0.125);
+}
+</style>
 
 <div class="container mt-4">
     <h2>Review Document</h2>
@@ -284,52 +193,75 @@ function renderAnswerInput($item) {
                 <input type="hidden" name="evaluationId" value="<?php echo htmlspecialchars($_GET['evaluationId']); ?>">
                 
                 <!--Evaluation questions + answer box-->
-
-                <?php foreach ($selectedTemplate -> items as $item): ?>
-                    <!-- Question:: -->
-
+                <?php $logger->info('Iterating through ' . count($selectedTemplate->items) . ' items for rendering.'); ?>
+                <?php foreach ($selectedTemplate -> items as $item): 
+                    $options = $rubricsDao->getRubricItemOptionsByItemId($item->getId());
+                    if (!$options) {
+                        $logger->error('No options found for item ID: ' . $item->getId());
+                    } else {
+                         $logger->info('Found ' . count($options) . ' options for item ID ' . $item->getId());
+                    }
+                    $existingItem = $evaluationsDao->getEvaluationRubricItemByEvalAndRubricItem($_GET['evaluationId'], $item->getId());
+                    $currentOptionId = $existingItem && $existingItem->getRubricItemOption() ? $existingItem->getRubricItemOption()->getId() : null;
+                    $currentComment = $existingItem ? $existingItem->getComments() : '';
+                    $rawId = $item->getId();
+                    $name = 'answers[' . $rawId . ']';
+                ?>
                     <div class="row mb-5">
-                        <!-- Left column: Name and Description (12/12) -->
-                        <div class="card col-12">
-                            <div class="card-header mb-1 d-flex align-items-center">
-                                <div class="me-3">
-                                    <strong><?= htmlspecialchars($item->getName()) ?></strong>
-                                </div>
-
-                                <?php if (strtolower($item->getAnswerType()) !== 'text'): ?>
-                                    <div class="ms-auto flex-shrink-0">
-                                        <?= renderAnswerInput($item) ?>
-                                    </div>
-                                <?php endif; ?>
+                        <div class="card col-12 p-0 border-primary">
+                            <div class="card-header bg-primary text-white mb-1">
+                                <strong><?= htmlspecialchars($item->getName()) ?></strong>
                             </div>
 
                             <div class="card-body">
-                                <?= $item->getDescription() ?>
+                                <div class="mb-4">
+                                    <?= $item->getDescription() ?>
+                                </div>
+                                
+                                <?php 
+                                $optionCount = $options ? count($options) : 0; 
+                                if ($optionCount > 2): 
+                                ?>
+                                    <div class="d-flex w-100 gap-2 mb-4 flex-wrap">
+                                        <?php foreach ($options as $opt): ?>
+                                            <div class="flex-fill" style="flex-basis: 0; min-width: 150px;">
+                                                <input class="btn-check" type="radio" name="<?= htmlspecialchars($name) ?>" id="<?= htmlspecialchars($rawId . '_' . $opt->getId()) ?>" value="<?= htmlspecialchars($opt->getId()) ?>" <?= ($currentOptionId == $opt->getId() ? 'checked' : '') ?> required>
+                                                <label class="btn rubric-btn w-100 h-100 d-flex align-items-center justify-content-center text-center p-3" for="<?= htmlspecialchars($rawId . '_' . $opt->getId()) ?>">
+                                                    <?= htmlspecialchars($opt->getTitle()) ?>
+                                                </label>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="row">
+                                    <?php if ($optionCount > 0 && $optionCount <= 2): ?>
+                                        <div class="col-md-5 d-flex flex-column gap-3 mb-3 mb-md-0">
+                                            <?php foreach ($options as $opt): ?>
+                                                <div class="flex-fill">
+                                                    <input class="btn-check" type="radio" name="<?= htmlspecialchars($name) ?>" id="<?= htmlspecialchars($rawId . '_' . $opt->getId()) ?>" value="<?= htmlspecialchars($opt->getId()) ?>" <?= ($currentOptionId == $opt->getId() ? 'checked' : '') ?> required>
+                                                    <label class="btn rubric-btn w-100 h-100 d-flex align-items-center justify-content-center text-center p-3" for="<?= htmlspecialchars($rawId . '_' . $opt->getId()) ?>">
+                                                        <?= htmlspecialchars($opt->getTitle()) ?>
+                                                    </label>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        <div class="col-md-7">
+                                            <label class="mb-2" for="<?= htmlspecialchars('comments_' . $rawId) ?>">
+                                                <strong>Add Comments <?= $item->getCommentRequired() ? '<span class="text-danger">*</span>' : '' ?>:</strong>
+                                            </label>
+                                            <textarea class="form-control item-comments" id="<?= htmlspecialchars('comments_' . $rawId) ?>" name="<?= htmlspecialchars('comments[' . $rawId . ']') ?>" <?= $item->getCommentRequired() ? 'required' : '' ?>><?= htmlspecialchars($currentComment) ?></textarea>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="col-12">
+                                            <label class="mb-2" for="<?= htmlspecialchars('comments_' . $rawId) ?>">
+                                                <strong>Add Comments <?= $item->getCommentRequired() ? '<span class="text-danger">*</span>' : '' ?>:</strong> 
+                                            </label>
+                                            <textarea class="form-control item-comments" id="<?= htmlspecialchars('comments_' . $rawId) ?>" name="<?= htmlspecialchars('comments[' . $rawId . ']') ?>" <?= $item->getCommentRequired() ? 'required' : '' ?>><?= htmlspecialchars($currentComment) ?></textarea>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                        </div>
-                    
-                    <!-- Answer:: -->
-
-                        <!-- Renders answer inline with question if answer is text, then
-                         Full width answer textarea -->
-                        <div class= "col-12 mt-2">
-                            <?php if (strtolower($item->getAnswerType()) === 'text'): ?>
-                                <?= renderAnswerInput($item) ?>
-                            <?php endif; ?>
-                        </div>
-
-                    <!-- Comment:: -->
-                        <div class="col-12 mt-2" <?php echo(($item -> getAnswerType() == "text")?("hidden"):(""));?>> 
-                            <!-- Full-width comment textarea only displays when the answer isnt already text-->
-                            <label for="<?php echo htmlspecialchars($item->getId() . 'comments'); ?>"> 
-                                Add Comments: 
-                            </label>
-                            <textarea 
-                                class="form-control item-comments" 
-                                id="<?php echo htmlspecialchars($item->getId() . 'comments'); ?>" 
-                                name="<?= htmlspecialchars('comments[' . $item->getId() . ']') ?>" 
-                                ><?= htmlspecialchars($item->getComments() ?? '') ?></textarea>
-                            
                         </div>
                     </div>
 
@@ -353,6 +285,9 @@ function renderAnswerInput($item) {
     function createEditorForAnswer(textarea) {
         if (answerEditors.has(textarea)) return Promise.resolve(answerEditors.get(textarea));
 
+        // Prevent HTML5 validation from silently failing when it tries to focus an obscured textarea.
+        textarea.removeAttribute('required');
+
         return ClassicEditor.create(textarea, {
             toolbar: ['bold', 'italic', 'bulletedList', 'numberedList', 'undo', 'redo'],
             placeholder: textarea.getAttribute('placeholder') || ''
@@ -361,15 +296,18 @@ function renderAnswerInput($item) {
             answerEditors.set(textarea, editor);
             editor.ui.view.editable.element.style.minHeight = '200px';
             editor.ui.view.editable.element.style.overflowY = 'auto';
+
+            // Continuously sync data into the hidden textarea 
+            editor.model.document.on('change:data', () => {
+                textarea.value = editor.getData();
+            });
+
             return editor;
         })
         .catch(err => console.error('CKEditor init error:', err));
     }
 
     function initializeAnswerEditors() {
-        document.querySelectorAll('textarea.item-answer').forEach(textarea => {
-            createEditorForAnswer(textarea);
-        });
         document.querySelectorAll('textarea.item-comments').forEach(textarea => {
             createEditorForAnswer(textarea);
         });

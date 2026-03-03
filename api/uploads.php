@@ -10,9 +10,7 @@ use DataAccess\UsersDao;
 use DataAccess\UploadsDao;
 use Api\UploadActionHandler;
 
-$uploadsDao = new UploadsDao($dbConn, $logger);
-$userDao = new UsersDao($dbConn, $logger);
-$handler = new UploadActionHandler($uploadsDao, $userDao, $configManager, $logger);
+$handler = new UploadActionHandler($dbConn, $configManager, $logger);
 
 if ($isLoggedIn) {
     $handler->handleRequest();

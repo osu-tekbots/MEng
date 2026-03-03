@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.3
+-- version 5.2.1-1.el7.remi
 -- https://www.phpmyadmin.net/
 --
--- Host: db
--- Generation Time: Dec 13, 2025 at 10:47 PM
--- Server version: 10.3.39-MariaDB-1:10.3.39+maria~ubu2004
--- PHP Version: 8.3.26
+-- Host: engr-db.engr.oregonstate.edu:3307
+-- Generation Time: Mar 02, 2026 at 05:12 PM
+-- Server version: 10.6.24-MariaDB-log
+-- PHP Version: 7.4.33
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `meng`
+-- Database: `meng_assessment`
 --
 
 -- --------------------------------------------------------
@@ -30,15 +30,14 @@ SET time_zone = "+00:00";
 CREATE TABLE `Document_types` (
   `id` int(11) NOT NULL,
   `type_name` varchar(32) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `Document_types`
 --
 
 INSERT INTO `Document_types` (`id`, `type_name`) VALUES
-(1, 'Report'),
-(2, 'Thesis');
+(1, 'Thesis');
 
 -- --------------------------------------------------------
 
@@ -51,18 +50,21 @@ CREATE TABLE `Evaluations` (
   `fk_student_id` varchar(8) NOT NULL,
   `fk_reviewer_id` varchar(8) NOT NULL,
   `fk_upload_id` varchar(8) NOT NULL,
+  `fk_rubric_id` varchar(8) DEFAULT NULL,
   `date_created` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `Evaluations`
 --
 
-INSERT INTO `Evaluations` (`id`, `fk_student_id`, `fk_reviewer_id`, `fk_upload_id`, `date_created`) VALUES
-('0b0530cb', 'jKieNkw1', 'jKieNkw1', '6kVkVUjN', '2025-12-02 16:47:15'),
-('35d69251', 'jKieNkw1', 'jKieNkw1', 'pFUaze3Z', '2025-12-13 14:35:01'),
-('3db8f1b4', 'jKieNkw1', 'jKieNkw1', 'pFUaze3Z', '2025-11-19 02:51:44'),
-('5e6ca0fb', 'jKieNkw1', 'jKieNkw1', '6kVkVUjN', '2025-12-13 14:25:17');
+INSERT INTO `Evaluations` (`id`, `fk_student_id`, `fk_reviewer_id`, `fk_upload_id`, `fk_rubric_id`, `date_created`) VALUES
+('08554bc1', 'qwqwqwqw', 'qwqwqwqw', 'SuvWSku9', '1', '2026-02-16 14:32:30'),
+('6667f3cf', 'qwqwqwqw', 'qwqwqwqw', 'xKtacZVX', '1', '2026-02-18 12:20:34'),
+('88cf9066', 'b9Q6kInz', 'b9Q6kInz', 'EDPIX0Xt', '1', '2026-02-16 20:16:52'),
+('b715b0c7', 'qwqwqwqw', 'qwqwqwqw', 'xKtacZVX', '1', '2026-02-18 12:29:50'),
+('c7146422', 'esdouhfq', 'esdouhfq', '42fUPx94', '1', '2026-03-02 15:55:30'),
+('c722afc6', 'qwqwqwqw', 'qwqwqwqw', 'xKtacZVX', '1', '2026-02-18 12:21:12');
 
 -- --------------------------------------------------------
 
@@ -76,7 +78,7 @@ CREATE TABLE `Evaluation_flags` (
   `arrangement` int(11) NOT NULL,
   `type` enum('Status') NOT NULL,
   `is_active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `Evaluation_flags`
@@ -97,46 +99,32 @@ INSERT INTO `Evaluation_flags` (`id`, `name`, `arrangement`, `type`, `is_active`
 CREATE TABLE `Evaluation_flag_assignments` (
   `id` int(11) NOT NULL,
   `fk_evaluation_id` varchar(8) NOT NULL,
-  `fk_evaluation_flag_id` int(11) NOT NULL,
-  `date_created` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  `fk_evaluation_flag_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `Evaluation_flag_assignments`
 --
 
-INSERT INTO `Evaluation_flag_assignments` (`id`, `fk_evaluation_id`, `fk_evaluation_flag_id`, `date_created`) VALUES
-(4, '0b0530cb', 4, '2025-12-13 09:22:31'),
-(5, '0b0530cb', 1, '2025-12-13 09:22:42'),
-(10, '3db8f1b4', 1, '2025-12-13 12:05:46'),
-(11, '5e6ca0fb', 2, '2025-12-13 22:25:17'),
-(12, '35d69251', 2, '2025-12-13 22:35:01'),
-(13, '35d69251', 1, '2025-12-13 22:45:13'),
-(14, '5e6ca0fb', 4, '2025-12-13 22:45:23');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `Evaluation_rubrics`
---
-
-CREATE TABLE `Evaluation_rubrics` (
-  `id` int(11) NOT NULL,
-  `fk_evaluation_id` varchar(8) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `date_created` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
---
--- Dumping data for table `Evaluation_rubrics`
---
-
-INSERT INTO `Evaluation_rubrics` (`id`, `fk_evaluation_id`, `name`, `date_created`) VALUES
-(3, '62ec7217', 'New template temp', '2025-11-19 02:51:01'),
-(4, '3db8f1b4', 'Engr 67 2025 Rubric', '2025-11-19 02:51:44'),
-(5, '0b0530cb', 'Engr 67 2025 Rubric', '2025-12-02 16:47:16'),
-(6, '5e6ca0fb', 'Input sanitization testing rubric', '2025-12-13 14:25:17'),
-(7, '35d69251', 'New template temp', '2025-12-13 14:35:01');
+INSERT INTO `Evaluation_flag_assignments` (`id`, `fk_evaluation_id`, `fk_evaluation_flag_id`) VALUES
+(1, '08554bc1', 2),
+(2, '510f1988', 2),
+(3, '16001740', 2),
+(4, '19d62c0b', 2),
+(5, '88cf9066', 2),
+(6, '6667f3cf', 2),
+(7, 'c722afc6', 2),
+(8, 'b715b0c7', 2),
+(9, '8da9d356', 2),
+(10, '3cea709b', 2),
+(11, 'bb8f69a0', 2),
+(12, '077657ad', 2),
+(13, 'e2dd172d', 2),
+(14, 'e7692801', 2),
+(15, '78eec102', 2),
+(16, '0307df36', 2),
+(17, '822e6f30', 2),
+(18, 'c7146422', 2);
 
 -- --------------------------------------------------------
 
@@ -146,30 +134,11 @@ INSERT INTO `Evaluation_rubrics` (`id`, `fk_evaluation_id`, `name`, `date_create
 
 CREATE TABLE `Evaluation_rubric_items` (
   `id` int(11) NOT NULL,
-  `fk_evaluation_rubric_id` int(11) NOT NULL,
-  `name` text NOT NULL,
-  `description` text NOT NULL,
-  `answer_type` enum('number','boolean','text') NOT NULL,
-  `answer_value` text DEFAULT NULL,
+  `fk_evaluation_id` int(11) NOT NULL,
+  `fk_rubric_item_id` varchar(8) NOT NULL,
+  `fk_rubric_item_option_id` varchar(8) NOT NULL,
   `comments` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
---
--- Dumping data for table `Evaluation_rubric_items`
---
-
-INSERT INTO `Evaluation_rubric_items` (`id`, `fk_evaluation_rubric_id`, `name`, `description`, `answer_type`, `answer_value`, `comments`) VALUES
-(7, 3, 'aefaef', '<p>awfaf</p>', 'boolean', NULL, NULL),
-(8, 4, 'What is the students gpa', '<p>Insert it as a <strong>number&nbsp;</strong></p>', 'number', '5', '<p>Its really good</p><p><i><strong>bold comment</strong></i></p>'),
-(9, 4, 'Is the student a grad student', '<p><strong>yes or no</strong> but include comments</p>', 'boolean', 'false', '<p>Man idk but not a grad student</p>'),
-(10, 4, 'describe the student', '<p>put text</p>', 'text', '<p>Very good student, idk</p><p>This is me testing some bold and wysvifg features</p><ul><li>student info</li><li>also student ingto</li><li><strong>heres a bold</strong></li></ul>', ''),
-(11, 5, 'What is the students gpa', '<p>Insert it as a <strong>number&nbsp;</strong></p>', 'number', '0', '<p>This evaluation rubric item question needs to be reassigned to a text type, so the person can input the gpa. bing bong</p>'),
-(12, 5, 'Is the student a grad student', '<p><strong>yes or no</strong> but include comments</p>', 'boolean', 'true', ''),
-(13, 5, 'describe the student', '<p>put text</p>', 'text', '<p>ikmdwioemiowejmf</p>', ''),
-(14, 6, 'Shouldnt display anything <a href = \'https://google.com\'> google </a> ', '<p><strong>None of these should be displayed but this should be bolded:</strong></p><p>&lt;h2&gt; This is a heading &lt;/h2&gt;</p><p>&lt;input value = â€œThis should be an inputâ€&gt;</p><p>&nbsp;</p>', 'text', '', ''),
-(15, 6, '<php> break everything <?php>', '<p>&lt;img href = â€œhttps://en.wikipedia.org/wiki/File:View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_(cropped).jpgâ€&gt;</p><p>&lt;a&gt; This shouldnt be displayed as a link &lt;/a&gt;</p>', 'text', '', ''),
-(16, 6, 'Testing a bunch of breaks', '<p>&lt;br&gt;</p><p>hi</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>hi</p>', 'number', '0', ''),
-(17, 7, 'aefaef', '<p>awfaf</p>', 'boolean', NULL, '');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -180,59 +149,70 @@ INSERT INTO `Evaluation_rubric_items` (`id`, `fk_evaluation_rubric_id`, `name`, 
 CREATE TABLE `Invites` (
   `id` varchar(8) NOT NULL,
   `email` varchar(64) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Rubric_item_templates`
+-- Table structure for table `Rubrics`
 --
 
-CREATE TABLE `Rubric_item_templates` (
+CREATE TABLE `Rubrics` (
   `id` int(11) NOT NULL,
-  `fk_rubric_template_id` int(11) NOT NULL,
-  `name` text NOT NULL,
-  `description` text NOT NULL,
-  `answer_type` enum('number','boolean','text') NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
---
--- Dumping data for table `Rubric_item_templates`
---
-
-INSERT INTO `Rubric_item_templates` (`id`, `fk_rubric_template_id`, `name`, `description`, `answer_type`) VALUES
-(1, 1, 'What is the students gpa', '<p>Insert it as a <strong>number&nbsp;</strong></p>', 'number'),
-(2, 1, 'Is the student a grad student', '<p><strong>yes or no</strong> but include comments</p>', 'boolean'),
-(3, 1, 'describe the student', '<p>put text</p>', 'text'),
-(4, 2, 'Question 1 here ', '<p>Answer something</p>', 'text'),
-(5, 2, 'Put a number here', '<p><i>Hi</i></p>', 'number'),
-(6, 3, 'Shouldnt display anything <a href = \'https://google.com\'> google </a> ', '<p><strong>None of these should be displayed but this should be bolded:</strong></p><p>&lt;h2&gt; This is a heading &lt;/h2&gt;</p><p>&lt;input value = â€œThis should be an inputâ€&gt;</p><p>&nbsp;</p>', 'text'),
-(7, 3, '<php> break everything <?php>', '<p>&lt;img href = â€œhttps://en.wikipedia.org/wiki/File:View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_(cropped).jpgâ€&gt;</p><p>&lt;a&gt; This shouldnt be displayed as a link &lt;/a&gt;</p>', 'text'),
-(8, 3, 'Testing a bunch of breaks', '<p>&lt;br&gt;</p><p>hi</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;</p><p>hi</p>', 'number'),
-(9, 4, 'aefaef', '<p>awfaf</p>', 'boolean');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `Rubric_templates`
---
-
-CREATE TABLE `Rubric_templates` (
-  `id` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
+  `name` varchar(32) NOT NULL,
   `last_used` datetime NOT NULL,
   `last_modified` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
--- Dumping data for table `Rubric_templates`
+-- Dumping data for table `Rubrics`
 --
 
-INSERT INTO `Rubric_templates` (`id`, `name`, `last_used`, `last_modified`) VALUES
-(1, 'Engr 67 2025 Rubric', '2025-11-18 17:57:09', '2025-11-19 02:15:55'),
-(2, 'Engr 67 2026 Rubric', '2025-11-18 17:59:12', '2025-11-18 17:59:12'),
-(3, 'Input sanitization testing rubric', '2025-11-18 18:28:33', '2025-11-18 18:29:34'),
-(4, 'New template temp', '2025-11-19 02:21:18', '2025-11-19 02:23:26');
+INSERT INTO `Rubrics` (`id`, `name`, `last_used`, `last_modified`) VALUES
+(1, 'MENG Assessment 2', '2026-02-16 14:31:51', '2026-02-17 10:35:45');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Rubric_items`
+--
+
+CREATE TABLE `Rubric_items` (
+  `id` int(11) NOT NULL,
+  `fk_rubric_id` int(11) NOT NULL,
+  `name` text NOT NULL,
+  `description` text NOT NULL,
+  `comment_required` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
+
+--
+-- Dumping data for table `Rubric_items`
+--
+
+INSERT INTO `Rubric_items` (`id`, `fk_rubric_id`, `name`, `description`, `comment_required`) VALUES
+(25, 1, 'Mastery of Engineering Concepts', '<p>Mastery of Engineering Concepts Demonstrates an advanced understanding of engineering principles, theories, and practices, integrating them with cutting-edge developments and interdisciplinary approaches. Demonstrates a solid understanding of core engineering principles, theories, and practices, with some integration of interdisciplinary perspectives. Demonstrates a basic understanding of engineering principles, but with limited integration or application.</p>', 0),
+(26, 1, 'Depth of Technical Knowledge', '<figure class=\"table\"><table><tbody><tr><td>Demonstrates deep, comprehensive knowledge of specialized areas within engineering, engaging critically with advanced theories, research, and applications.</td><td>Demonstrates strong technical knowledge in specific areas of engineering, though may not engage with the most complex or advanced concepts.</td><td>Shows understanding of fundamental engineering concepts, but lacks depth and engagement with specialized knowledge.</td></tr></tbody></table></figure>', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Rubric_item_options`
+--
+
+CREATE TABLE `Rubric_item_options` (
+  `id` int(11) NOT NULL,
+  `fk_rubric_item_id` int(11) NOT NULL,
+  `value` int(11) DEFAULT NULL,
+  `title` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
+
+--
+-- Dumping data for table `Rubric_item_options`
+--
+
+INSERT INTO `Rubric_item_options` (`id`, `fk_rubric_item_id`, `value`, `title`) VALUES
+(1, 26, 3, 'Advanced'),
+(2, 26, 2, 'Proficient');
 
 -- --------------------------------------------------------
 
@@ -246,15 +226,18 @@ CREATE TABLE `Uploads` (
   `file_path` varchar(64) NOT NULL,
   `file_name` varchar(64) NOT NULL,
   `date_uploaded` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `Uploads`
 --
 
 INSERT INTO `Uploads` (`id`, `fk_user_id`, `file_path`, `file_name`, `date_uploaded`) VALUES
-('6kVkVUjN', 'jKieNkw1', '/jKieNkw1/1/', 'A3_code_review_final.pdf', '2025-12-02 16:33:04'),
-('pFUaze3Z', 'jKieNkw1', '/jKieNkw1/2/', 'MEng Database draft (9).pdf', '2025-08-16 18:11:23');
+('3TN214g3', 'esdouhfq', '/esdouhfq/2/', 'Rental Agreement Final.pdf', '2025-12-17 10:17:48'),
+('42fUPx94', 'esdouhfq', '/esdouhfq/1/', 'Ethics Reseach Report Formatting Example_U24.pdf', '2026-01-19 20:07:37'),
+('EDPIX0Xt', 'b9Q6kInz', '/b9Q6kInz/2/', 'MIPS Reference Data Card (4).pdf', '2026-01-22 12:55:12'),
+('SuvWSku9', 'qwqwqwqw', '/qwqwqwqw/2/', '2353727.pdf', '2026-02-13 10:07:09'),
+('xKtacZVX', 'qwqwqwqw', '/qwqwqwqw/1/', 'Order details _ eBay (3).pdf', '2026-01-15 16:02:34');
 
 -- --------------------------------------------------------
 
@@ -268,15 +251,15 @@ CREATE TABLE `Upload_flags` (
   `arrangement` int(11) NOT NULL,
   `type` enum('doc_type','status') NOT NULL,
   `is_active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `Upload_flags`
 --
 
 INSERT INTO `Upload_flags` (`id`, `name`, `arrangement`, `type`, `is_active`) VALUES
-(1, 'Computer Science Thesis', 0, 'doc_type', 1),
-(2, 'Mechanical Engineering Thesis', 0, 'doc_type', 1);
+(1, 'Thesis', 0, 'doc_type', 1),
+(2, 'Project', 0, 'doc_type', 1);
 
 -- --------------------------------------------------------
 
@@ -287,17 +270,18 @@ INSERT INTO `Upload_flags` (`id`, `name`, `arrangement`, `type`, `is_active`) VA
 CREATE TABLE `Upload_flag_assignments` (
   `id` int(11) NOT NULL,
   `fk_upload_id` varchar(8) NOT NULL,
-  `fk_upload_flag_id` int(11) NOT NULL,
-  `flag_value` varchar(32) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  `fk_upload_flag_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `Upload_flag_assignments`
 --
 
-INSERT INTO `Upload_flag_assignments` (`id`, `fk_upload_id`, `fk_upload_flag_id`, `flag_value`) VALUES
-(4, 'pFUaze3Z', 2, NULL),
-(6, '6kVkVUjN', 1, NULL);
+INSERT INTO `Upload_flag_assignments` (`id`, `fk_upload_id`, `fk_upload_flag_id`) VALUES
+(21, 'xKtacZVX', 1),
+(22, '42fUPx94', 1),
+(27, 'EDPIX0Xt', 2),
+(28, 'SuvWSku9', 2);
 
 -- --------------------------------------------------------
 
@@ -307,21 +291,25 @@ INSERT INTO `Upload_flag_assignments` (`id`, `fk_upload_id`, `fk_upload_flag_id`
 
 CREATE TABLE `Users` (
   `id` varchar(8) NOT NULL,
-  `uuid` varchar(32) NOT NULL,
-  `osu_id` varchar(32) NOT NULL,
+  `uuid` varchar(32) DEFAULT NULL,
+  `osu_id` varchar(32) DEFAULT NULL,
   `first_name` varchar(32) NOT NULL,
   `last_name` varchar(32) NOT NULL,
   `onid` varchar(11) NOT NULL,
-  `email` varchar(64) NOT NULL,
+  `email` varchar(64) DEFAULT NULL,
   `last_login` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `Users`
 --
 
 INSERT INTO `Users` (`id`, `uuid`, `osu_id`, `first_name`, `last_name`, `onid`, `email`, `last_login`) VALUES
-('jKieNkw1', '14979642353', '934427597', 'Rohan', 'Thapliyal', 'thapliyr', 'thapliyr@oregonstate.edu', NULL);
+('b9Q6kInz', NULL, NULL, 'Rohan', 'Thapliyal', 'thapliyr', 'thapliyr@oregonstate.edu', '2026-02-26 15:54:59'),
+('eaq15xz7', NULL, NULL, 'Brian', 'Mills', 'millsbr', 'brian.mills@oregonstate.edu', '2026-01-22 15:02:43'),
+('esdouhfq', 'test', '934593467', 'Ekansh', 'Arora', 'arorae', 'arorae@oregonstate.edu', '2026-03-02 15:28:55'),
+('qwqwqwqw', 'test', '123456789', 'Donald', 'Heer', 'heer', '', '2026-02-26 20:36:49'),
+('sdghokjg', 'temp1', 'temp1', 'Calvin', 'Hughes', 'hughesca', 'Calvin.Hughes@oregonstate.edu', NULL);
 
 -- --------------------------------------------------------
 
@@ -335,17 +323,19 @@ CREATE TABLE `User_flags` (
   `arrangement` int(11) NOT NULL,
   `type` enum('Role','Department') NOT NULL,
   `is_active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `User_flags`
 --
 
 INSERT INTO `User_flags` (`id`, `name`, `arrangement`, `type`, `is_active`) VALUES
-(1, 'Developer', 0, 'Role', 1),
-(2, 'Student', 0, 'Role', 1),
-(3, 'Admin', 0, 'Role', 1),
-(4, 'Reviewer', 0, 'Role', 1);
+(2, 'Student', 3, 'Role', 1),
+(3, 'Admin', 1, 'Role', 1),
+(4, 'Reviewer', 2, 'Role', 1),
+(8, 'Computer Science', 0, 'Department', 1),
+(9, 'Mechanical Engineering', 0, 'Department', 1),
+(10, 'Electrical Engineering', 0, 'Department', 1);
 
 -- --------------------------------------------------------
 
@@ -356,18 +346,40 @@ INSERT INTO `User_flags` (`id`, `name`, `arrangement`, `type`, `is_active`) VALU
 CREATE TABLE `User_flag_assignments` (
   `id` int(11) NOT NULL,
   `fk_user_id` varchar(8) NOT NULL,
-  `fk_user_flag_id` int(11) NOT NULL,
-  `flag_value` varchar(32) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  `fk_user_flag_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `User_flag_assignments`
 --
 
-INSERT INTO `User_flag_assignments` (`id`, `fk_user_id`, `fk_user_flag_id`, `flag_value`) VALUES
-(2, 'jKieNkw1', 2, NULL),
-(3, 'jKieNkw1', 3, NULL),
-(4, 'jKieNkw1', 4, NULL);
+INSERT INTO `User_flag_assignments` (`id`, `fk_user_id`, `fk_user_flag_id`) VALUES
+(2, 'jKieNkw1', 2),
+(4, 'jKieNkw1', 4),
+(9, 'jKieNkw1', 1),
+(12, 'qwqwqwqw', 2),
+(13, 'qwqwqwqw', 3),
+(14, 'qwqwqwqw', 4),
+(17, 'sdghokjg', 3),
+(18, 'sdghokjg', 2),
+(19, 'sdghokjg', 4),
+(20, 'qwqwqwqw', 9),
+(21, 'qwqwqwqw', 8),
+(24, 'esdouhfq', 4),
+(25, 'esdouhfq', 3),
+(27, 'jKieNkw1', 10),
+(28, 'X33XtiGI', 9),
+(29, 'X33XtiGI', 3),
+(30, 'X33XtiGI', 2),
+(31, 'X33XtiGI', 4),
+(32, 'b9Q6kInz', 9),
+(33, 'b9Q6kInz', 3),
+(34, 'b9Q6kInz', 2),
+(35, 'b9Q6kInz', 4),
+(36, 'esdouhfq', 2),
+(37, 'eaq15xz7', 3),
+(38, 'eaq15xz7', 4),
+(39, 'eaq15xz7', 2);
 
 --
 -- Indexes for dumped tables
@@ -399,23 +411,15 @@ ALTER TABLE `Evaluation_flags`
 --
 ALTER TABLE `Evaluation_flag_assignments`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_eval_flag` (`fk_evaluation_id`,`fk_evaluation_flag_id`),
   ADD KEY `evaluation_flag_assignments_evaluations` (`fk_evaluation_id`),
   ADD KEY `evaluation_flag_assignments_evaluation_flags` (`fk_evaluation_flag_id`) USING BTREE;
-
---
--- Indexes for table `Evaluation_rubrics`
---
-ALTER TABLE `Evaluation_rubrics`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `evaluation_rubrics_evaluations` (`fk_evaluation_id`);
 
 --
 -- Indexes for table `Evaluation_rubric_items`
 --
 ALTER TABLE `Evaluation_rubric_items`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `evaluation_rubric_items_evaluation_rubrics` (`fk_evaluation_rubric_id`);
+  ADD KEY `evaluation_rubric_items_evaluation_rubrics` (`fk_evaluation_id`);
 
 --
 -- Indexes for table `Invites`
@@ -424,17 +428,24 @@ ALTER TABLE `Invites`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `Rubric_item_templates`
+-- Indexes for table `Rubrics`
 --
-ALTER TABLE `Rubric_item_templates`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `rubric_item_templates_rubric_templates` (`fk_rubric_template_id`);
+ALTER TABLE `Rubrics`
+  ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `Rubric_templates`
+-- Indexes for table `Rubric_items`
 --
-ALTER TABLE `Rubric_templates`
-  ADD PRIMARY KEY (`id`);
+ALTER TABLE `Rubric_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `rubric_item_templates_rubric_templates` (`fk_rubric_id`);
+
+--
+-- Indexes for table `Rubric_item_options`
+--
+ALTER TABLE `Rubric_item_options`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `rubric_item_options_rubric_items` (`fk_rubric_item_id`);
 
 --
 -- Indexes for table `Uploads`
@@ -497,31 +508,31 @@ ALTER TABLE `Evaluation_flags`
 -- AUTO_INCREMENT for table `Evaluation_flag_assignments`
 --
 ALTER TABLE `Evaluation_flag_assignments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
-
---
--- AUTO_INCREMENT for table `Evaluation_rubrics`
---
-ALTER TABLE `Evaluation_rubrics`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `Evaluation_rubric_items`
 --
 ALTER TABLE `Evaluation_rubric_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
 
 --
--- AUTO_INCREMENT for table `Rubric_item_templates`
+-- AUTO_INCREMENT for table `Rubrics`
 --
-ALTER TABLE `Rubric_item_templates`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+ALTER TABLE `Rubrics`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT for table `Rubric_templates`
+-- AUTO_INCREMENT for table `Rubric_items`
 --
-ALTER TABLE `Rubric_templates`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+ALTER TABLE `Rubric_items`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+
+--
+-- AUTO_INCREMENT for table `Rubric_item_options`
+--
+ALTER TABLE `Rubric_item_options`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `Upload_flags`
@@ -533,19 +544,19 @@ ALTER TABLE `Upload_flags`
 -- AUTO_INCREMENT for table `Upload_flag_assignments`
 --
 ALTER TABLE `Upload_flag_assignments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `User_flags`
 --
 ALTER TABLE `User_flags`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `User_flag_assignments`
 --
 ALTER TABLE `User_flag_assignments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- Constraints for dumped tables
@@ -556,6 +567,12 @@ ALTER TABLE `User_flag_assignments`
 --
 ALTER TABLE `Evaluations`
   ADD CONSTRAINT `evaluations_uploads` FOREIGN KEY (`fk_upload_id`) REFERENCES `Uploads` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `Rubric_item_options`
+--
+ALTER TABLE `Rubric_item_options`
+  ADD CONSTRAINT `rubric_item_options_rubric_items` FOREIGN KEY (`fk_rubric_item_id`) REFERENCES `Rubric_items` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Uploads`

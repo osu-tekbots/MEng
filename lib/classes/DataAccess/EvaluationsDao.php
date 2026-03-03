@@ -3,6 +3,8 @@ namespace DataAccess;
 
 use Model\Evaluation;
 use Model\Rubric;
+use Model\RubricItem;
+use Model\RubricItemOption;
 use Model\EvaluationRubricItem;
 use Model\EvaluationFlag;
 use Model\EvaluationFlagAssignment;
@@ -187,8 +189,8 @@ class EvaluationsDao {
 
     public function getRubricFromEvaluationId($evaluationId) {
         try {
-            $sql = 'SELECT * FROM Rubrics 
-                    JOIN Evaluations on Rubrics.id = Evaluations.fk_rubric_id;
+            $sql = 'SELECT Rubrics.* FROM Rubrics 
+                    JOIN Evaluations on Rubrics.id = Evaluations.fk_rubric_id
                     WHERE Evaluations.id = :evaluationId';
             $params = array(
                 ':evaluationId' => $evaluationId
@@ -210,15 +212,32 @@ class EvaluationsDao {
 
     public function getRubricItems($rubricId) {
         try {
+            $this->logError('EvaluationsDao::getRubricItems called for rubricId: ' . $rubricId);
             $sql = 'SELECT * FROM Rubric_items WHERE fk_rubric_id = :id';
             $params = [':id' => $rubricId];
             $result = $this->conn->query($sql, $params);
-            return array_map('self::ExtractRubricItemFromRow', $result);
+            $this->logError('EvaluationsDao::getRubricItems found ' . count($result) . ' rubric items in DB');
+            
+            $items = array();
+            
+            foreach ($result as $row) {
+                $item = self::ExtractRubricItemFromRow($row);
+                $this->logError('EvaluationsDao::getRubricItems extracted item ID: ' . $item->getId() . ' - fetching options...');
+                $options = $this->getRubricItemOptionsByItemId($item->getId());
+                if ($options === false) {
+                    $options = [];
+                }
+                $this->logError('EvaluationsDao::getRubricItems found ' . count($options) . ' options for item ID: ' . $item->getId());
+                $item->items = $options; // using ->items as per existing convention
+                $items[] = $item;
+            }
+            return $items;
         } catch (\Exception $e) {
             $this->logError('Failed to get rubric items: ' . $e->getMessage());
             return [];
         }
     }
+
     //DUPLICATE FROM RubricsDao; consider refactor to avoid code duplication
     public static function ExtractRubricItemFromRow($row) {
         $item = new RubricItem($row['id']);
@@ -229,17 +248,51 @@ class EvaluationsDao {
         return $item;
     }
 
+    /**
+     * Gets all RubricItemOptions by RubricItem id.
+     * @param int $id
+     * @return RubricItemOption[] | false
+     */
+    public function getRubricItemOptionsByItemId($id) {
+        try {
+            $sql = 'SELECT * FROM Rubric_item_options WHERE fk_rubric_item_id = :id ORDER BY Title ASC';
+            $params = [':id' => $id];
+            $result = $this->conn->query($sql, $params);
+            if (!$result || count($result) === 0) return false;
+            $options = Array();
+			foreach ($result as $row) {
+                $option = self::ExtractRubricItemOptionFromRow($row);
+                $options[] = $option;
+            }
+            return $options;
+        } catch (\Exception $e) {
+            $this->logError('Failed to get rubric item option by id: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public static function ExtractRubricItemOptionFromRow($row) {
+        $option = new RubricItemOption($row['id']);
+        $option->setFkRubricItemId($row['fk_rubric_item_id'])
+            ->setValue($row['value'])
+            ->setTitle($row['title']);
+        return $option;
+    }
+
+    
+
     private function buildEvaluationRubricItemObjectFromRow($row) {
         $item = new EvaluationRubricItem($row['id']);
 
-        $item->setFkEvaluationRubricId($row['fk_evaluation_id']);
+        $item->setFkEvaluationId($row['fk_evaluation_id']);
         $item -> setComments($row['comments']);
 
-        $fkRubricItem = $this -> getRubricItemById($row['fk_rubric_item_id']);
-        $fkRubricItemOption = $this -> getRubricItemOptionById($row['fk_rubric_item_option_id']);
+        $rubricsDao = new RubricsDao($this->conn, $this->logger);
+        $fkRubricItem = $rubricsDao->getRubricItemById($row['fk_rubric_item_id']);
+        $fkRubricItemOption = $rubricsDao->getRubricItemOptionById($row['fk_rubric_item_option_id']);
 
-        $item->setFkRubricItem($fkRubricItem);
-        $item->setFkRubricItemOption($fkRubricItemOption);
+        $item->setRubricItem($fkRubricItem);
+        $item->setRubricItemOption($fkRubricItemOption);
 
         return $item;
     }
@@ -459,16 +512,17 @@ class EvaluationsDao {
     }
 
     /*
-        Updates the value and comments of an evaluation rubric item. 
+        Updates the option and comments of an evaluation rubric item. 
         Expected that the rubric item is already in the database.
         @param EvaluationRubricItem $evaluationRubricItem the evaluation rubric item to update
         @return boolean true if the query execution succeeds, false otherwise.
     */
     public function setEvaluationRubricItem($evaluationRubricItem) {
         try {
-            $sql = 'UPDATE Evaluation_rubric_items SET fk_rubric_item_id = :fk_rubric_item_id, comments = :comments WHERE id = :id';
+            $sql = 'UPDATE Evaluation_rubric_items SET fk_rubric_item_id = :fk_rubric_item_id, fk_rubric_item_option_id = :fk_rubric_item_option_id, comments = :comments WHERE id = :id';
             $params = array(
-                ':fk_rubric_item_id' => $evaluationRubricItem->getRubricItem()->getId(),
+                ':fk_rubric_item_id' => $evaluationRubricItem->getRubricItem() ? $evaluationRubricItem->getRubricItem()->getId() : null,
+                ':fk_rubric_item_option_id' => $evaluationRubricItem->getRubricItemOption() ? $evaluationRubricItem->getRubricItemOption()->getId() : null,
                 ':id' => $evaluationRubricItem->getId(),
                 ':comments' => $evaluationRubricItem->getComments()
             );
@@ -477,6 +531,52 @@ class EvaluationsDao {
             return true;
         } catch (\Exception $e) {
             $this->logError('Failed to set evaluation rubric item: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Inserts a new evaluation rubric item response into the database.
+     * @param EvaluationRubricItem $evaluationRubricItem the evaluation rubric item to insert
+     * @return boolean true if the query execution succeeds, false otherwise.
+     */
+    public function insertEvaluationRubricItem($evaluationRubricItem) {
+        try {
+            $sql = 'INSERT INTO Evaluation_rubric_items (fk_evaluation_id, fk_rubric_item_id, fk_rubric_item_option_id, comments) VALUES (:fk_evaluation_id, :fk_rubric_item_id, :fk_rubric_item_option_id, :comments)';
+            $params = array(
+                ':fk_evaluation_id' => $evaluationRubricItem->getFkEvaluationId(),
+                ':fk_rubric_item_id' => $evaluationRubricItem->getRubricItem() ? $evaluationRubricItem->getRubricItem()->getId() : null,
+                ':fk_rubric_item_option_id' => $evaluationRubricItem->getRubricItemOption() ? $evaluationRubricItem->getRubricItemOption()->getId() : null,
+                ':comments' => $evaluationRubricItem->getComments()
+            );
+        
+            $this->conn->execute($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to insert evaluation rubric item: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Gets an EvaluationRubricItem by evaluation ID and rubric item ID.
+     * @param string $evaluationId
+     * @param string $rubricItemId
+     * @return EvaluationRubricItem|false
+     */
+    public function getEvaluationRubricItemByEvalAndRubricItem($evaluationId, $rubricItemId) {
+        try {
+            $sql = 'SELECT * FROM Evaluation_rubric_items WHERE fk_evaluation_id = :fk_evaluation_id AND fk_rubric_item_id = :fk_rubric_item_id LIMIT 1';
+            $params = array(
+                ':fk_evaluation_id' => $evaluationId,
+                ':fk_rubric_item_id' => $rubricItemId
+            );
+            $result = $this->conn->query($sql, $params);
+            if (!$result || count($result) === 0) return false;
+            
+            return $this->buildEvaluationRubricItemObjectFromRow($result[0]);
+        } catch (\Exception $e) {
+            $this->logError('Failed to get evaluation rubric item by eval and item: ' . $e->getMessage());
             return false;
         }
     }

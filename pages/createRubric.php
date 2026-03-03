@@ -10,239 +10,294 @@ use Model\RubricItem;
 use Model\RubricItemOption;
 
 $js = array(
-   "https://cdn.ckeditor.com/ckeditor5/31.1.0/classic/ckeditor.js"
+    "https://cdn.ckeditor.com/ckeditor5/31.1.0/classic/ckeditor.js"
 );
 
 $message = '';
+if (isset($_GET['msg']) && $_GET['msg'] === 'saved') {
+    $message = 'Rubric saved successfully!';
+}
 
 $rubricsDao = new RubricsDao($dbConn, $logger);
-$rubrics = $rubricsDao->getAllRubrics();
 
-$selectedRubric = null;
-$rubricId = null;
+// ==========================================================
+// 1. POST PROCESSING (Create / Update / Copy / Delete)
+// ==========================================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    $rubricId = $_POST['rubricId'] ?? null;
+    $rubricName = $_POST['rubricName'] ?? 'Untitled Rubric';
+    
+    if (in_array($action, ['create', 'update', 'copy'])) {
+        $isNewRubric = ($action === 'create' || $action === 'copy');
+        if ($action === 'copy') $rubricName .= ' (Copy)';
+        
+        // --- A. Save or Update the Core Rubric ---
+        if ($isNewRubric) {
+            $rubric = new Rubric();
+            $rubric->setName($rubricName)
+                   ->setLastUsed(date('Y-m-d H:i:s'))
+                   ->setLastModified(date('Y-m-d H:i:s'));
+            $rubricsDao->addNewRubric($rubric);
+            $targetRubricId = $rubricsDao->getLastInsertedRubricId();
+        } else {
+            $targetRubricId = $rubricId;
+            $rubric = clone $rubricsDao->getRubricById($targetRubricId);
+            if ($rubric) {
+                $rubric->setName($rubricName)->setLastModified(date('Y-m-d H:i:s'));
+                $rubricsDao->updateRubric($rubric);
+            }
+        }
 
-//Are we workign on a specific rubric Id? If so, Log it.
-if (isset($_REQUEST['rubricId'])){
-	$rubricId = $_REQUEST['rubricId'];
-	$selectedRubric = $rubricsDao->getRubricById($rubricId);
-	if ($logger && $selectedRubric)
-        $logger->info('Selected rubric ID: ' . $selectedRubric->getId());
-} 
+        $submittedItemIds = $_POST['itemIds'] ?? [];
 
-	
-//Use PHP to build the array of data to display. We will build the html into an array for each rubric item. 
-//We will be putting options into the rubric items.
-$rubricItemsHTML = Array();
-if ($rubricId != null){
-	if (!($rubric = $rubricsDao->getRubricById($rubricId))){
-		$message = "Invalid Rubric ID.";
-		echo $message;
-		exit();
-	}
-	$rubricItems = $rubric->getItems();
-	foreach ($rubricItems as $item){
-		$rubricItemsHTML[$item->getId()] = '
-		<div class="row mt-4 rubric-item-row align-items-start">
-		<input type="hidden" name="itemId[]" id="item'.$item->getId().'" value="'.$item->getId().'">
-        <div class="col-md-8">
+        // --- B. Delete Removed Items (If Updating) ---
+        if ($action === 'update' && $targetRubricId) {
+            $existingItems = $rubricsDao->getRubricItems($targetRubricId) ?: [];
+            foreach ($existingItems as $exItem) {
+                if (!in_array($exItem->getId(), $submittedItemIds)) {
+                    // Delete associated options first to prevent foreign key errors
+                    $opts = $rubricsDao->getRubricItemOptionsByItemId($exItem->getId()) ?: [];
+                    foreach ($opts as $o) $rubricsDao->deleteRubricItemOption($o->getId());
+                    // Delete the item
+                    $rubricsDao->deleteRubricItem($exItem->getId());
+                }
+            }
+        }
 
-            <input
-                name="itemName'.$item->getId().'"
-                id="itemName'.$item->getId().'"
-                class="form-control mb-2 rubric-name-editor"
-                placeholder="Item Name"
-                value = "'.$item->getName().'"
-            >
-
-            <textarea 
-                name="itemDesc'.$item->getId().'" 
-                class="form-control" 
-                placeholder="Description" 
-                rows="4">'.$item->getDescription().'</textarea> ';
-
-		$options = $item->getItemOptions();
-		$rubricItemsHTML[$item->getId()] .= 'Possible Options:<BR>
-		<div class="row">
-		<div class="col-md-2">
-			<input name="optionTitleNew"
-				class="form-control mb-2 rubric-name-editor"
-				placeholder = "Title"
-				>
-			<input name="optionValueNew"
-					class="form-control mb-2 rubric-name-editor"
-					placeholder="Value"
-					type = "number"
-			>
-		<button type="button" class="btn btn-warning btn-add-option" data-itemid="'.$item->getId().'" id="addOption'.$item->getId().'" aria-label="Add Option"><i class="bi bi-plus"></i> Add Option</button>
-		</div>';
-		
-		if ($options)
-			foreach ($options as $o){
-				$rubricItemsHTML[$item->getId()] .= '
-					<div class="col-md-2" style="border-color:grey;border-style:solid;padding:2px;margin:2px;" id="option'. $o->getId().'">
-					<input name="optionTitle'. $o->getId().'"
-					class="form-control mb-2 rubric-name-editor"
-					value = "'.$o->getTitle().'"
-					>
-					<input
-							name="optionValue'. $o->getId().'"
-							class="form-control mb-2 rubric-name-editor"
-							value="'.$o->getValue().'"
-							type = "number"
-					>
-					<button type="button" class="btn btn-warning btn-remove-option" data-optionid="'.$o->getId().'" aria-label="Delete"><i class="bi bi-trash"></i>Delete</button>
-					</div>';
-			}
-
-		$rubricItemsHTML[$item->getId()] .= '</div></div>
-        <div class="col-md-4 d-flex gap-2">
-            <select name="itemCommentRequired'.$item->getId().'" class="form-select" required>
-                <option value="true" '.(($item && $item->getCommentRequired()) ? 'selected' : '') .'>
-                    Comments Required
-                </option>
-                <option value="false" '.(($item && !$item->getCommentRequired()) ? 'selected' : '') .'>
-                    Comments Optional
-                </option>
-            </select>
+        // --- C. Process Items and their Options ---
+        foreach ($submittedItemIds as $iid) {
+            $itemName = $_POST['itemName'][$iid] ?? '';
+            if (trim($itemName) === '') continue; // Skip empty item names
             
-            <button type="button" class="btn btn-danger btn-remove-item" data-itemid="'.$item->getId().'"><i class="bi bi-trash"></i></button>
-        </div>
+            $itemDesc = $_POST['itemDesc'][$iid] ?? '';
+            $itemReq = ($_POST['itemCommentRequired'][$iid] ?? 'false') === 'true' ? 1 : 0;
+            
+            // It's a "new" item if we're creating/copying, OR if the JS generated a temporary ID
+            $isNewItem = $isNewRubric || strpos($iid, 'new_') === 0;
 
-    </div>
-		';
-		}
-	}
-	
-/*	
-$action = $_POST['action'] ?? '';
-//change copy to include -copy in name
-if ($action === 'create' || $action === 'copy') {
-	$rubric = new Rubric();
+            if ($isNewItem) {
+                $rubricsDao->createRubricItem($targetRubricId, $itemName, $itemDesc, $itemReq);
+                $actualItemId = $rubricsDao->getLastInsertedRubricItemId(); 
+            } else {
+                $actualItemId = $iid;
+                $itemToUpdate = clone $rubricsDao->getRubricItemById($actualItemId);
+                if ($itemToUpdate) {
+                    $itemToUpdate->setName($itemName)
+                                 ->setDescription($itemDesc)
+                                 ->setCommentRequired($itemReq);
+                    $rubricsDao->updateRubricItem($itemToUpdate);
+                }
+                
+                // Delete missing options for this item
+                $submittedOptionIds = $_POST['optionIds'][$iid] ?? [];
+                $existingOpts = $rubricsDao->getRubricItemOptionsByItemId($actualItemId) ?: [];
+                foreach ($existingOpts as $exOpt) {
+                    if (!in_array($exOpt->getId(), $submittedOptionIds)) {
+                        $rubricsDao->deleteRubricItemOption($exOpt->getId());
+                    }
+                }
+            }
 
-	$name = $_POST['rubricName'] ?? '';
-        if($action === 'copy' && !empty($name)) {
-		$name .= '-copy';
-	}
+            // --- D. Process Options for this Item ---
+            
+            // 1. Existing options submitted (If we are updating)
+            if (!$isNewRubric && !$isNewItem && isset($_POST['optionIds'][$iid])) {
+                foreach ($_POST['optionIds'][$iid] as $oid) {
+                    $optTitle = $_POST['optionTitle'][$oid] ?? '';
+                    $optVal = $_POST['optionValue'][$oid] ?? '';
+                    $optToUpdate = clone $rubricsDao->getRubricItemOptionById($oid);
+                    if ($optToUpdate) {
+                        $optToUpdate->setTitle($optTitle)->setValue($optVal);
+                        $rubricsDao->updateRubricItemOption($optToUpdate);
+                    }
+                }
+            } elseif ($isNewRubric && isset($_POST['optionIds'][$iid])) {
+                // If copying, treat previously existing options as brand new
+                foreach ($_POST['optionIds'][$iid] as $oid) {
+                    $optTitle = $_POST['optionTitle'][$oid] ?? '';
+                    $optVal = $_POST['optionValue'][$oid] ?? '';
+                    if (trim($optTitle) !== '') {
+                        $rubricsDao->createRubricItemOption($actualItemId, $optVal, $optTitle);
+                    }
+                }
+            }
 
-	$rubric->setName($name)
-			 ->setLastUsed(date('Y-m-d H:i:s'))
-			 ->setLastModified(date('Y-m-d H:i:s'));
-	$rubricsDao->addNewRubric($rubric);
-	// Get the last inserted rubric id via DAO
-	$rubricId = $rubricsDao->getLastInsertedRubricId();
-	if ($rubricId) { 
-		$rubric->setId($rubricId);
-	}
+            // 2. Brand new options added dynamically via Javascript
+            if (isset($_POST['optionTitleNew'][$iid])) {
+                foreach ($_POST['optionTitleNew'][$iid] as $index => $optTitle) {
+                    $optVal = $_POST['optionValueNew'][$iid][$index] ?? '';
+                    if (trim($optTitle) !== '') {
+                        $rubricsDao->createRubricItemOption($actualItemId, $optVal, $optTitle);
+                    }
+                }
+            }
+        }
 
-	if (!empty($_POST['itemName']) && $rubricId !== null) {
-		foreach ($_POST['itemName'] as $i => $name) {
-			if(trim($name) === '') {
-				continue; // Skip empty names
-			}
-			$desc = $_POST['itemDesc'][$i] ?? '';
-			$commentRequired = $_POST['itemCommentRequired'][$i] ?? 'false';
-
-			//? comments required false right now, should be changed in the future
-			$rubricsDao->createRubricItem($rubricId, $name, $desc, $commentRequired);
-		}
-	}
-	$message = 'Rubric created!';
-	//Redirects to new rubric (either copy or entirely new)
-	echo "<script>window.location.href = '?rubricId={$rubricId}';</script>";
-	exit;
-} elseif ($action === 'update') {
-
-	$rubricId = $_POST['rubricId'];
-	$rubric = $rubricsDao->getRubricById($rubricId);
-	$rubric->setName($_POST['rubricName'] ?? '')
-			 ->setLastModified(date('Y-m-d H:i:s'));
-	$rubricsDao->updateRubric($rubric);
-	// Update items
-	$existingItems = $rubric->getItems();
-	$existingIds = array_map(function($item){ return $item->getId(); }, $existingItems);
-	$submittedIds = $_POST['itemId'] ?? [];
-	// Delete removed items
-	foreach ($existingIds as $eid) {
-		if (!in_array($eid, $submittedIds)) {
-			$rubricsDao->deleteRubricItem($eid);
-		}
-	}
-	// Add/update items
-	if (!empty($_POST['itemName'])) {
-		foreach ($_POST['itemName'] as $i => $name) {
-			$desc = $_POST['itemDesc'][$i] ?? '';
-			$commentRequired = $_POST['itemCommentRequired'][$i] ?? 'false';
-			$id = $_POST['itemId'][$i] ?? null;
-			if ($id && in_array($id, $existingIds)) {
-				// Update
-				$item = new RubricItem($id);
-				$item->setFkRubricId($rubricId)
-					 ->setName($name)
-					 ->setDescription($desc)
-					 ->setCommentRequired($commentRequired);
-				$rubricsDao->updateRubricItem($item);
-			} else {
-				// New
-				$rubricsDao->createRubricItem($rubricId, $name, $desc, $commentRequired);
-			}
-		}
-	}
-	$message = 'Rubric updated!<BR>'. print_r($_POST, true);;
+        // Redirect to edit mode of the new/updated rubric to prevent POST resubmissions on refresh
+        header("Location: ?rubricId=" . $targetRubricId . "&msg=saved");
+        exit;
+    }
 }
-*/
 
+// ==========================================================
+// 2. FETCH DATA FOR DISPLAY
+// ==========================================================
+
+$rubrics = $rubricsDao->getAllRubrics();
+$selectedRubric = null;
+$rubricId = $_REQUEST['rubricId'] ?? null;
+
+if ($rubricId != null){
+    $selectedRubric = $rubricsDao->getRubricById($rubricId);
+    if ($logger && $selectedRubric) {
+        $logger->info('Selected rubric ID: ' . $selectedRubric->getId());
+    }
+} 
+    
+$rubricItemsHTML = Array();
+if ($selectedRubric){
+    $rubricItems = $selectedRubric->getItems();
+    if ($rubricItems) {
+        foreach ($rubricItems as $item){
+            $itemId = $item->getId();
+            
+            // Main Item Fields
+            $rubricItemsHTML[$itemId] = '
+            <div class="row mt-4 rubric-item-row align-items-start">
+                <input type="hidden" name="itemIds[]" value="'.$itemId.'">
+                <div class="col-md-8">
+                    <input
+                        name="itemName['.$itemId.']"
+                        class="form-control mb-2 rubric-name-editor"
+                        placeholder="Item Name"
+                        value="'.htmlspecialchars($item->getName()).'"
+                    >
+                    <textarea 
+                        name="itemDesc['.$itemId.']" 
+                        class="form-control" 
+                        placeholder="Description" 
+                        rows="4">'.htmlspecialchars($item->getDescription()).'</textarea>';
+
+            // Options container
+            $options = $item->getItemOptions();
+            $rubricItemsHTML[$itemId] .= '
+                    <div class="mt-3">
+                        <strong>Possible Options:</strong><br>
+                        <div class="row options-container">
+                            <div class="col-md-3">
+                                <input name="optionTitleNew['.$itemId.'][]" class="form-control mb-2 rubric-name-editor" placeholder="Title">
+                                <input name="optionValueNew['.$itemId.'][]" class="form-control mb-2 rubric-name-editor" placeholder="Value" type="number">
+                                <button type="button" class="btn btn-warning btn-sm btn-add-option" data-itemid="'.$itemId.'" aria-label="Add Option">
+                                    <i class="bi bi-plus"></i> Add Option
+                                </button>
+                            </div>';
+            
+            // Existing options for this item
+            if ($options) {
+                foreach ($options as $o){
+                    $oid = $o->getId();
+                    $rubricItemsHTML[$itemId] .= '
+                            <div class="col-md-2 option-card" style="border-color:grey;border-style:solid;padding:5px;margin:2px;border-radius:4px;">
+                                <input type="hidden" name="optionIds['.$itemId.'][]" value="'.$oid.'">
+                                <input name="optionTitle['.$oid.']" class="form-control mb-2 rubric-name-editor" value="'.htmlspecialchars($o->getTitle()).'">
+                                <input name="optionValue['.$oid.']" class="form-control mb-2 rubric-name-editor" value="'.htmlspecialchars($o->getValue()).'" type="number">
+                                <button type="button" class="btn btn-danger btn-sm btn-remove-option" aria-label="Delete">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>';
+                }
+            }
+
+            // Close blocks and add controls
+            $rubricItemsHTML[$itemId] .= '
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <select name="itemCommentRequired['.$itemId.']" class="form-select" required>
+                        <option value="true" '.(($item->getCommentRequired()) ? 'selected' : '') .'>Comments Required</option>
+                        <option value="false" '.((!$item->getCommentRequired()) ? 'selected' : '') .'>Comments Optional</option>
+                    </select>
+                    <button type="button" class="btn btn-danger btn-remove-item"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>';
+        }
+    }
+}
+    
 $rubricSelectorHTML = '
-	<form method="GET" class="mb-4">
+    <form method="GET" class="mb-4">
         <label for="rubricId" class="form-label">Select Rubric to Edit or Copy:</label>
         <select name="rubricId" id="rubricId" class="form-select" onchange="this.form.submit()">
             <option value="">-- Create New Rubric --</option>';
-            foreach ($rubrics as $rubric){
-                $rubricSelectorHTML .= '<option value="'.$rubric->getId().'">'. htmlspecialchars($rubric->getName()).'</option>';
+            foreach ($rubrics as $r){
+                $selected = ($rubricId == $r->getId()) ? 'selected' : '';
+                $rubricSelectorHTML .= '<option value="'.$r->getId().'" '.$selected.'>'. htmlspecialchars($r->getName()).'</option>';
             }
 $rubricSelectorHTML .= '</select>
     </form>
 ';
 
-
-
 include_once PUBLIC_FILES . '/modules/header.php';
-
 ?>
-
 
 <div class="container mt-4">
     <h2>Rubric Management</h2>
     <?php if (!empty($message)): ?>
-        <div class="alert alert-success"><?php echo $message; ?></div>
+        <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
     <?php endif; ?>
     
-	<?php echo $rubricSelectorHTML; ?>
+    <?php echo $rubricSelectorHTML; ?>
 
-    <form method="POST" class="mb-5" id = "rubricForm">
+    <form method="POST" class="mb-5" id="rubricForm">
         <input type="hidden" name="action" value="<?php echo $selectedRubric ? 'update' : 'create'; ?>">
         <?php if ($selectedRubric): ?>
-            <input type="hidden" name="rubricId" id="rubricId" value="<?php echo $selectedRubric->getId(); ?>">
+            <input type="hidden" name="rubricId" value="<?php echo $selectedRubric->getId(); ?>">
         <?php endif; ?>
+        
         <div class="mb-3">
             <label for="rubricName" class="form-label">Rubric Name</label>
-            <input type="text" class="form-control" id="rubricName" maxlength = "255" name="rubricName" required value="<?php echo $selectedRubric ? htmlspecialchars($selectedRubric->getName()) : ''; ?>">
+            <input type="text" class="form-control" id="rubricName" maxlength="255" name="rubricName" required value="<?php echo $selectedRubric ? htmlspecialchars($selectedRubric->getName()) : ''; ?>">
         </div>
-        <div id="itemsContainer" class = "mt-3 mb-4 ">
+        
+        <div id="itemsContainer" class="mt-3 mb-4">
             <h5>Rubric Items</h5>
-
             <?php 
-                
-                    foreach ($rubricItemsHTML as $item) {
-						echo $item;
-                    }
-           
+                foreach ($rubricItemsHTML as $item) echo $item;
             ?>
         </div>
-            <!-- hidden template row that renders a item so that javascript can copy this renered html around-->
-        <template id="templateRow">
-		<div class="row mt-4 rubric-item-row align-items-start"> From the template </div>
-        </template>
 
+        <template id="templateRow">
+            <div class="row mt-4 rubric-item-row align-items-start">
+                <input type="hidden" name="itemIds[]" value="__ITEM_ID__">
+                <div class="col-md-8">
+                    <input name="itemName[__ITEM_ID__]" class="form-control mb-2 rubric-name-editor" placeholder="Item Name" value="">
+                    <textarea name="itemDesc[__ITEM_ID__]" class="form-control" placeholder="Description" rows="4"></textarea>
+                    
+                    <div class="mt-3">
+                        <strong>Possible Options:</strong><br>
+                        <div class="row options-container">
+                            <div class="col-md-3">
+                                <input name="optionTitleNew[__ITEM_ID__][]" class="form-control mb-2 rubric-name-editor" placeholder="Title">
+                                <input name="optionValueNew[__ITEM_ID__][]" class="form-control mb-2 rubric-name-editor" placeholder="Value" type="number">
+                                <button type="button" class="btn btn-warning btn-sm btn-add-option" data-itemid="__ITEM_ID__" aria-label="Add Option">
+                                    <i class="bi bi-plus"></i> Add Option
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 d-flex gap-2">
+                    <select name="itemCommentRequired[__ITEM_ID__]" class="form-select" required>
+                        <option value="true">Comments Required</option>
+                        <option value="false" selected>Comments Optional</option>
+                    </select>
+                    <button type="button" class="btn btn-danger btn-remove-item"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>
+        </template>
 
         <button type="button" class="btn btn-secondary mb-3" id="addItemBtn">Add Item</button>
         <div>
@@ -253,22 +308,20 @@ include_once PUBLIC_FILES . '/modules/header.php';
         </div>
     </form>
 </div>
+
 <script>
-    /* Keep the CKEditor <script> include you already had */
-    let editorInstances = new Map(); // map textarea DOM node -> editor instance
+    let editorInstances = new Map(); 
+    let newItemCounter = 1; // Used to generate unique IDs for brand new items before they hit the DB
 
     function createEditorForTextarea(textarea) {
-        // If CKEditor already created and tracked, don't create again
         if (editorInstances.has(textarea)) return Promise.resolve(editorInstances.get(textarea));
 
-        // Use the textarea's placeholder attribute for CKEditor's placeholder config
         return ClassicEditor.create(textarea, {
             toolbar: ['bold', 'italic', 'bulletedList', 'numberedList', 'undo', 'redo'],
             placeholder: textarea.getAttribute('placeholder') || ''
         })
         .then(editor => {
             editorInstances.set(textarea, editor);
-            // mark the textarea as initialized to avoid re-init attempts by other code
             textarea.classList.add('ckeditor-enabled');
             return editor;
         })
@@ -279,113 +332,81 @@ include_once PUBLIC_FILES . '/modules/header.php';
     }
 
     function initializeCKEditors() {
-        // Initialize only textareas that have not been enabled yet and are already in the DOM
         document.querySelectorAll("textarea").forEach(textarea => {
-            // Only init on textareas that are attached to document (avoid detached nodes)
             if (!document.documentElement.contains(textarea)) return;
-            createEditorForTextarea(textarea).catch(()=>{/* already logged */});
+            createEditorForTextarea(textarea).catch(()=>{});
         });
     }
 
-    //Handles adding a row logic, including making names required and initializing CKEditor on the new textarea
+    // Handle adding an entirely new item row
     document.getElementById('addItemBtn').addEventListener('click', function() {
-        // TODO: API call for adding item to database
-		console.log("Add item btn clicked");
+        const templateHTML = document.getElementById("templateRow").innerHTML;
+        const tempId = 'new_' + newItemCounter++;
+        
+        // Inject our temporary ID so the backend can group this item's fields and options
+        const finalHTML = templateHTML.replace(/__ITEM_ID__/g, tempId);
 
-        // Use the <template> node and clone it so we get real DOM nodes with real properties
-        const template = document.getElementById("templateRow");
-        if (!template) {
-            console.error("Template row not found!");
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = finalHTML;
+        const newNode = wrapper.firstElementChild;
+
+        document.getElementById("itemsContainer").appendChild(newNode);
+
+        const textarea = newNode.querySelector("textarea");
+        if (textarea) createEditorForTextarea(textarea).catch(()=>{});
+    });
+
+    // Make sure CKEditor content is pushed to textareas on form submit
+    document.getElementById('rubricForm').addEventListener('submit', e => {
+        editorInstances.forEach((editor, textarea) => {
+            textarea.value = editor.getData().trim(); 
+        });
+    });
+
+    // Event Delegation for dynamically added elements
+    document.addEventListener('click', function(e) {
+        
+        // Remove Item
+        const btnRemoveItem = e.target.closest('.btn-remove-item');
+        if (btnRemoveItem) {
+            const row = btnRemoveItem.closest('.rubric-item-row');
+            if (row) {
+                const textarea = row.querySelector("textarea");
+                if (textarea && editorInstances.has(textarea)) {
+                    editorInstances.get(textarea).destroy().catch(err => console.warn(err));
+                    editorInstances.delete(textarea);
+                }
+                row.remove();
+            }
             return;
         }
 
-        // Clone the template content (deep clone)
-        const newNode = template.content.firstElementChild.cloneNode(true);
-
-        // Clear any content inside the textarea element directly (so CKEditor starts empty)
-        const textarea = newNode.querySelector("textarea[name='itemDesc[]']");
-        if (textarea) {
-            // Clear the *text content* (what would show inside <textarea>...</textarea>)
-            textarea.value = "";
-            // Remove any preexisting ckeditor marker
-            textarea.classList.remove('ckeditor-enabled');
+        // Remove Option
+        const btnRemoveOption = e.target.closest('.btn-remove-option');
+        if (btnRemoveOption) {
+            btnRemoveOption.closest('.option-card').remove();
+            return;
         }
-
-        // Append the new node to the container
-        const container = document.getElementById("itemsContainer");
-        container.appendChild(newNode);
-        //Make all names required
-
-
-        // Initialize CKEditor on JUST the newly appended textarea element
-        // Initialize CKEditor for both name and description
-        if (textarea) createEditorForTextarea(textarea).catch(()=>{/* logged above */});
-
-    });
-
-    //Handles highliting required fields on form submission to ensure they are filled out
-	//TODO: Needs to be expanded to perform API calls for updating Rubric Items and associated Options
-    document.getElementById('rubricForm').addEventListener('submit', e => {
-        let valid = true;
-        editorInstances.forEach((editor, textarea) => {
-            const content = editor.getData().trim(); // get CKEditor content
-            textarea.value = content; // sync for backend
-
-            /*
-            if (textarea.name === 'itemName[]' && !content) {
+        
+        // Add Option
+        const btnAddOption = e.target.closest('.btn-add-option');
+        if (btnAddOption) {
+            const itemId = btnAddOption.dataset.itemid;
+            const optionsContainer = btnAddOption.closest('.options-container');
+            
+            const newOptionHTML = `
+                <div class="col-md-2 option-card" style="border-color:grey;border-style:solid;padding:5px;margin:2px;border-radius:4px;">
+                    <input name="optionTitleNew[${itemId}][]" class="form-control mb-2 rubric-name-editor" placeholder="Title">
+                    <input name="optionValueNew[${itemId}][]" class="form-control mb-2 rubric-name-editor" placeholder="Value" type="number">
+                    <button type="button" class="btn btn-danger btn-sm btn-remove-option" aria-label="Delete">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>`;
                 
-                valid = false;
-                // highlight the empty editor
-                editor.ui.view.editable.element.style.border = '2px solid red';
-            } else {
-                editor.ui.view.editable.element.style.border = ''; // remove highlight if filled
-            }
-                */
-        });
-
-        if (!valid) {
-            e.preventDefault(); // prevent form submission
-            alert('Please fill out all Item Name fields.');
+            optionsContainer.insertAdjacentHTML('beforeend', newOptionHTML);
         }
     });
 
-    // Handle removing items
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('btn-remove-item')) {
-            // Find the nearest rubric-item-row and before removing, destroy any attached CKEditor instance
-            const row = e.target.closest('.rubric-item-row');
-            if (!row) {
-                e.target.closest('.rubric-item-row')?.remove();
-                return;
-            }
-
-            const textarea = row.querySelector("textarea[name='itemDesc[]']");
-            if (textarea && editorInstances.has(textarea)) {
-                const editor = editorInstances.get(textarea);
-                // destroy the CKEditor instance gracefully
-                editor.destroy().catch(err => console.warn('Error destroying editor', err));
-                editorInstances.delete(textarea);
-            }
-
-            row.remove();
-        }
-		if (e.target.classList.contains('btn-remove-option')) {
-            // TODO: API call for removal from database
-			console.log("Remove option btn clicked: " + e.target.dataset.optionid);
-			parentDiv = e.target.parentElement;
-			parentDiv.remove();	
-        }
-		
-		if (e.target.classList.contains('btn-add-option')) {
-            // TODO: Add the option to the DOM and API call for adding option to data associiated with correct Rubric Item
-			console.log("Add option btn clicked: " + e.target.dataset.itemid);
-			parentDiv = e.target.parentElement.parentElement;
-			parentDiv.innerHTML += '<div class="col-md-2" >New Stuff</div>';
-			
-        }
-    });
-
-    // Run initialization for editors that came from server-render on DOMContentLoaded
     window.addEventListener("DOMContentLoaded", initializeCKEditors);
 </script>
 

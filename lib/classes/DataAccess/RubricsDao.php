@@ -62,6 +62,23 @@ class RubricsDao {
     }
 
     /**
+     * Gets the last inserted rubric item id.
+     * @return int|null
+     */
+    public function getLastInsertedRubricItemId() {
+        try {
+            $sql = 'SELECT id FROM Rubric_items ORDER BY id DESC LIMIT 1';
+            $result = $this->conn->query($sql);
+            if ($result && count($result) > 0) {
+                return $result[0]['id'];
+            }
+        } catch (\Exception $e) {
+            $this->logError('Failed to get last inserted rubric item id: ' . $e->getMessage());
+        }
+        return null;
+    }
+
+    /**
      * Adds a new Rubric to the database.
      * @param Rubric $rubric
      * @return bool
