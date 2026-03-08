@@ -212,22 +212,18 @@ class EvaluationsDao {
 
     public function getRubricItems($rubricId) {
         try {
-            $this->logError('EvaluationsDao::getRubricItems called for rubricId: ' . $rubricId);
             $sql = 'SELECT * FROM Rubric_items WHERE fk_rubric_id = :id';
             $params = [':id' => $rubricId];
             $result = $this->conn->query($sql, $params);
-            $this->logError('EvaluationsDao::getRubricItems found ' . count($result) . ' rubric items in DB');
             
             $items = array();
             
             foreach ($result as $row) {
                 $item = self::ExtractRubricItemFromRow($row);
-                $this->logError('EvaluationsDao::getRubricItems extracted item ID: ' . $item->getId() . ' - fetching options...');
                 $options = $this->getRubricItemOptionsByItemId($item->getId());
                 if ($options === false) {
                     $options = [];
                 }
-                $this->logError('EvaluationsDao::getRubricItems found ' . count($options) . ' options for item ID: ' . $item->getId());
                 $item->items = $options; // using ->items as per existing convention
                 $items[] = $item;
             }

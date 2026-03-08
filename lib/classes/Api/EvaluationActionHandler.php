@@ -67,7 +67,7 @@ class EvaluationActionHandler extends ActionHandler {
             foreach ($reviewerIds as $reviewerId) {
                 try {
                     $newEval = $this->evaluationsDao->createEvaluation($studentId, $reviewerId, $uploadId, $rubricId);
-
+                    $count++;
                 } catch (\Exception $e) {
                     $errors[] = "DB Error (Student: $studentId, Reviewer: $reviewerId): " . $e->getMessage();
                 }

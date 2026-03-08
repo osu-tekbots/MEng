@@ -116,6 +116,11 @@ include_once PUBLIC_FILES . '/modules/header.php';
     #rubrics option {
         color: #212529;
     }
+
+    /* Ensure snackbar displays above the fixed bottom bar on this page */
+    #snackbar {
+        z-index: 1100 !important;
+    }
 </style>
 
 <div class="container-fluid">
