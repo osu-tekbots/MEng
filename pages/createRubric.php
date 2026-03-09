@@ -9,6 +9,8 @@ use Model\Rubric;
 use Model\RubricItem; 
 use Model\RubricItemOption;
 
+use DataAccess\EvaluationsDao;
+
 $js = array(
     "https://cdn.ckeditor.com/ckeditor5/31.1.0/classic/ckeditor.js"
 );
@@ -19,6 +21,7 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'saved') {
 }
 
 $rubricsDao = new RubricsDao($dbConn, $logger);
+$evaluationsDao = new EvaluationsDao($dbConn, $logger);
 
 // ==========================================================
 // 1. POST PROCESSING (Create / Update / Copy / Delete)
@@ -147,12 +150,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $rubrics = $rubricsDao->getAllRubrics();
 $selectedRubric = null;
 $rubricId = $_REQUEST['rubricId'] ?? null;
+$isLocked = false;
 
 if ($rubricId != null){
     $selectedRubric = $rubricsDao->getRubricById($rubricId);
     if ($logger && $selectedRubric) {
         $logger->info('Selected rubric ID: ' . $selectedRubric->getId());
     }
+    $isLocked = $evaluationsDao->isRubricInUse($rubricId);
 } 
     
 $rubricItemsHTML = Array();
@@ -163,6 +168,7 @@ if ($selectedRubric){
             $itemId = $item->getId();
             
             // Main Item Fields
+            $disabledAttr = $isLocked ? 'disabled' : '';
             $rubricItemsHTML[$itemId] = '
             <div class="row mt-4 rubric-item-row align-items-start">
                 <input type="hidden" name="itemIds[]" value="'.$itemId.'">
@@ -172,19 +178,42 @@ if ($selectedRubric){
                         class="form-control mb-2 rubric-name-editor"
                         placeholder="Item Name"
                         value="'.htmlspecialchars($item->getName()).'"
-                    >
+                        '.$disabledAttr.'
+                    >';
+            if ($isLocked) {
+                // When a rubric is locked, all of its standard form inputs (textareas, dropdowns) 
+                // are disabled or removed to prevent editing historical data.
+                // However, the "Copy as New" functionality requires ALL original data to be submitted.
+                // This block generates hidden inputs to silently pass that historical data through the POST request.
+                $commentReqStr = $item->getCommentRequired() ? 'true' : 'false';
+                $rubricItemsHTML[$itemId] .= '
+                    <input type="hidden" name="itemName['.$itemId.']" value="'.htmlspecialchars($item->getName()).'">
+                    <textarea name="itemDesc['.$itemId.']" style="display:none;">'.htmlspecialchars($item->getDescription()).'</textarea>
+                    <input type="hidden" name="itemCommentRequired['.$itemId.']" value="'.$commentReqStr.'">
+                    
+                    <!-- Read-only visual display of the description -->
+                    <div class="form-control" style="min-height: 100px; background-color: #e9ecef; overflow-y: auto;">
+                        '.$item->getDescription().'
+                    </div>';
+            } else {
+                $rubricItemsHTML[$itemId] .= '
                     <textarea 
                         name="itemDesc['.$itemId.']" 
                         class="form-control" 
                         placeholder="Description" 
                         rows="4">'.htmlspecialchars($item->getDescription()).'</textarea>';
+            }
 
             // Options container
-            $options = $item->getItemOptions();
+            $options = $item->getItemOptions() ?: [];
+            $optionsLabel = $isLocked ? 'Selected Options:' : 'Possible Options:';
             $rubricItemsHTML[$itemId] .= '
-                    <div class="mt-3">
-                        <strong>Possible Options:</strong><br>
-                        <div class="row options-container">
+                    <div class="mt-4">
+                        <strong>'.$optionsLabel.'</strong><br>
+                        <div class="row options-container mt-2">';
+            
+            if (!$isLocked) {
+                $rubricItemsHTML[$itemId] .= '
                             <div class="col-md-3">
                                 <input name="optionTitleNew['.$itemId.'][]" class="form-control mb-2 rubric-name-editor" placeholder="Title">
                                 <input name="optionValueNew['.$itemId.'][]" class="form-control mb-2 rubric-name-editor" placeholder="Value" type="number">
@@ -192,20 +221,38 @@ if ($selectedRubric){
                                     <i class="bi bi-plus"></i> Add Option
                                 </button>
                             </div>';
-            
+            }
             // Existing options for this item
             if ($options) {
                 foreach ($options as $o){
                     $oid = $o->getId();
-                    $rubricItemsHTML[$itemId] .= '
-                            <div class="col-md-2 option-card" style="border-color:grey;border-style:solid;padding:5px;margin:2px;border-radius:4px;">
-                                <input type="hidden" name="optionIds['.$itemId.'][]" value="'.$oid.'">
-                                <input name="optionTitle['.$oid.']" class="form-control mb-2 rubric-name-editor" value="'.htmlspecialchars($o->getTitle()).'">
-                                <input name="optionValue['.$oid.']" class="form-control mb-2 rubric-name-editor" value="'.htmlspecialchars($o->getValue()).'" type="number">
-                                <button type="button" class="btn btn-danger btn-sm btn-remove-option" aria-label="Delete">
-                                    <i class="bi bi-trash"></i> Delete
-                                </button>
-                            </div>';
+                    if ($isLocked) {
+                        // For locked rubrics, standard option inputs are omitted to prevent tampering.
+                        // We use hidden inputs to ensure the "Copy as New" function can still 
+                        // submit the original option data (ID, Title, Value) to the server.
+                        $rubricItemsHTML[$itemId] .= '
+                                <div class="col-md-2 mb-3">
+                                    <!-- Hidden inputs preserving locked option data -->
+                                    <input type="hidden" name="optionIds['.$itemId.'][]" value="'.$oid.'">
+                                    <input type="hidden" name="optionTitle['.$oid.']" value="'.htmlspecialchars($o->getTitle()).'">
+                                    <input type="hidden" name="optionValue['.$oid.']" value="'.htmlspecialchars($o->getValue()).'">
+                                    
+                                    <!-- Read-only visual display of the option -->
+                                    <div class="p-3 text-center" style="background-color:#f8f9fa; border:1px solid lightgrey; border-radius:6px; min-height:60px; display:flex; align-items:center; justify-content:center;">
+                                        <strong>'.htmlspecialchars($o->getTitle()).'</strong>
+                                    </div>
+                                </div>';
+                    } else {
+                        $rubricItemsHTML[$itemId] .= '
+                                <div class="col-md-2 option-card" style="border-color:grey;border-style:solid;padding:5px;margin:2px;border-radius:4px;">
+                                    <input type="hidden" name="optionIds['.$itemId.'][]" value="'.$oid.'">
+                                    <input name="optionTitle['.$oid.']" class="form-control mb-2 rubric-name-editor" value="'.htmlspecialchars($o->getTitle()).'">
+                                    <input name="optionValue['.$oid.']" class="form-control mb-2 rubric-name-editor" value="'.htmlspecialchars($o->getValue()).'" type="number">
+                                    <button type="button" class="btn btn-danger btn-sm btn-remove-option" aria-label="Delete">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </div>';
+                    }
                 }
             }
 
@@ -215,11 +262,14 @@ if ($selectedRubric){
                     </div>
                 </div>
                 <div class="col-md-4 d-flex gap-2">
-                    <select name="itemCommentRequired['.$itemId.']" class="form-select" required>
+                    <select name="itemCommentRequired['.$itemId.']" class="form-select" required '.$disabledAttr.'>
                         <option value="true" '.(($item->getCommentRequired()) ? 'selected' : '') .'>Comments Required</option>
                         <option value="false" '.((!$item->getCommentRequired()) ? 'selected' : '') .'>Comments Optional</option>
-                    </select>
-                    <button type="button" class="btn btn-danger btn-remove-item"><i class="bi bi-trash"></i></button>
+                    </select>';
+            if (!$isLocked) {
+                $rubricItemsHTML[$itemId] .= '<button type="button" class="btn btn-danger btn-remove-item"><i class="bi bi-trash"></i></button>';
+            }
+            $rubricItemsHTML[$itemId] .= '
                 </div>
             </div>';
         }
@@ -258,7 +308,15 @@ include_once PUBLIC_FILES . '/modules/header.php';
         
         <div class="mb-3">
             <label for="rubricName" class="form-label">Rubric Name</label>
-            <input type="text" class="form-control" id="rubricName" maxlength="255" name="rubricName" required value="<?php echo $selectedRubric ? htmlspecialchars($selectedRubric->getName()) : ''; ?>">
+            <input type="text" class="form-control" id="rubricName" maxlength="255" name="rubricName" required value="<?php echo $selectedRubric ? htmlspecialchars($selectedRubric->getName()) : ''; ?>" <?php echo $isLocked ? 'disabled' : ''; ?>>
+            <?php if ($isLocked && $selectedRubric): ?>
+                <!-- 
+                    Because the visible Rubric Name input is set to disabled when locked, 
+                    it won\'t be submitted in the POST request. This hidden input ensures 
+                    "Copy as New" still receives the original rubric name to copy from.
+                -->
+                <input type="hidden" name="rubricName" value="<?php echo htmlspecialchars($selectedRubric->getName()); ?>">
+            <?php endif; ?>
         </div>
         
         <div id="itemsContainer" class="mt-3 mb-4">
@@ -299,13 +357,24 @@ include_once PUBLIC_FILES . '/modules/header.php';
             </div>
         </template>
 
-        <button type="button" class="btn btn-secondary mb-3" id="addItemBtn">Add Item</button>
-        <div>
-            <button type="submit" class="btn btn-primary">Save Rubric</button>
-            <?php if ($selectedRubric): ?>
-                <button type="submit" name="action" value="copy" class="btn btn-info ms-2">Copy as New</button>
-            <?php endif; ?>
-        </div>
+        </template>
+
+        <?php if ($isLocked): ?>
+            <div class="alert alert-warning mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i> This rubric is currently in use for an evaluation. Forms and inputs have been locked to prevent modifying historical data.
+            </div>
+            <div>
+                <button type="submit" name="action" value="copy" class="btn btn-info">Copy as New</button>
+            </div>
+        <?php else: ?>
+            <button type="button" class="btn btn-secondary mb-3" id="addItemBtn">Add Item</button>
+            <div>
+                <button type="submit" class="btn btn-primary">Save Rubric</button>
+                <?php if ($selectedRubric): ?>
+                    <button type="submit" name="action" value="copy" class="btn btn-info ms-2">Copy as New</button>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     </form>
 </div>
 
@@ -316,11 +385,16 @@ include_once PUBLIC_FILES . '/modules/header.php';
     function createEditorForTextarea(textarea) {
         if (editorInstances.has(textarea)) return Promise.resolve(editorInstances.get(textarea));
 
+        let isLocked = textarea.classList.contains('locked-editor');
+
         return ClassicEditor.create(textarea, {
-            toolbar: ['bold', 'italic', 'bulletedList', 'numberedList', 'undo', 'redo'],
+            toolbar: isLocked ? [] : ['bold', 'italic', 'bulletedList', 'numberedList', 'undo', 'redo'],
             placeholder: textarea.getAttribute('placeholder') || ''
         })
         .then(editor => {
+            if (isLocked) {
+                editor.enableReadOnlyMode("lockedRubric");
+            }
             editorInstances.set(textarea, editor);
             textarea.classList.add('ckeditor-enabled');
             return editor;

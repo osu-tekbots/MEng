@@ -210,6 +210,30 @@ class EvaluationsDao {
         }
     }
 
+    /**
+     * Checks if a given rubric is currently being used in any evaluation.
+     *
+     * @param int $rubricId the id of the rubric to check
+     * @return boolean true if the rubric is in use, false otherwise
+     */
+    public function isRubricInUse($rubricId) {
+        try {
+            $sql = 'SELECT COUNT(*) as count FROM Evaluations WHERE fk_rubric_id = :rubricId';
+            $params = array(
+                ':rubricId' => $rubricId
+            );
+            $result = $this->conn->query($sql, $params);
+            
+            if ($result && isset($result[0]['count']) && $result[0]['count'] > 0) {
+                return true;
+            }
+            return false;
+        } catch (\Exception $e) {
+            $this->logError('Failed to check if rubric is in use: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function getRubricItems($rubricId) {
         try {
             $sql = 'SELECT * FROM Rubric_items WHERE fk_rubric_id = :id';

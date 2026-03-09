@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: engr-db.engr.oregonstate.edu:3307
--- Generation Time: Mar 05, 2026 at 09:31 PM
+-- Generation Time: Mar 08, 2026 at 05:20 PM
 -- Server version: 10.6.24-MariaDB-log
 -- PHP Version: 7.4.33
 
@@ -62,6 +62,7 @@ INSERT INTO `Evaluations` (`id`, `fk_student_id`, `fk_reviewer_id`, `fk_upload_i
 ('0061a86a', 'esdouhfq', 'esdouhfq', '3TN214g3', '1', '2026-03-05 21:28:57'),
 ('08554bc1', 'qwqwqwqw', 'qwqwqwqw', 'SuvWSku9', '1', '2026-02-16 14:32:30'),
 ('6667f3cf', 'qwqwqwqw', 'qwqwqwqw', 'xKtacZVX', '1', '2026-02-18 12:20:34'),
+('85b0f51b', 'esdouhfq', 'esdouhfq', '3TN214g3', '10', '2026-03-08 17:18:44'),
 ('88cf9066', 'b9Q6kInz', 'b9Q6kInz', 'EDPIX0Xt', '1', '2026-02-16 20:16:52'),
 ('b715b0c7', 'qwqwqwqw', 'qwqwqwqw', 'xKtacZVX', '1', '2026-02-18 12:29:50'),
 ('c7146422', 'esdouhfq', 'esdouhfq', '42fUPx94', '1', '2026-03-02 15:55:30'),
@@ -139,7 +140,36 @@ INSERT INTO `Evaluation_flag_assignments` (`id`, `fk_evaluation_id`, `fk_evaluat
 (29, 'c7146422', 1),
 (30, 'ce924fe9', 2),
 (31, '0061a86a', 2),
-(32, '0061a86a', 4);
+(32, '0061a86a', 4),
+(33, '0061a86a', 4),
+(34, '0061a86a', 4),
+(35, 'c7146422', 4),
+(36, 'c7146422', 4),
+(37, 'fb6d75ba', 2),
+(38, '13d46adb', 2),
+(39, '42b3a332', 2),
+(40, 'd9378cb6', 2),
+(41, '6b366ca0', 2),
+(42, 'b66d3289', 2),
+(43, '8390674f', 2),
+(44, 'bd45b61c', 2),
+(45, '29298d90', 2),
+(46, '1f0bcc70', 2),
+(47, '1249b8d8', 2),
+(48, '8097c7cc', 2),
+(49, '9c738c9a', 2),
+(50, 'bf99a460', 2),
+(51, '6911b94b', 2),
+(52, '8c5f00ce', 2),
+(53, '5a90be71', 2),
+(54, '5d65ae93', 2),
+(55, 'b1598438', 2),
+(56, '25eba082', 2),
+(57, '4b1b78f4', 2),
+(58, '37da094e', 2),
+(59, '7307e920', 2),
+(60, '30b1dfb5', 2),
+(61, '85b0f51b', 2);
 
 -- --------------------------------------------------------
 
@@ -162,8 +192,10 @@ CREATE TABLE `Evaluation_rubric_items` (
 INSERT INTO `Evaluation_rubric_items` (`id`, `fk_evaluation_id`, `fk_rubric_item_id`, `fk_rubric_item_option_id`, `comments`) VALUES
 (79, 'c7146422', '26', '2', '<p>i picked proficient for comments</p>'),
 (80, 'c7146422', '25', '4', '<p>This is a test of the comments here for q 1</p>'),
-(81, '0061a86a', '25', '7', '<p>Thus is a test comment&nbsp;</p>'),
-(82, '0061a86a', '26', '8', '<p>erg3eg3eg</p>');
+(81, '0061a86a', '25', '6', '<p>Thus is a test comment hi3&nbsp;</p>'),
+(82, '0061a86a', '26', '1', '<p>erg3eg3eg</p>'),
+(83, '0061a86a', '30', '9', ''),
+(84, 'c7146422', '30', '9', '');
 
 -- --------------------------------------------------------
 
@@ -184,7 +216,7 @@ CREATE TABLE `Invites` (
 
 CREATE TABLE `Rubrics` (
   `id` int(11) NOT NULL,
-  `name` varchar(32) NOT NULL,
+  `name` varchar(255) NOT NULL,
   `last_used` datetime NOT NULL,
   `last_modified` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
@@ -194,7 +226,8 @@ CREATE TABLE `Rubrics` (
 --
 
 INSERT INTO `Rubrics` (`id`, `name`, `last_used`, `last_modified`) VALUES
-(1, 'MENG Assessment 2', '2026-02-16 14:31:51', '2026-03-03 04:53:10');
+(1, 'MENG Assessment 2', '2026-02-16 14:31:51', '2026-03-05 23:51:41'),
+(10, 'MENG Assessment 2 (Copy) (Only o', '2026-03-08 17:17:57', '2026-03-08 17:18:26');
 
 -- --------------------------------------------------------
 
@@ -219,7 +252,15 @@ INSERT INTO `Rubric_items` (`id`, `fk_rubric_id`, `name`, `description`, `commen
 (26, 1, 'Depth of Technical Knowledge', '<figure class=\"table\"><table><tbody><tr><td>Demonstrates deep, comprehensive knowledge of specialized areas within engineering, engaging critically with advanced theories, research, and applications.</td><td>Demonstrates strong technical knowledge in specific areas of engineering, though may not engage with the most complex or advanced concepts.</td><td>Shows understanding of fundamental engineering concepts, but lacks depth and engagement with specialized knowledge.</td></tr></tbody></table></figure><p>&nbsp;</p>', 0),
 (27, 2, 'test3', '<p>ewfdwef</p>', 0),
 (28, 3, 'test3', '', 0),
-(29, 4, 'test3', '', 0);
+(29, 4, 'test3', '', 0),
+(30, 1, 'testing', '<p>hi</p>', 0),
+(31, 8, 'Mastery of Engineering Concepts', '<p>Mastery of Engineering Concepts Demonstrates an advanced understanding of engineering principles, theories, and practices, integrating them with cutting-edge developments and interdisciplinary approaches. Demonstrates a solid understanding of core engineering principles, theories, and practices, with some integration of interdisciplinary perspectives. Demonstrates a basic understanding of engineering principles, but with limited integration or application.</p>', 0),
+(32, 8, 'Depth of Technical Knowledge', '<figure class=\"table\"><table><tbody><tr><td>Demonstrates deep, comprehensive knowledge of specialized areas within engineering, engaging critically with advanced theories, research, and applications.</td><td>Demonstrates strong technical knowledge in specific areas of engineering, though may not engage with the most complex or advanced concepts.</td><td>Shows understanding of fundamental engineering concepts, but lacks depth and engagement with specialized knowledge.</td></tr></tbody></table></figure><p>&nbsp;</p>', 0),
+(33, 8, 'testing', '<p>hi</p>', 0),
+(34, 9, 'Mastery of Engineering Concepts', '<p>Mastery of Engineering Concepts Demonstrates an advanced understanding of engineering principles, theories, and practices, integrating them with cutting-edge developments and interdisciplinary approaches. Demonstrates a solid understanding of core engineering principles, theories, and practices, with some integration of interdisciplinary perspectives. Demonstrates a basic understanding of engineering principles, but with limited integration or application.</p>', 0),
+(35, 9, 'Depth of Technical Knowledge', '<figure class=\"table\"><table><tbody><tr><td>Demonstrates deep, comprehensive knowledge of specialized areas within engineering, engaging critically with advanced theories, research, and applications.</td><td>Demonstrates strong technical knowledge in specific areas of engineering, though may not engage with the most complex or advanced concepts.</td><td>Shows understanding of fundamental engineering concepts, but lacks depth and engagement with specialized knowledge.</td></tr></tbody></table></figure><p>&nbsp;</p>', 0),
+(36, 9, 'testing', '<p>hi</p>', 0),
+(37, 10, 'Mastery of Engineering Concepts', '<p>Mastery of Engineering Concepts Demonstrates an advanced understanding of engineering principles, theories, and practices, integrating them with cutting-edge developments and interdisciplinary approaches. Demonstrates a solid understanding of core engineering principles, theories, and practices, with some integration of interdisciplinary perspectives. Demonstrates a basic understanding of engineering principles, but with limited integration or application.</p>', 1);
 
 -- --------------------------------------------------------
 
@@ -231,7 +272,7 @@ CREATE TABLE `Rubric_item_options` (
   `id` int(11) NOT NULL,
   `fk_rubric_item_id` int(11) NOT NULL,
   `value` int(11) DEFAULT NULL,
-  `title` varchar(50) DEFAULT NULL
+  `title` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
@@ -246,7 +287,28 @@ INSERT INTO `Rubric_item_options` (`id`, `fk_rubric_item_id`, `value`, `title`) 
 (5, 25, 2, 'hi2'),
 (6, 25, 3, 'hi3'),
 (7, 25, 9, 'hi4'),
-(8, 26, 67, '67');
+(8, 26, 67, '67'),
+(9, 30, 3, 'erver'),
+(10, 30, 2, 'option 2'),
+(11, 31, 5, 'hi'),
+(12, 31, 2, 'hi2'),
+(13, 31, 3, 'hi3'),
+(14, 31, 9, 'hi4'),
+(15, 32, 67, '67'),
+(16, 32, 3, 'Advanced'),
+(17, 32, 2, 'Proficient'),
+(18, 33, 3, 'erver'),
+(19, 33, 2, 'option 2'),
+(20, 34, 5, 'hi'),
+(21, 34, 2, 'hi2'),
+(22, 34, 3, 'hi3'),
+(23, 34, 9, 'hi4'),
+(24, 35, 67, '67'),
+(25, 35, 3, 'Advanced'),
+(26, 35, 2, 'Proficient'),
+(27, 36, 3, 'erver'),
+(28, 36, 2, 'option 2'),
+(29, 37, 5, 'hi');
 
 -- --------------------------------------------------------
 
@@ -341,7 +403,7 @@ CREATE TABLE `Users` (
 INSERT INTO `Users` (`id`, `uuid`, `osu_id`, `first_name`, `last_name`, `onid`, `email`, `last_login`) VALUES
 ('b9Q6kInz', NULL, NULL, 'Rohan', 'Thapliyal', 'thapliyr', 'thapliyr@oregonstate.edu', '2026-03-02 20:33:40'),
 ('eaq15xz7', NULL, NULL, 'Brian', 'Mills', 'millsbr', 'brian.mills@oregonstate.edu', '2026-01-22 15:02:43'),
-('esdouhfq', 'test', '934593467', 'Ekansh', 'Arora', 'arorae', 'arorae@oregonstate.edu', '2026-03-05 20:51:48'),
+('esdouhfq', 'test', '934593467', 'Ekansh', 'Arora', 'arorae', 'arorae@oregonstate.edu', '2026-03-08 15:29:00'),
 ('qwqwqwqw', 'test', '123456789', 'Donald', 'Heer', 'heer', '', '2026-02-26 20:36:49'),
 ('sdghokjg', 'temp1', 'temp1', 'Calvin', 'Hughes', 'hughesca', 'Calvin.Hughes@oregonstate.edu', NULL);
 
@@ -542,31 +604,31 @@ ALTER TABLE `Evaluation_flags`
 -- AUTO_INCREMENT for table `Evaluation_flag_assignments`
 --
 ALTER TABLE `Evaluation_flag_assignments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
 
 --
 -- AUTO_INCREMENT for table `Evaluation_rubric_items`
 --
 ALTER TABLE `Evaluation_rubric_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85;
 
 --
 -- AUTO_INCREMENT for table `Rubrics`
 --
 ALTER TABLE `Rubrics`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `Rubric_items`
 --
 ALTER TABLE `Rubric_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT for table `Rubric_item_options`
 --
 ALTER TABLE `Rubric_item_options`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT for table `Upload_flags`
