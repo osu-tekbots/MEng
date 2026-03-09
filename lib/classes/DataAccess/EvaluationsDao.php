@@ -469,23 +469,23 @@ class EvaluationsDao {
 
             $jsonArray = [];
 
-        foreach ($evaluationItems as $evaluationItem) {
-            $item = $evaluationItem -> getRubricItem();
-            $option = $evaluationItem -> getRubricItemOption();
-            $jsonArray[] = [
-                'Name' => $item->getName(),
-                'Description' => $item->getDescription(),
-                'Answer Title' => $option->getTitle(),
-                'Answer Value' => $option->getValue(),
-                'Comments' => $evaluationItem->getComments(),
-                'Comments Required' => $item->getCommentsRequired()
-            ];
-        }
+            foreach ($evaluationItems as $evaluationRubricItem) {
+                $rubricItem = $evaluationRubricItem -> getRubricItem();
+                $option = $evaluationRubricItem -> getRubricItemOption();
+                $jsonArray[] = [
+                    'Name' => $rubricItem->getName(),
+                    'Description' => $rubricItem->getDescription(),
+                    'Answer Title' => $option->getTitle(),
+                    'Answer Value' => $option->getValue(),
+                    'Comments' => $evaluationRubricItem->getComments(),
+                    'Comments Required' => $rubricItem->getCommentRequired()
+                ];
+            }
 
-        // Convert to JSON
-        $jsonData = json_encode($jsonArray);
-        $this -> logError('Exported Evaluation Data: ' . $jsonData);
-        return $jsonData;
+            // Convert to JSON
+            $jsonData = json_encode($jsonArray);
+            $this -> logError('Exported Evaluation Data: ' . $jsonData);
+            return $jsonData;
 
         } catch (\Exception $e) {
             $this->logError('Failed to get evaluation data for export: ' . $e->getMessage());
