@@ -212,16 +212,7 @@ if ($selectedRubric){
                         <strong>'.$optionsLabel.'</strong><br>
                         <div class="row options-container mt-2">';
             
-            if (!$isLocked) {
-                $rubricItemsHTML[$itemId] .= '
-                            <div class="col-md-3">
-                                <input name="optionTitleNew['.$itemId.'][]" class="form-control mb-2 rubric-name-editor" placeholder="Title">
-                                <input name="optionValueNew['.$itemId.'][]" class="form-control mb-2 rubric-name-editor" placeholder="Value" type="number">
-                                <button type="button" class="btn btn-warning btn-sm btn-add-option" data-itemid="'.$itemId.'" aria-label="Add Option">
-                                    <i class="bi bi-plus"></i> Add Option
-                                </button>
-                            </div>';
-            }
+            
             // Existing options for this item
             if ($options) {
                 foreach ($options as $o){
@@ -254,6 +245,15 @@ if ($selectedRubric){
                                 </div>';
                     }
                 }
+            }
+
+			if (!$isLocked) {
+                $rubricItemsHTML[$itemId] .= '
+                            <div class="col-md-3">
+                                <button type="button" class="btn btn-warning btn-sm btn-add-option" data-itemid="'.$itemId.'" aria-label="Add Option">
+                                    <i class="bi bi-plus"></i> Add Option
+                                </button>
+                            </div>';
             }
 
             // Close blocks and add controls
@@ -337,8 +337,6 @@ include_once PUBLIC_FILES . '/modules/header.php';
                         <strong>Possible Options:</strong><br>
                         <div class="row options-container">
                             <div class="col-md-3">
-                                <input name="optionTitleNew[__ITEM_ID__][]" class="form-control mb-2 rubric-name-editor" placeholder="Title">
-                                <input name="optionValueNew[__ITEM_ID__][]" class="form-control mb-2 rubric-name-editor" placeholder="Value" type="number">
                                 <button type="button" class="btn btn-warning btn-sm btn-add-option" data-itemid="__ITEM_ID__" aria-label="Add Option">
                                     <i class="bi bi-plus"></i> Add Option
                                 </button>

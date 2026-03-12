@@ -275,7 +275,7 @@ class EvaluationsDao {
      */
     public function getRubricItemOptionsByItemId($id) {
         try {
-            $sql = 'SELECT * FROM Rubric_item_options WHERE fk_rubric_item_id = :id ORDER BY Title ASC';
+            $sql = 'SELECT * FROM Rubric_item_options WHERE fk_rubric_item_id = :id ORDER BY Title DESC';
             $params = [':id' => $id];
             $result = $this->conn->query($sql, $params);
             if (!$result || count($result) === 0) return false;
