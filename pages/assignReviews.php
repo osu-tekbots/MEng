@@ -11,13 +11,13 @@ $uploadsDao = new UploadsDao($dbConn, $logger);
 $rubricsDao = new RubricsDao($dbConn, $logger);
 $documentTypesDao = new DocumentTypesDao($dbConn, $logger);
 
-// 1. Determine Server-Side Filters (Department Only)
-$filterDepartment = isset($_GET['department']) && $_GET['department'] != '' ? $_GET['department'] : null;
+// 1. Determine Server-Side Filters (Program Only)
+$filterProgram = isset($_GET['program']) && $_GET['program'] != '' ? $_GET['program'] : null;
 
-// 2. Fetch Students based on Department Filter
+// 2. Fetch Students based on Program Filter
 $students = [];
-if ($filterDepartment) {
-    $students = $usersDao->getStudentsByDepartment($filterDepartment);
+if ($filterProgram) {
+    $students = $usersDao->getStudentsByDepartment($filterProgram);
 } else {
     $students = $usersDao->getAllStudents();
 }
@@ -44,11 +44,11 @@ foreach ($unassignedUploads as $upl) {
     $unassignedIds[$upl->getId()] = true;
 }
 
-// 5. Build Department Map (ID -> Name) for display
-$department_flags = $usersDao->getAllDepartmentFlags();
-$deptMap = [];
-foreach ($department_flags as $dept) {
-    $deptMap[$dept->getId()] = $dept->getName();
+// 5. Build Program Map (ID -> Name) for display
+$program_flags = $usersDao->getAllDepartmentFlags();
+$progMap = [];
+foreach ($program_flags as $prog) {
+    $progMap[$prog->getId()] = $prog->getName();
 }
 
 require_once PUBLIC_FILES . '/lib/osu-identities-api.php';
@@ -143,13 +143,13 @@ include_once PUBLIC_FILES . '/modules/header.php';
                 
                 <div class="form-row mb-3">
                     <div class="col-md-6">
-                        <label class="text-muted small text-uppercase font-weight-bold">Filter by Department</label>
-                        <select id="departments" name="departments" class="form-control" onchange="filterDepartments()">
-                            <option value="">All Departments</option>
+                        <label class="text-muted small text-uppercase font-weight-bold">Filter by Program</label>
+                        <select id="programs" name="programs" class="form-control" onchange="filterPrograms()">
+                            <option value="">All Programs</option>
                             <?php 
-                                foreach ($department_flags as $dept) {
-                                    $selected = ($filterDepartment == $dept->getId()) ? 'selected' : '';
-                                    echo '<option value="'. $dept->getId() .'" '.$selected.'>'. $dept->getName() .'</option>';
+                                foreach ($program_flags as $prog) {
+                                    $selected = ($filterProgram == $prog->getId()) ? 'selected' : '';
+                                    echo '<option value="'. $prog->getId() .'" '.$selected.'>'. $prog->getName() .'</option>';
                                 }
                             ?>
                         </select>
@@ -259,13 +259,13 @@ include_once PUBLIC_FILES . '/modules/header.php';
 </div>
 
 <script>
-    function filterDepartments() {
-        const deptValue = document.getElementById("departments").value;
-        let url = "assignReviews.php?";
-        if (deptValue) {
-            url += "department=" + deptValue;
+    function filterPrograms() {
+        const progValue = document.getElementById("programs").value;
+        let url = "?";
+        if (progValue) {
+            url += "program=" + progValue;
         }
-        window.location.href = url;
+        window.location.href = window.location.pathname + url;
     }
 
     function updateUploadVisibility() {

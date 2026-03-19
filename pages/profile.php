@@ -56,17 +56,20 @@ if (!$hasPermissions || !$user) {
 
 // 5. Fetch Upload Data (FILTERED)
 
-// A. Gather the User's Department IDs
+
+/*
+// A. Gather the User's Program IDs
 $userDeptIds = [];
 if ($userFlags) {
     foreach ($userFlags as $flag) {
-        if ($flag->getType() === 'Department') {
+        if ($flag->getType() === 'Program') {
             $userDeptIds[] = $flag->getId();
         }
     }
 }
+*/
 
-    $documentTypes = $uploadsDao->getAllDocumentTypes();
+$documentTypes = $uploadsDao->getAllDocumentTypes();
 
 // C. Fetch Previous Uploads
 // We use $user->getId() (the profile being viewed) instead of $_SESSION['userID']
@@ -92,7 +95,7 @@ if ($previousUpload) {
 
 // 6. Process Flags/Roles
 $allRoles = $usersDao->getAllRoleFlags();
-$allDepartments = $usersDao->getAllDepartmentFlags();
+$allPrograms = $usersDao->getAllDepartmentFlags();
 
 // Robustly build the array of IDs checking for validity
 $userFlagIds = [];
@@ -278,16 +281,16 @@ if ($userFlags && is_array($userFlags)) {
                     </div>
                     <div class="card-body">
                         
-                        <h6 class="text-muted small text-uppercase font-weight-bold mb-2">Department</h6>
+                        <h6 class="text-muted small text-uppercase font-weight-bold mb-2">Program</h6>
                         <div class="mb-3">
                             <?php 
-                                // Logic to determine the currently selected department (if any)
-                                // We check if the user has a flag that matches a department ID
+                                // Logic to determine the currently selected program (if any)
+                                // We check if the user has a flag that matches a program ID
                                 $currentDeptId = '';
                                 if ($userFlagIds) {
-                                    foreach ($allDepartments as $dept) {
-                                        if (in_array($dept->getId(), $userFlagIds)) {
-                                            $currentDeptId = $dept->getId();
+                                    foreach ($allPrograms as $prog) {
+                                        if (in_array($prog->getId(), $userFlagIds)) {
+                                            $currentDeptId = $prog->getId();
                                             break; // Enforce single selection by taking the first match
                                         }
                                     }
@@ -295,21 +298,21 @@ if ($userFlags && is_array($userFlags)) {
                             ?>
 
                             <select class="form-control" 
-                                    id="departmentSelect" 
+                                    id="programSelect" 
                                     data-user-id="<?php echo $user->getId(); ?>"
-                                    data-current-dept="<?php echo $currentDeptId; ?>"
-                                    onchange="updateDepartment(this)"
+                                    data-current-prog="<?php echo $currentDeptId; ?>"
+                                    onchange="updateProgram(this)"
                                     <?php echo $btnDisabled ?? ''; ?>>
                                 
-                                <option value="">Select Department...</option>
-                                <?php foreach ($allDepartments as $dept): ?>
-                                    <option value="<?php echo $dept->getId(); ?>" 
-                                        <?php echo ($currentDeptId == $dept->getId()) ? 'selected' : ''; ?>>
-                                        <?php echo $dept->getName(); ?>
+                                <option value="">Select Program...</option>
+                                <?php foreach ($allPrograms as $prog): ?>
+                                    <option value="<?php echo $prog->getId(); ?>" 
+                                        <?php echo ($currentDeptId == $prog->getId()) ? 'selected' : ''; ?>>
+                                        <?php echo $prog->getName(); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                            <small class="form-text text-muted">Select a single department for this user.</small>
+                            <small class="form-text text-muted">Select a single program for this user.</small>
                         </div>
 
                         <hr>
@@ -355,12 +358,12 @@ if ($userFlags && is_array($userFlags)) {
     }
 
     /**
-     * Handles the logic to swap departments.
-     * Removes the previously selected department flag and adds the new one.
+     * Handles the logic to swap programs.
+     * Removes the previously selected program flag and adds the new one.
      */
-    async function updateDepartment(selectElem) {
+    async function updateProgram(selectElem) {
         const userId = selectElem.getAttribute('data-user-id');
-        const oldDeptId = selectElem.getAttribute('data-current-dept');
+        const oldDeptId = selectElem.getAttribute('data-current-prog');
         const newDeptId = selectElem.value;
         
         // UPDATED: Point to the root '/users' endpoint which the UserActionHandler listens to
@@ -370,7 +373,7 @@ if ($userFlags && is_array($userFlags)) {
         selectElem.disabled = true;
 
         try {
-            // 1. Remove the old department (if one was previously set)
+            // 1. Remove the old program (if one was previously set)
             if (oldDeptId && oldDeptId !== "") {
                 await api.post(endpoint, { 
                     action: 'toggleUserFlag', // MATCHES CASE IN handleRequest()
@@ -380,7 +383,7 @@ if ($userFlags && is_array($userFlags)) {
                 });
             }
 
-            // 2. Add the new department (if the user didn't just select the placeholder)
+            // 2. Add the new program (if the user didn't just select the placeholder)
             if (newDeptId && newDeptId !== "") {
                 await api.post(endpoint, { 
                     action: 'toggleUserFlag', // MATCHES CASE IN handleRequest()
@@ -391,14 +394,14 @@ if ($userFlags && is_array($userFlags)) {
             }
 
             // 3. Update the tracker so the next change knows what to remove
-            selectElem.setAttribute('data-current-dept', newDeptId);
+            selectElem.setAttribute('data-current-prog', newDeptId);
             
             // Optional: Provide visual feedback
-            // alert('Department updated');
+            // alert('Program updated');
 
         } catch (err) {
-            console.error("Failed to update department", err);
-            alert("An error occurred while saving the department selection. Please refresh the page.");
+            console.error("Failed to update program", err);
+            alert("An error occurred while saving the program selection. Please refresh the page.");
         } finally {
             selectElem.disabled = false;
         }

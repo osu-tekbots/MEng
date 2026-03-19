@@ -10,13 +10,13 @@ $usersDao = new UsersDao($dbConn, $logger);
 $evaluationsDao = new EvaluationsDao($dbConn, $logger);
 $uploadsDao = new UploadsDao($dbConn, $logger);
 
-// 1. Determine Server-Side Filters (Department Only)
-$filterDepartment = isset($_GET['department']) && $_GET['department'] != '' ? $_GET['department'] : null;
+// 1. Determine Server-Side Filters (Program Only)
+$filterProgram = isset($_GET['program']) && $_GET['program'] != '' ? $_GET['program'] : null;
 
 // 2. Fetch Reviewers
 $reviewers = [];
-if ($filterDepartment) {
-    $reviewers = $usersDao->getReviewersByDepartment($filterDepartment);
+if ($filterProgram) {
+    $reviewers = $usersDao->getReviewersByDepartment($filterProgram);
 } else {
     $reviewers = $usersDao->getAllReviewers();
 }
@@ -35,16 +35,16 @@ foreach ($reviewers as $reviewer) {
             $student = $usersDao->getUser($eval->getFkStudentId());
             $studentName = $student ? $student->getFullName() : 'Unknown Student';
 
-            // B. Fetch Student Department (CHANGED from Document Type)
-            $studentDepartment = 'None Assigned';
+            // B. Fetch Student Program (CHANGED from Document Type)
+            $studentProgram = 'None Assigned';
             if ($student) {
                 // Get all flags for the student
                 $studentFlags = $usersDao->getUserFlags($student->getId());
                 if ($studentFlags) {
                     foreach ($studentFlags as $flag) {
-                        // Check if the flag is a Department type
-                        if ($flag->getType() === 'Department') {
-                            $studentDepartment = $flag->getName();
+                        // Check if the flag is a Program type
+                        if ($flag->getType() === 'Program') {
+                            $studentProgram = $flag->getName();
                             // Requirement: Only show one if multiple exist
                             break; 
                         }
@@ -86,7 +86,7 @@ foreach ($reviewers as $reviewer) {
             $flatEvaluations[] = [
                 'id' => $eval->getId(),
                 'student_name' => $studentName,
-                'student_department' => $studentDepartment, // Updated key
+                'student_program' => $studentProgram, // Updated key
                 'reviewer_name' => $reviewerName,
                 'status' => $status,
                 'date_completed' => $dateCompleted
@@ -95,8 +95,8 @@ foreach ($reviewers as $reviewer) {
     }
 }
 
-// 4. Build Department Map for Dropdown
-$department_flags = $usersDao->getAllDepartmentFlags();
+// 4. Build Program Map for Dropdown
+$program_flags = $usersDao->getAllDepartmentFlags();
 
 require_once PUBLIC_FILES . '/lib/osu-identities-api.php';
 include_once PUBLIC_FILES . '/modules/header.php';
@@ -120,13 +120,13 @@ include_once PUBLIC_FILES . '/modules/header.php';
                 
                 <div class="form-row mb-3">
                     <div class="col-md-6">
-                        <label class="text-muted small text-uppercase font-weight-bold">Filter by Reviewer Department</label>
-                        <select id="departments" name="departments" class="form-control" onchange="filterDepartments()">
-                            <option value="">All Departments</option>
+                        <label class="text-muted small text-uppercase font-weight-bold">Filter by Reviewer Program</label>
+                        <select id="programs" name="programs" class="form-control" onchange="filterPrograms()">
+                            <option value="">All Programs</option>
                             <?php 
-                                foreach ($department_flags as $dept) {
-                                    $selected = ($filterDepartment == $dept->getId()) ? 'selected' : '';
-                                    echo '<option value="'. $dept->getId() .'" '.$selected.'>'. $dept->getName() .'</option>';
+                                foreach ($program_flags as $prog) {
+                                    $selected = ($filterProgram == $prog->getId()) ? 'selected' : '';
+                                    echo '<option value="'. $prog->getId() .'" '.$selected.'>'. $prog->getName() .'</option>';
                                 }
                             ?>
                         </select>
@@ -139,7 +139,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                     <thead class="thead-light">
                         <tr>
                             <th scope="col">Student Name</th>
-                            <th scope="col">Student Department</th> <th scope="col">Reviewer Name</th>
+                            <th scope="col">Student Program</th> <th scope="col">Reviewer Name</th>
                             <th scope="col">Status</th>
                             <th scope="col">Date Completed</th>
                             <th scope="col">Export Data</th>
@@ -153,7 +153,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                 
                                 echo '<tr>';
                                 echo '<td>' . htmlspecialchars($row['student_name']) . '</td>';
-                                echo '<td>' . htmlspecialchars($row['student_department']) . '</td>'; // Updated Data
+                                echo '<td>' . htmlspecialchars($row['student_program']) . '</td>'; // Updated Data
                                 echo '<td>' . htmlspecialchars($row['reviewer_name']) . '</td>';
                                 echo '<td class="text-center"><span class="badge ' . $badgeClass . ' p-2">' . $row['status'] . '</span></td>';
                                 echo '<td>' . $row['date_completed'] . '</td>';
@@ -242,13 +242,13 @@ include_once PUBLIC_FILES . '/modules/header.php';
         });
     });
     
-    function filterDepartments() {
-        const deptValue = document.getElementById("departments").value;
+    function filterPrograms() {
+        const progValue = document.getElementById("programs").value;
         let url = "?"; 
-        if (deptValue) {
-            url += "department=" + deptValue;
+        if (progValue) {
+            url += "program=" + progValue;
         }
-        window.location.href = url;
+        window.location.href = window.location.pathname + url;
     }
 
     // Initialize DataTable

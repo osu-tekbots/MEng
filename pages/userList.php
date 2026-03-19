@@ -51,7 +51,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                     $flags = $usersDao->getUserFlags($u->getId());
                                     $roles = [];
                                     
-                                    // Filter just the "Role" type flags (ignoring Departments for this column)
+                                    // Filter just the "Role" type flags (ignoring Programs for this column)
                                     if ($flags) {
                                         foreach ($flags as $flag) {
                                             if ($flag->getType() == 'Role') {
