@@ -44,7 +44,7 @@ function onUploadDocumentFormSubmit(event) {
             .then(res => {
                 snackbar('Successfully updated', 'success');
                 $('#btnUploadLoader').hide();
-                setTimeout(function() {
+                setTimeout(function () {
                     location.reload();
                 }, 1000);
             })
@@ -58,7 +58,7 @@ function onUploadDocumentFormSubmit(event) {
             .then(res => {
                 snackbar('Successfully uploaded', 'success');
                 $('#btnUploadLoader').hide();
-                setTimeout(function() {
+                setTimeout(function () {
                     location.reload();
                 }, 1000);
             })
@@ -95,7 +95,7 @@ function onUploadDelete(event) {
         .then(res => {
             snackbar('Successfully deleted', 'success');
             $('#btnUploadLoader').hide();
-            setTimeout(function() {
+            setTimeout(function () {
                 location.reload();
             }, 1000);
         })
@@ -118,63 +118,63 @@ function onUploadDownload(event) {
     bodyDocumentUpload.append('action', 'downloadDocument');
 
     api.post('/uploads.php', bodyDocumentUpload, true)
-    .then(data => {
-        // 1. Parse the double-encoded JSON
-        let payload;
-        try {
-            payload = typeof data.message === 'string' ? JSON.parse(data.message) : data;
-        } catch (e) {
-            payload = data;
-        }
+        .then(data => {
+            // 1. Parse the double-encoded JSON
+            let payload;
+            try {
+                payload = typeof data.message === 'string' ? JSON.parse(data.message) : data;
+            } catch (e) {
+                payload = data;
+            }
 
-        if (!payload.fileData) {
-            alert("Server returned no file data");
-            return;
-        }
+            if (!payload.fileData) {
+                alert("Server returned no file data");
+                return;
+            }
 
-        // 2. Clean & Decode Base64
-        const cleanBase64 = payload.fileData.replace(/\s/g, '');
-        const binaryString = window.atob(cleanBase64);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
+            // 2. Clean & Decode Base64
+            const cleanBase64 = payload.fileData.replace(/\s/g, '');
+            const binaryString = window.atob(cleanBase64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
 
-        // 3. Create Blob (FORCE octet-stream to bypass PDF viewers)
-        const blob = new Blob([bytes], { type: 'application/octet-stream' });
-        const url = window.URL.createObjectURL(blob);
+            // 3. Create Blob (FORCE octet-stream to bypass PDF viewers)
+            const blob = new Blob([bytes], { type: 'application/octet-stream' });
+            const url = window.URL.createObjectURL(blob);
 
-        // 4. Create the link element
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = payload.filename || "download.pdf";
-        
-        // TRICK 1: Make it part of the DOM, but invisible
-        a.style.display = 'block';
-        a.style.position = 'absolute';
-        a.style.left = '-9999px';
-        document.body.appendChild(a);
+            // 4. Create the link element
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = payload.filename || "download.pdf";
 
-        // TRICK 2: Create a genuine mouse event
-        // (Zen/Firefox sometimes ignores .click() in promises)
-        const clickEvent = new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: true
+            // TRICK 1: Make it part of the DOM, but invisible
+            a.style.display = 'block';
+            a.style.position = 'absolute';
+            a.style.left = '-9999px';
+            document.body.appendChild(a);
+
+            // TRICK 2: Create a genuine mouse event
+            // (Zen/Firefox sometimes ignores .click() in promises)
+            const clickEvent = new MouseEvent('click', {
+                view: window,
+                bubbles: true,
+                cancelable: true
+            });
+            a.dispatchEvent(clickEvent);
+
+            // TRICK 3: Long timeout cleanup
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 5000); // 5 second wait to ensure Zen's download manager has grabbed it
+        })
+        .catch(err => {
+            console.error("Download Critical Failure:", err);
+            alert("Download failed. Check console for details.");
         });
-        a.dispatchEvent(clickEvent);
-
-        // TRICK 3: Long timeout cleanup
-        setTimeout(() => {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }, 5000); // 5 second wait to ensure Zen's download manager has grabbed it
-    })
-    .catch(err => {
-        console.error("Download Critical Failure:", err);
-        alert("Download failed. Check console for details.");
-    });
 }
 
 $('#aUploadDownload').on('click', onUploadDownload);
@@ -199,14 +199,14 @@ function onEditProfileFormSubmit(event) {
 
     // 3. Disable button to prevent double-click
     $('#btnEditProfileSubmit').attr('disabled', true);
-    
+
     // 4. Send API Request
     // Note: We send to '/users.php', not '/uploads.php'
     // We do NOT pass 'true' as the 3rd argument because this is JSON, not FormData
     api.post('/users.php', body)
         .then(res => {
             snackbar('Profile updated successfully', 'success');
-            setTimeout(function() { location.reload(); }, 1000);
+            setTimeout(function () { location.reload(); }, 1000);
         })
         .catch(err => {
             snackbar(err.message, 'error');
@@ -221,13 +221,13 @@ $('#formEditProfile').on('submit', onEditProfileFormSubmit);
 /**
  * Handles Permission Toggle Buttons
  */
-$('.btn-flag-toggle').on('click', function(event) {
+$('.btn-flag-toggle').on('click', function (event) {
     if (event) event.preventDefault(); // Added preventDefault
 
     const btn = $(this);
-    
+
     // Prevent double-clicking
-    if(btn.prop('disabled')) return;
+    if (btn.prop('disabled')) return;
     btn.prop('disabled', true);
 
     const flagId = btn.data('flag-id');

@@ -10,8 +10,8 @@ $usersDao = new UsersDao($dbConn, $logger);
 $uploadsDao = new UploadsDao($dbConn, $logger);
 $evaluationsDao = new EvaluationsDao($dbConn, $logger); // [2] Initialize DAO
 
-// 2. Handle Document Type Logic (from studentUpload.php)
-$selectedDocumentType = isset($_GET['documentType']) && !empty($_GET['documentType']) ? $_GET['documentType'] : 1;
+// 2. Document Type (hardcoded to thesis)
+$selectedDocumentType = 1;
 
 // 3. Include Upload JS
 $js = array(
@@ -172,24 +172,7 @@ if ($userFlags && is_array($userFlags)) {
                         
                         <div class="card-body">
                             
-                            <div class="form-group row align-items-center">
-                                <label for="documentType" class="col-sm-3 col-form-label text-muted small text-uppercase font-weight-bold">Document Type</label>
-                                <div class="col-sm-9">
-                                    <select class="form-control" id="documentType" onChange="onDocumentTypeChange()">
-                                        <?php 
-                                            foreach ($documentTypes as $documentType) {
-                                                echo "<option value=" . $documentType->getId() . " ";
-                                                if ($documentType->getId() == $selectedDocumentType) {
-                                                    echo "selected";
-                                                }
-                                                echo ">" . $documentType->getName() . "</option>";
-                                            }
-                                        ?>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <hr class="my-4">
+                            <input type="hidden" id="documentType" value="<?php echo $selectedDocumentType; ?>">
 
                             <?php if ($previousUpload): ?>
                                 <div class="alert alert-secondary mb-4">
@@ -346,16 +329,6 @@ if ($userFlags && is_array($userFlags)) {
 </div>
 
 <script>
-    /**
-     * Handles document type selection change.
-     * Reloads profile.php with the selected type in the query string.
-     */
-    function onDocumentTypeChange() {
-        const documentType = document.getElementById("documentType").value;
-        const userId = document.getElementById("userId").value; 
-
-        window.location.replace("profile.php?documentType=" + documentType + "&userId=" + userId);
-    }
 
     /**
      * Handles the logic to swap programs.
