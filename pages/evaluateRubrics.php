@@ -349,7 +349,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                 </h3>
 
                 <a class="fs-5 fw-semibold text-decoration-none"
-                href="<?php echo htmlspecialchars('./uploads' . $selectedUpload->getFilePath() . $selectedUpload->getId() ); ?>" download="<?php echo $selectedUpload->getFileName();?>">
+                href="<?php echo htmlspecialchars('./uploads' . $selectedUpload->getFilePath() . $selectedUpload->getId() ); ?>" target="_blank" rel="noopener noreferrer">
                     <?php echo htmlspecialchars($selectedUpload->getFileName()); ?>
                 </a>
 
