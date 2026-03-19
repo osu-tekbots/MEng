@@ -98,6 +98,9 @@ foreach ($reviewers as $reviewer) {
 // 4. Build Program Map for Dropdown
 $program_flags = $usersDao->getAllDepartmentFlags();
 
+// 5. Fetch rubrics used in evaluations (for bulk export dropdown)
+$rubricsUsedInEvals = $evaluationsDao->getRubricsUsedInEvaluations();
+
 require_once PUBLIC_FILES . '/lib/osu-identities-api.php';
 include_once PUBLIC_FILES . '/modules/header.php';
 ?>
@@ -119,7 +122,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
             <div class="card-body">
                 
                 <div class="form-row mb-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="text-muted small text-uppercase font-weight-bold">Filter by Reviewer Program</label>
                         <select id="programs" name="programs" class="form-control" onchange="filterPrograms()">
                             <option value="">All Programs</option>
@@ -130,6 +133,26 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                 }
                             ?>
                         </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="text-muted small text-uppercase font-weight-bold">Bulk Export</label>
+                        <div class="d-flex align-items-end">
+                            <select id="bulkRubric" class="form-control mr-2">
+                                <option value="">Select Rubric</option>
+                                <?php foreach ($rubricsUsedInEvals as $r): ?>
+                                    <option value="<?= htmlspecialchars($r['id']) ?>"><?= htmlspecialchars($r['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <select id="bulkTimeRange" class="form-control mr-2">
+                                <option value="all">All Time</option>
+                                <option value="1week">1 Week</option>
+                                <option value="1month">1 Month</option>
+                                <option value="3months">3 Months</option>
+                                <option value="6months">6 Months</option>
+                                <option value="1year">1 Year</option>
+                            </select>
+                            <button id="bulkExportBtn" class="btn btn-primary text-nowrap">Export All</button>
+                        </div>
                     </div>
                 </div>
 
@@ -240,6 +263,75 @@ include_once PUBLIC_FILES . '/modules/header.php';
             link.remove();
             window.URL.revokeObjectURL(downloadUrl);
         });
+    });
+
+    // --- Bulk Export (independent from individual export) ---
+    document.getElementById('bulkExportBtn').addEventListener('click', async () => {
+        const rubricId = document.getElementById('bulkRubric').value;
+        const timeRange = document.getElementById('bulkTimeRange').value;
+
+        if (!rubricId) {
+            alert('Please select a rubric.');
+            return;
+        }
+
+        const btn = document.getElementById('bulkExportBtn');
+        btn.disabled = true;
+        btn.textContent = 'Exporting...';
+
+        try {
+            // 1. Fetch bulk data from API
+            const res = await api.post('/evaluations.php', {
+                action: 'getBulkExportData',
+                rubricId: rubricId,
+                timeRange: timeRange
+            });
+
+            const data = res.message;
+
+            if (!data || data.length === 0) {
+                alert('No evaluations found for the selected rubric and time range.');
+                return;
+            }
+
+            // 2. Get rubric name for filename
+            const rubricName = document.getElementById('bulkRubric').selectedOptions[0].text;
+            const filename = rubricName.replace(/[^a-zA-Z0-9]/g, '_') + '_bulk_export.xlsx';
+
+            // 3. Send to download.php with type=bulk
+            const response = await fetch('./downloaders/download.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filename: filename,
+                    data: data,
+                    type: 'bulk'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            // 4. Download the file
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+
+        } catch (err) {
+            console.error('Bulk export error:', err);
+            alert('An error occurred during bulk export. Please try again.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Export All';
+        }
     });
     
     function filterPrograms() {

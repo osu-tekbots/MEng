@@ -17,14 +17,19 @@ if (!is_array($payload) || empty($payload['data'])) {
 }
 
 // Determine filename
-$filename = !empty($payload['filename']) ? preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $payload['filename']) : 'report.xlsx';
+$filename = !empty($payload['filename']) ? preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $payload['filename']) : 'export.xlsx';
 
-// Generate Excel binary using your ExcelExporter class
-// Assumes $payload['data'] is an array of associative arrays or arrays
-$binary = ExcelExporter::getXlsxBinary(json_decode($payload['data'], true));
-error_log("Generated Excel binary of length: " . strlen($binary));
+// Determine data based on export type
+if (isset($payload['type']) && $payload['type'] === 'bulk') {
+    // Bulk export: data is already a PHP array of associative arrays
+    $excelData = $payload['data'];
+} else {
+    // Individual export: data is a JSON-encoded string that needs decoding
+    $excelData = json_decode($payload['data'], true);
+}
 
-$filename = "export.xlsx";
+// Generate Excel binary using ExcelExporter class
+$binary = ExcelExporter::getXlsxBinary($excelData);
 
 // Prevent any prior output
 if (ob_get_length()) {

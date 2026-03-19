@@ -671,6 +671,123 @@ class EvaluationsDao {
     }
 
     /**
+     * Gets all distinct rubrics that have been used in at least one evaluation.
+     * Used to populate the bulk export rubric dropdown.
+     *
+     * @return array of associative arrays with 'id' and 'name' keys, or empty array on failure
+     */
+    public function getRubricsUsedInEvaluations() {
+        try {
+            $sql = 'SELECT DISTINCT r.id, r.name FROM Rubrics r
+                    JOIN Evaluations e ON r.id = e.fk_rubric_id
+                    ORDER BY r.name';
+            $result = $this->conn->query($sql);
+
+            if (!$result) return [];
+
+            $rubrics = [];
+            foreach ($result as $row) {
+                $rubrics[] = [
+                    'id' => $row['id'],
+                    'name' => $row['name']
+                ];
+            }
+            return $rubrics;
+        } catch (\Exception $e) {
+            $this->logError('Failed to get rubrics used in evaluations: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Gets bulk evaluation data for export as a flat array of rows.
+     * Each row: Reviewer Name, Student Name, then question/comment pairs for each rubric item.
+     *
+     * @param int $rubricId the rubric to filter by
+     * @param string|null $sinceDate optional date cutoff (Y-m-d H:i:s format), null for all time
+     * @return array of associative arrays ready for Excel export
+     */
+    public function getBulkEvaluationDataForExport($rubricId, $sinceDate = null) {
+        try {
+            $usersDao = new UsersDao($this->conn, $this->logger);
+
+            // 1. Get the rubric items in order to build consistent column headers
+            $rubricItems = $this->getRubricItems($rubricId);
+            if (!$rubricItems || empty($rubricItems)) {
+                return [];
+            }
+
+            // 2. Fetch evaluations for this rubric, optionally filtered by date
+            $sql = 'SELECT * FROM Evaluations WHERE fk_rubric_id = :rubricId';
+            $params = [':rubricId' => $rubricId];
+
+            if ($sinceDate !== null) {
+                $sql .= ' AND date_created >= :sinceDate';
+                $params[':sinceDate'] = $sinceDate;
+            }
+
+            $evaluations = $this->conn->query($sql, $params);
+            if (!$evaluations) return [];
+
+            $rows = [];
+
+            foreach ($evaluations as $evalRow) {
+                // Get reviewer and student names
+                $reviewer = $usersDao->getUser($evalRow['fk_reviewer_id']);
+                $student = $usersDao->getUser($evalRow['fk_student_id']);
+
+                $reviewerName = $reviewer ? $reviewer->getFullName() : 'Unknown';
+                $studentName = $student ? $student->getFullName() : 'Unknown';
+
+                // Start building the row
+                $row = [
+                    'Reviewer Name' => $reviewerName,
+                    'Student Name' => $studentName
+                ];
+
+                // Get this evaluation's rubric item responses
+                $evalItems = $this->getEvaluationRubricItemsForEvaluation($evalRow['id']);
+
+                // Build a lookup of rubric_item_id => evaluation_rubric_item
+                $evalItemLookup = [];
+                if ($evalItems) {
+                    foreach ($evalItems as $ei) {
+                        $ri = $ei->getRubricItem();
+                        if ($ri) {
+                            $evalItemLookup[$ri->getId()] = $ei;
+                        }
+                    }
+                }
+
+                // For each rubric item, add the answer and comments columns
+                foreach ($rubricItems as $rubricItem) {
+                    $itemName = $rubricItem->getName();
+                    $answer = '';
+                    $comments = '';
+
+                    if (isset($evalItemLookup[$rubricItem->getId()])) {
+                        $ei = $evalItemLookup[$rubricItem->getId()];
+                        $option = $ei->getRubricItemOption();
+                        $answer = $option ? $option->getTitle() : '';
+                        $comments = $ei->getComments() ?? '';
+                    }
+
+                    $row[$itemName] = $answer;
+                    $row[$itemName . ' Comments'] = $comments;
+                }
+
+                $rows[] = $row;
+            }
+
+            return $rows;
+
+        } catch (\Exception $e) {
+            $this->logError('Failed to get bulk evaluation data for export: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Logs an error if a logger was provided to the class when it was constructed.
      * * Essentially a wrapper around the error logging so we don't cause the equivalent of a null pointer exception.
      *

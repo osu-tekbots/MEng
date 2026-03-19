@@ -126,6 +126,56 @@ class EvaluationActionHandler extends ActionHandler {
         }
     }
 
+    public function handleGetRubricsUsedInEvaluations() {
+        try {
+            $rubrics = $this->evaluationsDao->getRubricsUsedInEvaluations();
+            $this->respond(new Response(Response::OK, $rubrics));
+        } catch (\Exception $e) {
+            $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Error fetching rubrics: ' . $e->getMessage()));
+        }
+    }
+
+    public function handleGetBulkExportData() {
+        $rubricId = $this->getFromBody('rubricId');
+        $timeRange = $this->getFromBody('timeRange');
+
+        if (empty($rubricId)) {
+            $this->respond(new Response(Response::BAD_REQUEST, 'Missing rubric ID.'));
+            return;
+        }
+
+        // Compute the since date based on the time range
+        $sinceDate = null;
+        if ($timeRange && $timeRange !== 'all') {
+            $now = new \DateTime();
+            switch ($timeRange) {
+                case '1week':
+                    $now->modify('-1 week');
+                    break;
+                case '1month':
+                    $now->modify('-1 month');
+                    break;
+                case '3months':
+                    $now->modify('-3 months');
+                    break;
+                case '6months':
+                    $now->modify('-6 months');
+                    break;
+                case '1year':
+                    $now->modify('-1 year');
+                    break;
+            }
+            $sinceDate = $now->format('Y-m-d H:i:s');
+        }
+
+        try {
+            $data = $this->evaluationsDao->getBulkEvaluationDataForExport($rubricId, $sinceDate);
+            $this->respond(new Response(Response::OK, $data));
+        } catch (\Exception $e) {
+            $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Error fetching bulk export data: ' . $e->getMessage()));
+        }
+    }
+
     public function handleRequest() {
         if(!isset($this->requestBody['action'])){
              $this->respond(new Response(Response::BAD_REQUEST, 'Missing action parameter'));
@@ -144,7 +194,14 @@ class EvaluationActionHandler extends ActionHandler {
             case 'getEvaluationInfo':
                 $this -> handleGetEvaluationInfo();
                 break;
-                
+
+            case 'getRubricsUsedInEvaluations':
+                $this->handleGetRubricsUsedInEvaluations();
+                break;
+
+            case 'getBulkExportData':
+                $this->handleGetBulkExportData();
+                break;
 
             default:
                 $this->respond(new Response(Response::BAD_REQUEST, 'Invalid action on evaluation resource'));
