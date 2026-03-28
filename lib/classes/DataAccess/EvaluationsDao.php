@@ -768,7 +768,7 @@ class EvaluationsDao {
                     if (isset($evalItemLookup[$rubricItem->getId()])) {
                         $ei = $evalItemLookup[$rubricItem->getId()];
                         $option = $ei->getRubricItemOption();
-                        $answer = $option ? $option->getTitle() : '';
+                        $answer = $option ? $option->getValue() : '';
                         $comments = $ei->getComments() ?? '';
                     }
 
