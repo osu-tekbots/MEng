@@ -651,7 +651,8 @@ class EvaluationsDao {
         $evaluationflag->setName($row['name'])
             ->setType($row['type'])
             ->setArrangement($row['arrangement'])
-            ->setIsActive($row['is_active']);
+            ->setIsActive($row['is_active'])
+            ->setDateCreated($row['date_created']);
         
         return $evaluationflag;
     }

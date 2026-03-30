@@ -17,6 +17,9 @@ class EvaluationFlag {
     /** @var bool */
     private $isActive;
 
+    /** @var string */
+    private $dateCreated;
+
     /**
      * Constructor
      *
@@ -124,6 +127,26 @@ class EvaluationFlag {
      */
     public function setIsActive($isActive) {
         $this->isActive = $isActive;
+        return $this;
+    }
+
+    /**
+     * Get the value of dateCreated
+     *
+     * @return string
+     */
+    public function getDateCreated() {
+        return $this->dateCreated;
+    }
+
+    /**
+     * Set the value of dateCreated
+     *
+     * @param string $dateCreated
+     * @return self
+     */
+    public function setDateCreated($dateCreated) {
+        $this->dateCreated = $dateCreated;
         return $this;
     }
 }
