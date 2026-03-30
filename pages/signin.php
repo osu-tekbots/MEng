@@ -17,8 +17,8 @@ $usersDao = new UsersDao($dbConn, $logger);
 
 // 3. Get ONID from the session structure we saw in the debugger
 $onid = $_SESSION['auth']['id'];
-
 //$logger -> info("Auth " . json_encode($_SESSION['auth']));
+//Output: {"method":"onid","id":"arorae","firstName":"Ekansh","lastName":"Arora","email":"arorae@oregonstate.edu"}
 
 // 4. Attempt to fetch the user from the database
 $user = $usersDao->getUserByOnid($onid);
@@ -43,11 +43,6 @@ if ($user) {
     $newUser->setLastName($_SESSION['auth']['lastName']);
     $newUser->setEmail($_SESSION['auth']['email']);
     $newUser->setLastLogin(new DateTime());
-    
-    //Firstname lastname may be blank, other variable needs to be used then
-    //Need external osu methods to get first and last name from onid
-    //
-    //Output: {"method":"onid","id":"arorae","firstName":"Ekansh","lastName":"Arora","email":"arorae@oregonstate.edu"}
 
     // Determine how you generate IDs or UUIDs. 
     // If your DB auto-increments ID, you might need to insert first then fetch ID.
