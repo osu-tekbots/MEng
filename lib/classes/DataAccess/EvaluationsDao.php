@@ -413,16 +413,16 @@ class EvaluationsDao {
     }
 
     /**
-     * Gets the status item (evaluation_flag_assignments) of the highest arrangement associated with the evaluation id.
+     * Gets the EvaluationFlag object with the highest arrangement value (of type 'Status') associated with the evaluation id.
      *
      * @param string $evaluationId the id of the evaluation
-     * @return EvaluationFlagAssignment|boolean an EvaluationFlagAssignment object if the query execution succeeds, false otherwise.
+     * @return EvaluationFlag|boolean an EvaluationFlag object if the query execution succeeds, false otherwise.
      */
-    public function getHighestStatusAssignmentByEvaluationId($evaluationId) {
+    public function getHighestStatusFlagByEvaluationId($evaluationId) {
         try {
-            // Select the assignment fields, join with flags to access arrangement, filter by ID and Type 'Status'
-            $sql = 'SELECT efa.* FROM Evaluation_flag_assignments efa ';
-            $sql .= 'JOIN Evaluation_flags ef ON efa.fk_evaluation_flag_id = ef.id ';
+            // Select the flag fields, join with assignments to filter by evaluation, filter by Type 'Status'
+            $sql = 'SELECT ef.*, efa.date_created FROM Evaluation_flags ef ';
+            $sql .= 'JOIN Evaluation_flag_assignments efa ON ef.id = efa.fk_evaluation_flag_id ';
             $sql .= 'WHERE efa.fk_evaluation_id = :evaluationId AND ef.type = :type ';
             $sql .= 'ORDER BY ef.arrangement DESC ';
             $sql .= 'LIMIT 1';
@@ -437,9 +437,9 @@ class EvaluationsDao {
                 return false;
             }
 
-            return self::ExtractEvaluationFlagAssignmentFromRow($result[0]);
+            return self::ExtractEvaluationFlagFromRow($result[0]);
         } catch (\Exception $e) {
-            $this->logError('Failed to get highest status assignment by evaluation id: ' . $e->getMessage());
+            $this->logError('Failed to get highest status flag by evaluation id: ' . $e->getMessage());
 
             return false;
         }
@@ -651,8 +651,12 @@ class EvaluationsDao {
         $evaluationflag->setName($row['name'])
             ->setType($row['type'])
             ->setArrangement($row['arrangement'])
-            ->setIsActive($row['is_active'])
-            ->setDateCreated($row['date_created']);
+            ->setIsActive($row['is_active']);
+
+        //date_created is stored in the Evaluation_flag_assignments table, but is kept in the EvaluationFlag object for convenience
+        if (isset($row['date_created'])) {
+            $evaluationflag->setDateCreated($row['date_created']);
+        }
         
         return $evaluationflag;
     }

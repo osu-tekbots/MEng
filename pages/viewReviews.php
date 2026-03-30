@@ -61,22 +61,16 @@ foreach ($reviewers as $reviewer) {
             // D. Determine Status & Completion Date
             $status = 'temp';
             
-            // Use the new function to get the highest status assignment
-            $statusAssignment = $evaluationsDao->getHighestStatusAssignmentByEvaluationId($eval->getId());
-            if ($statusAssignment) {
-                // Fetch the flag name using the ID from the assignment
-                $flag = $evaluationsDao->getEvaluationFlag($statusAssignment->getFkEvaluationFlagId());
-                if ($flag) {
-                    $status = $flag->getName();
-                }
+            // Use the function to get the highest status flag directly
+            $statusFlag = $evaluationsDao->getHighestStatusFlagByEvaluationId($eval->getId());
+            if ($statusFlag) {
+                $status = $statusFlag->getName();
             }
 
-            // We still check for a rubric to determine the completion date (if applicable)
-            $rubric = $evaluationsDao->getRubricFromEvaluationId($eval->getId());
+            // Use the status flag's date_created for the completion date
             $dateCompleted = '';
-
-            if ($rubric) {
-                $rawDate = $rubric->getLastModified();
+            if ($statusFlag) {
+                $rawDate = $statusFlag->getDateCreated();
                 if ($rawDate) {
                     $dateCompleted = date("m/d/Y g:i A", strtotime($rawDate));
                 }
@@ -164,7 +158,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                             <th scope="col">Student Name</th>
                             <th scope="col">Student Program</th> <th scope="col">Reviewer Name</th>
                             <th scope="col">Status</th>
-                            <th scope="col">Date Completed</th>
+                            <th scope="col">Date Set</th>
                             <th scope="col">Export Data</th>
                         </tr>
                     </thead>

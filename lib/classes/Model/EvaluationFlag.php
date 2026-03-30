@@ -17,7 +17,10 @@ class EvaluationFlag {
     /** @var bool */
     private $isActive;
 
-    /** @var string */
+    /**
+     * @var string
+     * This is stored in the Evaluation_flag_assignments table, but is kept in the EvaluationFlag object for convenience
+     */
     private $dateCreated;
 
     /**
