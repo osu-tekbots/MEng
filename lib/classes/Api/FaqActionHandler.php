@@ -116,6 +116,40 @@ class FaqActionHandler extends ActionHandler {
     }
 
     /**
+     * Fetches all FAQs for a given category and returns them as JSON content.
+     *
+     * @return void
+     */
+    public function handleGetFaqsByCategory() {
+        $category = $this->getFromBody('category');
+
+        $faqs = $this->faqDao->getFaqsByCategory($category);
+        if ($faqs === false) {
+            $this->respond(new Response(
+                Response::INTERNAL_SERVER_ERROR,
+                'Failed to fetch FAQs'
+            ));
+            return;
+        }
+
+        $faqData = array();
+        foreach ($faqs as $faq) {
+            $faqData[] = array(
+                'id' => $faq->getId(),
+                'category' => $faq->getCategory(),
+                'question' => $faq->getQuestion(),
+                'answer' => $faq->getAnswer()
+            );
+        }
+
+        $this->respond(new Response(
+            Response::OK,
+            'FAQs fetched successfully',
+            $faqData
+        ));
+    }
+
+    /**
      * Handles the HTTP request on the API resource.
      * 
      * This effectively will invoke the correct action based on the `action` parameter value in the request body.
@@ -128,6 +162,9 @@ class FaqActionHandler extends ActionHandler {
 
         // Call the correct handler based on the action
         switch ($this->requestBody['action']) {
+
+            case 'getFaqsByCategory':
+                $this->handleGetFaqsByCategory();
 
             case 'createFaq':
                 $this->handleCreateFaq();

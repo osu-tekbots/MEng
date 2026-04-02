@@ -182,6 +182,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
         api.post('/faqs.php', data)
             .then(res => {
                 snackbar(res.message, 'success');
+                setTimeout(() => { window.location.reload(); }, 1500);
             })
             .catch(err => {
                 snackbar(err.message || 'Failed to update FAQ', 'error');
