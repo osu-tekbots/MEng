@@ -744,10 +744,17 @@ class EvaluationsDao {
                 $reviewerName = $reviewer ? $reviewer->getFullName() : 'Unknown';
                 $studentName = $student ? $student->getFullName() : 'Unknown';
 
+                $evaluationObj = $this->buildEvaluationObjectFromRow($evalRow);
+                $highestStatusFlag = $evaluationObj->getHighestStatusFlag();
+                $statusName = $highestStatusFlag ? $highestStatusFlag->getName() : 'Unknown';
+                $statusDate = $highestStatusFlag ? $highestStatusFlag->getDateCreated() : 'Unknown';
+
                 // Start building the row
                 $row = [
                     'Reviewer Name' => $reviewerName,
-                    'Student Name' => $studentName
+                    'Student Name' => $studentName,
+                    'Evaluation Status' => $statusName,
+                    'Status Set Date' => $statusDate
                 ];
 
                 // Get this evaluation's rubric item responses

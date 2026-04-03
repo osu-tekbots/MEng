@@ -76,6 +76,13 @@ foreach ($reviewers as $reviewer) {
                 }
             }
 
+            // F. Get Rubric Name
+            $rubricName = 'Unknown Rubric';
+            $rubric = $evaluationsDao->getRubricFromEvaluationId($eval->getId());
+            if ($rubric) {
+                $rubricName = $rubric->getName();
+            }
+
             // E. Add to list
             $flatEvaluations[] = [
                 'id' => $eval->getId(),
@@ -83,7 +90,8 @@ foreach ($reviewers as $reviewer) {
                 'student_program' => $studentProgram, // Updated key
                 'reviewer_name' => $reviewerName,
                 'status' => $status,
-                'date_completed' => $dateCompleted
+                'date_completed' => $dateCompleted,
+                'rubric_name' => $rubricName
             ];
         }
     }
@@ -98,6 +106,8 @@ $rubricsUsedInEvals = $evaluationsDao->getRubricsUsedInEvaluations();
 require_once PUBLIC_FILES . '/lib/osu-identities-api.php';
 include_once PUBLIC_FILES . '/modules/header.php';
 ?>
+
+
 
 <div class="container-fluid">
     <div class="container mt-5 mb-5">
@@ -159,21 +169,34 @@ include_once PUBLIC_FILES . '/modules/header.php';
                             <th scope="col">Student Program</th> <th scope="col">Reviewer Name</th>
                             <th scope="col">Status</th>
                             <th scope="col">Date Set</th>
+                            <th scope="col">Rubric Name</th>
                             <th scope="col">Export Data</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php 
                             foreach ($flatEvaluations as $row) {
-                                // Status Badge Logic - Updated to check for "Complete" (DB value) vs "Completed"
-                                $badgeClass = ($row['status'] == 'Complete') ? 'bg-success' : 'bg-warning';
+                                // Status Badge Logic
+                                $badgeClass = '';
+                                $badgeStyle = '';
+                                
+                                $statusName = trim($row['status']);
+                                if ($statusName === 'Complete' || $statusName === 'Submitted') {
+                                    $badgeStyle = 'background-color: #05c488ff; color: white;';
+                                } else if ($statusName === 'Draft') {
+                                    $badgeClass = 'bg-warning text-dark';
+                                } else {
+                                    // Default (Pending)
+                                    $badgeStyle = 'background-color: #e5e7eb; color: #374151;'; // Lighter gray
+                                }
                                 
                                 echo '<tr>';
                                 echo '<td>' . htmlspecialchars($row['student_name']) . '</td>';
                                 echo '<td>' . htmlspecialchars($row['student_program']) . '</td>'; // Updated Data
                                 echo '<td>' . htmlspecialchars($row['reviewer_name']) . '</td>';
-                                echo '<td class="text-center"><span class="badge ' . $badgeClass . ' p-2">' . $row['status'] . '</span></td>';
+                                echo '<td class="text-center"><span class="badge ' . $badgeClass . ' p-2" style="' . $badgeStyle . '">' . $row['status'] . '</span></td>';
                                 echo '<td>' . $row['date_completed'] . '</td>';
+                                echo '<td>' . htmlspecialchars($row['rubric_name']) . '</td>';
                                 echo '<td> <button data-id = "' . $row['id'] . '"  class = "btn btn-success export-btn"> Export </button> </td>';
                                 echo '</tr>';
                             }
