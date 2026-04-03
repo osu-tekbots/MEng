@@ -230,6 +230,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Flash message for snackbar after redirect
+    if (isset($_POST['action'])) {
+        $_SESSION['flash'] = $_POST['action'] === 'submit' ? 'Responses submitted successfully!' : 'Responses saved successfully!';
+    }
+
     // PRG redirect — prevents duplicate submissions on browser refresh
     header('Location: ?evaluationId=' . urlencode($evaluationId));
     exit;
@@ -272,6 +277,10 @@ if (isset($_GET['evaluationId'])) {
 
 include_once PUBLIC_FILES . '/modules/header.php';
 ?>
+
+<?php if (!empty($_SESSION['flash'])): ?>
+<script>document.addEventListener('DOMContentLoaded', () => snackbar(<?= json_encode($_SESSION['flash']) ?>, 'success'));</script>
+<?php unset($_SESSION['flash']); endif; ?>
 
 
 <!-- =====================================================================
@@ -385,7 +394,9 @@ include_once PUBLIC_FILES . '/modules/header.php';
     <?php endif; ?>
                 
 
-
+<?php
+include_once PUBLIC_FILES . '/modules/footer.php';
+?>
 </div>
 
 
@@ -442,14 +453,19 @@ include_once PUBLIC_FILES . '/modules/header.php';
         if (!form) return;
 
         form.addEventListener('submit', function(e) {
-            // For each editor instance, copy data back to its textarea so PHP receives the content
+            // Sync CKEditor data back to textareas
             answerEditors.forEach((editor, textarea) => {
                 try {
                     textarea.value = editor.getData();
-                } catch (err) {
-                    console.warn('Error syncing editor to textarea', err);
+                }
+                catch (err) { 
+                    console.warn('Error syncing editor', err); 
                 }
             });
+
+            // Immediate feedback while POST is in flight
+            const action = e.submitter?.value;
+            snackbar(action === 'submit' ? 'Submitting…' : 'Saving…', 'info');
         });
     });
 </script>

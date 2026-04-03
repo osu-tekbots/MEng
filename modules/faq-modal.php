@@ -10,6 +10,7 @@
  * Include this file once in the footer.
  */
 $faqIsLoggedIn = isset($isLoggedIn) && $isLoggedIn;
+$faqIsAdmin = $faqIsLoggedIn && isset($_SESSION['userIsAdmin']) && $_SESSION['userIsAdmin'];
 ?>
 
 <!-- FAQ Modal -->
@@ -70,6 +71,7 @@ $faqIsLoggedIn = isset($isLoggedIn) && $isLoggedIn;
 <script>
 (function() {
     const faqIsLoggedIn = <?php echo $faqIsLoggedIn ? 'true' : 'false'; ?>;
+    const faqIsAdmin = <?php echo $faqIsAdmin ? 'true' : 'false'; ?>;
     let faqsLoaded = false;
     let faqData = [];
 
@@ -99,7 +101,7 @@ $faqIsLoggedIn = isset($isLoggedIn) && $isLoggedIn;
             const escapedAnswer = escapeHtml(faq.answer).replace(/\n/g, '<br>');
 
             let editBtn = '';
-            if (faqIsLoggedIn) {
+            if (faqIsLoggedIn && faqIsAdmin) {
                 editBtn = '<a href="createFaq?id=' + faq.id + '" ' +
                     'class="btn btn-sm btn-outline-secondary ms-2 me-2 faq-edit-btn" ' +
                     'title="Edit this FAQ" style="white-space: nowrap;">' +
