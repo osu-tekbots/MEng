@@ -102,7 +102,7 @@ if($isLoggedIn) {
         $navlinks['ADMIN'] = ['Assign Reviews'=> 'assignReviews.php', 'View Reviews'=> 'viewReviews.php', 'Build Rubrics'=> 'createRubric.php', 'List Users'=> 'userList.php', 'Manage FAQs'=> 'createFaq.php'];
     } 
     if($_SESSION['userIsReviewer']) {
-      $navlinks['REVIEW'] = ['Reviewer Assignments' =>'reviewerAssignments.php', 'Evaluate Rubrics'=> 'evaluateRubrics.php'];
+      $navlinks['REVIEW'] = ['Reviewer Assignments' =>'reviewerAssignments.php'];
     } 
 	}
     $navlinks['PROFILE'] = 'profile';

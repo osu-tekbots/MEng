@@ -316,35 +316,11 @@ include_once PUBLIC_FILES . '/modules/header.php';
      ===================================================================== -->
 
 <div class="container mt-4">
-    <h2>Review Document</h2>
 
-
-    <!-- =================================================================
-         Evaluation selector dropdown
-         ================================================================= -->
-
-    <div class="row">
-        <form method="GET" class="mb-4">
-
-            <label for="evaluationId" class="form-label">Select Evaluation to answer:</label>
-            <select name="evaluationId" id="evaluationId" class="form-select" onchange="this.form.submit()">
-                <option value="">Select Evaluation</option>
-                <!-- Evaluations are actually evaluation rubric items but are being stored in the query param by their fk ids (not their own ids) so its still per evaluation, not rubric -->
-                <?php foreach ($evaluations as $evaluation): ?>
-                    <?php 
-                        $student = $usersDao->getUser($evaluation->getFkStudentId());
-                        $upload = $uploadsDao->getUpload($evaluation->getFkUploadId());
-                        $evaluationRubric = $evaluationsDao->getRubricFromEvaluationId($evaluation->getId());
-
-                        $evaluationName = '['.$student->getFirstName() . '_' . $student->getLastName() . "][" . $evaluationRubric->getName() ."]";
-                    ?>
-                    <option value="<?php echo $evaluation->getId(); ?>" <?php if (isset($_GET['evaluationId']) && $evaluation->getId() == $_GET['evaluationId']) echo 'selected'; ?>>
-                        <?php echo $evaluationName?> </option>
-                <?php endforeach; ?>
-            </select>
-        </form>
-    </div>
-
+    <!-- Back to Reviewer Assignments button -->
+    <a href="./reviewerAssignments.php" class="btn btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left"></i> Back to Reviewer Assignments
+    </a>
 
     <!-- =================================================================
          Rubric evaluation form (shown when an evaluation is selected)
@@ -353,9 +329,9 @@ include_once PUBLIC_FILES . '/modules/header.php';
     <?php if ($selectedTemplate): ?>
 
             <div class="d-flex align-items-center justify-content-between">
-                <h3 class="mb-0">
+                <h2 class="mb-0 mt-3">
                     Evaluating rubric: <?php echo htmlspecialchars($selectedTemplate->getName()); ?>
-                </h3>
+                </h2>
 
                 <a class="fs-5 fw-semibold text-decoration-none"
                 href="<?php echo htmlspecialchars('./uploads' . $selectedUpload->getFilePath() . $selectedUpload->getId() ); ?>" target="_blank" rel="noopener noreferrer">
@@ -391,6 +367,15 @@ include_once PUBLIC_FILES . '/modules/header.php';
                     <button type="submit" name = "action" value = "submit" class="btn btn-primary">Submit Responses</button>
                 </div>
             </form>
+
+    <?php else: ?>
+
+            <!-- No evaluation selected message -->
+            <div class="alert alert-warning d-flex align-items-center mt-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div>No evaluation selected. Please select an evaluation from the <a href="./reviewerAssignments.php">Reviewer Assignments</a> page.</div>
+            </div>
+
     <?php endif; ?>
                 
 
