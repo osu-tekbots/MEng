@@ -15,7 +15,7 @@ if (!session_id()) {
 
 $baseUrl = $configManager->getBaseUrl();
 
-$title = (isset($title) ? $title : 'MEng Assessment') . ' | OSU';
+$title = (isset($title) ? $title : 'COE Graduate Document Review System') . ' | OSU';
 
 // If the URL contains a query string parameter 'contentOnly=true', then we won't display a header or a footer
 if (!isset($contentOnly)) {
@@ -99,10 +99,10 @@ $navlinks = array(
 if($isLoggedIn) {
 	if (isset($_SESSION['userType'])){
     if($_SESSION['userIsAdmin']) {
-        $navlinks['ADMIN'] = ['Assign Reviews'=> 'assignReviews.php', 'View Reviews'=> 'viewReviews.php', 'Build Rubrics'=> 'createRubric.php', 'List Users'=> 'userList.php', 'Manage FAQs'=> 'createFaq.php'];
+        $navlinks['ADMIN'] = ['Assign Reviews'=> 'assignReviews.php', 'View Reviews'=> 'viewReviews.php', 'Build Rubrics'=> 'createRubric.php', 'Users'=> 'userList.php', 'Manage FAQs'=> 'createFaq.php'];
     } 
     if($_SESSION['userIsReviewer']) {
-      $navlinks['REVIEW'] = ['Reviewer Assignments' =>'reviewerAssignments.php'];
+      $navlinks['REVIEW'] = 'reviewerAssignments.php';
     } 
 	}
     $navlinks['PROFILE'] = 'profile';
@@ -165,8 +165,8 @@ if($isLoggedIn) {
     <header id="header" class="dark">
         <a class="header-main-link" href="">
             <div class="logo">
-                <h1 class="d-none d-lg-block" style="font-size: 48px;">MEng Assessment</h1>
-				<h5 class="d-lg-none">MEng Assessment</h5>
+
+				<h5 >COE Graduate Document Review System</h5>
             </div>
         </a>
         <nav class="navigation d-none d-sm-block">

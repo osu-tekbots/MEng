@@ -60,8 +60,8 @@ foreach($evaluations as $evaluation) {
     $evaluationRubric = $evaluationsDao -> getRubricFromEvaluationId($evaluation -> getId());
 
     $tableHTML.= getTableRow($evaluation, $student, $upload, $evaluationRubric);
-    
 }
+
 $tableHTML.= "</tbody>
 		</table>
     ";  
@@ -95,7 +95,7 @@ function getTableRow($evaluation, $student, $upload, $evaluationRubric) {
 <!-- Page HTML -->
 <div>
     <div class="container mt-4">
-        <h2>Assigned Reviews</h2>
+        <h2>Your Assigned Reviews</h2>
         <?php echo $tableHTML; ?>
     </div>
 </div>
@@ -103,7 +103,6 @@ function getTableRow($evaluation, $student, $upload, $evaluationRubric) {
 
 <script> 
 $("#reviewerAssignmentsTable").DataTable({
-    //'dom': 'Bft',
     'scrollX': false,
     'paging':   false,
     'ordering': true,

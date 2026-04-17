@@ -113,7 +113,7 @@ if ($userFlags && is_array($userFlags)) {
         <div class="row mb-4">
             <div class="col">
                 <h2>My Profile</h2>
-                <p class="text-muted">Manage your personal information, document submissions, and view your system permissions.</p>
+                <p class="text-muted">Manage your personal information and document submissions.</p>
             </div>
         </div>
 
@@ -178,6 +178,7 @@ if ($userFlags && is_array($userFlags)) {
                                 <div class="alert alert-secondary mb-4">
                                     <input type="hidden" name="previousUploadId" id="previousUploadId" value="<?php echo $previousUpload->getId(); ?>" />
                                     <div class="row align-items-center">
+									<div><p>Congratulations, you have uploaded a file. Please confirm that all other information on this page is correct and try downloading your file to be sure it looks correct. If you need to upload a new version of the file you can do that below. If everything looks correct, you have completed your task of uploading your graduate document to this website.</p></div>
                                         <div class="col-md-6 mb-2 mb-md-0">
                                             <h6 class="mb-1"><i class="fas fa-file-pdf text-danger mr-2"></i> File Previously Uploaded</h6>
                                             <small class="text-muted">Manage your existing submission for this document type.</small>
@@ -185,8 +186,8 @@ if ($userFlags && is_array($userFlags)) {
                                         <div class="btn-group" role="group">
                                             <a href="<?php echo htmlspecialchars('./uploads' . $previousUpload->getFilePath() . $previousUpload->getId()); ?>" 
                                             download="<?php echo htmlspecialchars($previousUpload->getFileName()); ?>" 
-                                            class="btn btn-sm btn-outline-primary">
-                                            Download
+                                            class="col-sm-6">
+                                            <?php echo $previousUpload->getFileName();?>
                                             </a>
                                             
                                             <?php // [4] Conditional rendering for Delete Button ?>
@@ -215,7 +216,7 @@ if ($userFlags && is_array($userFlags)) {
                                     </label>
                                     <div class="col-sm-9">
                                         <div class="custom-file">
-                                            <input name="userUpload" type="file" class="form-control pt-1" id="userUpload" accept=".pdf, application/pdf" style="height: auto;">
+                                            <input onchange="displayUpload()" name="userUpload" type="file" class="form-control pt-1" id="userUpload" accept=".pdf, application/pdf" style="height: auto;">
                                             <small class="form-text text-muted">Please ensure your file is in PDF format.</small>
                                         </div>
                                     </div>
@@ -228,7 +229,8 @@ if ($userFlags && is_array($userFlags)) {
                             <?php if (!$uploadLocked): ?>
                                 <div class="btn-upload-submit d-inline-block">
                                     <span class="loader mr-2" id="btnUploadLoader" style="display:none;"></span>
-                                    <button type="submit" class="btn btn-primary" id="btnUploadSubmit">
+                                    <button style="visibility:hidden;" type="submit" class="
+									btn btn-primary" id="btnUploadSubmit">
                                         <i class="fas fa-save mr-1"></i> Upload Document
                                     </button>
                                 </div>
@@ -329,6 +331,12 @@ if ($userFlags && is_array($userFlags)) {
 </div>
 
 <script>
+/**
+ * Displays the Upload Button only after a file upload is selected.
+ */
+function displayUpload() {
+	document.getElementById("btnUploadSubmit").style.visibility = "visible"; 
+}
 
     /**
      * Handles the logic to swap programs.

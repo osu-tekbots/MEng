@@ -168,7 +168,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                             <th scope="col">Student Name</th>
                             <th scope="col">Student Program</th> <th scope="col">Reviewer Name</th>
                             <th scope="col">Status</th>
-                            <th scope="col">Date Set</th>
+                            <th scope="col">Date Updated</th>
                             <th scope="col">Rubric Name</th>
                             <th scope="col">Export Data</th>
                         </tr>
