@@ -370,7 +370,8 @@ class EvaluationsDao {
         try {
             $sql = 'INSERT INTO Evaluation_flag_assignments 
                 (fk_evaluation_id, fk_evaluation_flag_id) 
-                VALUES (:evaluationId, :evaluationFlagId)';
+                VALUES (:evaluationId, :evaluationFlagId)
+                ON DUPLICATE KEY UPDATE date_created = NOW()';
 
             $params = array(
                 ':evaluationId' => $evaluationId,
@@ -565,8 +566,8 @@ class EvaluationsDao {
             $sql = 'INSERT INTO Evaluation_rubric_items (fk_evaluation_id, fk_rubric_item_id, fk_rubric_item_option_id, comments) VALUES (:fk_evaluation_id, :fk_rubric_item_id, :fk_rubric_item_option_id, :comments)';
             $params = array(
                 ':fk_evaluation_id' => $evaluationRubricItem->getFkEvaluationId(),
-                ':fk_rubric_item_id' => $evaluationRubricItem->getRubricItem() ? $evaluationRubricItem->getRubricItem()->getId() : null,
-                ':fk_rubric_item_option_id' => $evaluationRubricItem->getRubricItemOption() ? $evaluationRubricItem->getRubricItemOption()->getId() : null,
+                ':fk_rubric_item_id' => $evaluationRubricItem->getRubricItem() ? $evaluationRubricItem->getRubricItem()->getId() : NULL,
+                ':fk_rubric_item_option_id' => $evaluationRubricItem->getRubricItemOption() ? $evaluationRubricItem->getRubricItemOption()->getId() : NULL,
                 ':comments' => $evaluationRubricItem->getComments()
             );
         

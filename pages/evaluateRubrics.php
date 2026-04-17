@@ -122,7 +122,7 @@ function renderEvaluationItem($item, $options, $currentOptionId, $currentComment
                             <label class="mb-2" for="<?= htmlspecialchars('comments_' . $rawId) ?>">
                                 <strong>Add Comments <?= $item->getCommentRequired() ? '<span class="text-danger">*</span>' : '' ?>:</strong>
                             </label>
-                            <textarea class="form-control item-comments" id="<?= htmlspecialchars('comments_' . $rawId) ?>" name="<?= htmlspecialchars('comments[' . $rawId . ']') ?>" <?= $item->getCommentRequired() ? 'required' : '' ?>><?= htmlspecialchars($currentComment) ?></textarea>
+                            <textarea class="form-control item-comments" style="field-sizing: content;" id="<?= htmlspecialchars('comments_' . $rawId) ?>" name="<?= htmlspecialchars('comments[' . $rawId . ']') ?>" <?= $item->getCommentRequired() ? 'required' : '' ?>><?= htmlspecialchars($currentComment) ?></textarea>
                         </div>
                     <?php else: ?>
                         <!-- Full-width comment box (used when there are 0 or >2 options) -->
@@ -130,12 +130,43 @@ function renderEvaluationItem($item, $options, $currentOptionId, $currentComment
                             <label class="mb-2" for="<?= htmlspecialchars('comments_' . $rawId) ?>">
                                 <strong>Add Comments <?= $item->getCommentRequired() ? '<span class="text-danger">*</span>' : '' ?>:</strong> 
                             </label>
-                            <textarea class="form-control item-comments" id="<?= htmlspecialchars('comments_' . $rawId) ?>" name="<?= htmlspecialchars('comments[' . $rawId . ']') ?>" <?= $item->getCommentRequired() ? 'required' : '' ?>><?= htmlspecialchars($currentComment) ?></textarea>
+                            <textarea class="form-control item-comments" style="field-sizing: content;" id="<?= htmlspecialchars('comments_' . $rawId) ?>" name="<?= htmlspecialchars('comments[' . $rawId . ']') ?>" <?= $item->getCommentRequired() ? 'required' : '' ?>><?= htmlspecialchars($currentComment) ?></textarea>
                         </div>
                     <?php endif; ?>
                 </div>
 
             </div>
+        </div>
+    </div>
+<?php }
+
+
+/**
+ * Render the evaluation status banner.
+ *
+ * Shows an alert describing the current highest status of the evaluation.
+ * The verb phrase is adjusted per status arrangement:
+ *   1 (Pending)   → "is currently Pending"         (no date shown)
+ *   2 (Draft)     → "was saved as a Draft on …"
+ *   3 (Submitted) → "was Submitted on …"
+ *
+ * @param object|false $highestStatusFlag  The EvaluationFlag model (or false if none)
+ */
+function renderStatusBanner($highestStatusFlag) {
+    if (!$highestStatusFlag) return;
+    $arr        = $highestStatusFlag->getArrangement();
+    $isSubmitted = $arr >= 3;
+    $alertClass = $isSubmitted ? 'alert-success' : 'alert-info';
+    $iconClass  = $isSubmitted ? 'bi-check-circle-fill' : 'bi-info-circle-fill';
+    $verb       = $arr == 1 ? 'is currently' : ($arr == 2 ? 'was saved as a' : 'was'); ?>
+    <div class="alert <?= $alertClass ?> d-flex align-items-center mt-3 mb-2" role="alert">
+        <i class="bi <?= $iconClass ?> me-2"></i>
+        <div>
+            This evaluation <?= $verb ?>
+            <strong><?= htmlspecialchars($highestStatusFlag->getName()) ?></strong>
+            <?php if ($highestStatusFlag->getDateCreated() && $arr != 1): ?>
+                on <?= htmlspecialchars(date('F j, Y \a\t g:i A', strtotime($highestStatusFlag->getDateCreated()))) ?>
+            <?php endif; ?>
         </div>
     </div>
 <?php }
@@ -249,6 +280,7 @@ $logger->info('User ID ' . $_SESSION['userID'] . ' has ' . count($evaluations) .
 
 $selectedTemplate = null;
 $selectedUpload = '';
+$highestStatusFlag = null;
 
 if (isset($_GET['evaluationId'])) {
 
@@ -257,6 +289,9 @@ if (isset($_GET['evaluationId'])) {
     );
 
     $selectedTemplate = $evaluationsDao->getRubricFromEvaluationId($_GET['evaluationId']);
+
+    // Load the highest status flag (includes date_created from flag_assignments)
+    $highestStatusFlag = $evaluationsDao->getHighestStatusFlagByEvaluationId($_GET['evaluationId']);
 
     if ($logger && $selectedTemplate) {
         $logger->info('Selected Evaluation ID: ' . $_GET['evaluationId']);
@@ -328,6 +363,11 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
     <?php if ($selectedTemplate): ?>
 
+            <?php
+            // Determine if evaluation has been submitted before (arrangement >= 3)
+            $isSubmitted = $highestStatusFlag && $highestStatusFlag->getArrangement() >= 3;
+            ?>
+
             <div class="d-flex align-items-center justify-content-between">
                 <h2 class="mb-0 mt-3">
                     Evaluating rubric: <?php echo htmlspecialchars($selectedTemplate->getName()); ?>
@@ -339,6 +379,9 @@ include_once PUBLIC_FILES . '/modules/header.php';
                 </a>
 
             </div>
+
+            <?php renderStatusBanner($highestStatusFlag); ?>
+
             <br>
             <form method="POST" action="" id="rubricAnswersForm">
                 <input type="hidden" name="templateId" value="<?php echo $selectedTemplate->getId(); ?>">
@@ -363,8 +406,12 @@ include_once PUBLIC_FILES . '/modules/header.php';
                 <?php endforeach; ?>
 
                 <div class="mb-3">
-                    <button type="submit" name = "action" value = "save" class="btn btn-primary">Save Responses</button>
-                    <button type="submit" name = "action" value = "submit" class="btn btn-primary">Submit Responses</button>
+                    <?php if (!$isSubmitted): ?>
+                    <button type="submit" name="action" value="save" class="btn btn-primary">Save Responses</button>
+                    <?php endif; ?>
+                    <button type="submit" name="action" value="submit" class="btn btn-primary">
+                        <?php echo $isSubmitted ? 'Resubmit Responses' : 'Submit Responses'; ?>
+                    </button>
                 </div>
             </form>
 
@@ -424,9 +471,12 @@ include_once PUBLIC_FILES . '/modules/footer.php';
 
     /** Initialise CKEditor on every comment textarea. */
     function initializeAnswerEditors() {
+        /*
         document.querySelectorAll('textarea.item-comments').forEach(textarea => {
             createEditorForAnswer(textarea);
         });
+        */
+        //Removed Wysivig for comments;
     }
 
     // Run on page load
