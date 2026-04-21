@@ -17,7 +17,6 @@ $usersDao = new UsersDao($dbConn, $logger);
 
 // 3. Get ONID from the session structure we saw in the debugger
 $onid = $_SESSION['auth']['id'];
-//$logger -> info("Auth " . json_encode($_SESSION['auth']));
 //Output: {"method":"onid","id":"arorae","firstName":"Ekansh","lastName":"Arora","email":"arorae@oregonstate.edu"}
 
 // 4. Attempt to fetch the user from the database
@@ -36,7 +35,8 @@ if ($user) {
 } else {
     // --- NEW USER (First time logging in) ---
     // You might want to handle user creation here if they don't exist yet
-    
+    $logger -> info("New User Auth: " . json_encode($_SESSION['auth']));
+
     $newUser = new User();
     $newUser->setOnid($onid);
     $newUser->setFirstName($_SESSION['auth']['firstName']);

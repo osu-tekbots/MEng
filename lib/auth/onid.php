@@ -48,7 +48,7 @@ function authenticateWithONID() {
 
         // ini_set("log_errors", 1);
         // ini_set("error_log", __DIR__ . "/../../../.private/logs/php-error.log");
-        //error_log(print_r($html, true));
+        //error_log("HTML from onid php: " . print_r($html, true));
 
         // Extract first name with fallbacks: firstname -> givenName -> parsed from fullname -> parsed from commonName
         $firstName = extractFromXml('cas:firstname', $html);
@@ -96,6 +96,8 @@ function authenticateWithONID() {
             'lastName' => $lastName,
             'email' => $email
         );
+
+        error_log("Auth from onid php: " . json_encode($_SESSION['auth']));
 
         return $_SESSION['auth']['id'];
     } else {
