@@ -153,6 +153,40 @@ if ($userFlags && is_array($userFlags)) {
                                     value="<?php echo $user->getEmail(); ?>" required>
                             </div>
                             
+                            <h6 class="text-muted small text-uppercase font-weight-bold mb-2 mt-2">Program</h6>
+                            <div class="mb-3">
+                                <?php 
+                                    // Logic to determine the currently selected program (if any)
+                                    // We check if the user has a flag that matches a program ID
+                                    $currentDeptId = '';
+                                    if ($userFlagIds) {
+                                        foreach ($allPrograms as $prog) {
+                                            if (in_array($prog->getId(), $userFlagIds)) {
+                                                $currentDeptId = $prog->getId();
+                                                break; // Enforce single selection by taking the first match
+                                            }
+                                        }
+                                    }
+                                ?>
+
+                                <select class="form-control" 
+                                        id="programSelect" 
+                                        data-user-id="<?php echo $user->getId(); ?>"
+                                        data-current-prog="<?php echo $currentDeptId; ?>"
+                                        onchange="updateProgram(this)"
+                                        <?php echo $btnDisabled ?? ''; ?>>
+                                    
+                                    <option value="">Program Not Selected</option>
+                                    <?php foreach ($allPrograms as $prog): ?>
+                                        <option value="<?php echo $prog->getId(); ?>" 
+                                            <?php echo ($currentDeptId == $prog->getId()) ? 'selected' : ''; ?>>
+                                            <?php echo $prog->getName(); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="form-text text-muted">Select your program.</small>
+                            </div>
+
                             <hr class="mt-4 mb-4">
                             
                             <button type="submit" id="btnEditProfileSubmit" class="btn btn-primary">
@@ -257,71 +291,6 @@ if ($userFlags && is_array($userFlags)) {
                             <input type="text" class="form-control-plaintext font-weight-bold" 
                                    value="<?php echo $user->getOsuId(); ?>" readonly>
                         </div>
-                    </div>
-                </div>
-
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">Permissions & Access</h5>
-                    </div>
-                    <div class="card-body">
-                        
-                        <h6 class="text-muted small text-uppercase font-weight-bold mb-2">Program</h6>
-                        <div class="mb-3">
-                            <?php 
-                                // Logic to determine the currently selected program (if any)
-                                // We check if the user has a flag that matches a program ID
-                                $currentDeptId = '';
-                                if ($userFlagIds) {
-                                    foreach ($allPrograms as $prog) {
-                                        if (in_array($prog->getId(), $userFlagIds)) {
-                                            $currentDeptId = $prog->getId();
-                                            break; // Enforce single selection by taking the first match
-                                        }
-                                    }
-                                }
-                            ?>
-
-                            <select class="form-control" 
-                                    id="programSelect" 
-                                    data-user-id="<?php echo $user->getId(); ?>"
-                                    data-current-prog="<?php echo $currentDeptId; ?>"
-                                    onchange="updateProgram(this)"
-                                    <?php echo $btnDisabled ?? ''; ?>>
-                                
-                                <option value="">Select Program...</option>
-                                <?php foreach ($allPrograms as $prog): ?>
-                                    <option value="<?php echo $prog->getId(); ?>" 
-                                        <?php echo ($currentDeptId == $prog->getId()) ? 'selected' : ''; ?>>
-                                        <?php echo $prog->getName(); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <small class="form-text text-muted">Select a single program for this user.</small>
-                        </div>
-
-                        <hr>
-
-                        <h6 class="text-muted small text-uppercase font-weight-bold mb-2">User Roles</h6>
-                        <div>
-                            <?php foreach ($allRoles as $role): ?>
-                                <?php 
-                                    $hasFlag = in_array($role->getId(), $userFlagIds);
-                                    $btnStyle = $hasFlag ? 'btn-secondary' : 'btn-outline-secondary';
-                                    $action = $hasFlag ? 'remove' : 'add'; // Still needed for the generic buttons
-                                ?>
-                                <button type="button" 
-                                        class="btn btn-sm <?php echo $btnStyle; ?> mb-1 btn-flag-toggle"
-                                        data-flag-id="<?php echo $role->getId(); ?>"
-                                        data-user-id="<?php echo $user->getId(); ?>"
-                                        data-action="<?php echo $action; ?>" 
-                                        data-type="secondary"
-                                        <?php echo $btnDisabled ?? ''; ?>>
-                                    <?php echo $role->getName(); ?>
-                                </button>
-                            <?php endforeach; ?>
-                        </div>
-
                     </div>
                 </div>
 
