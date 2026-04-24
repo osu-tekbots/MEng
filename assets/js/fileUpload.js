@@ -33,9 +33,11 @@ function onUploadDocumentFormSubmit(event) {
 
     const documentType = document.getElementById("documentType");
     const userId = document.getElementById("userId");
+    let acceptedTypes = document.getElementById('userUpload').getAttribute('accept').trim().split(",");
 
     bodyDocumentUpload.append('userId', userId.value);
     bodyDocumentUpload.append('documentType', documentType.value);
+    bodyDocumentUpload.append('acceptedTypes', acceptedTypes);
 
     // Request to upload the profile image if there is one
     if (previousUpload) {
@@ -148,7 +150,7 @@ function onUploadDownload(event) {
             // 4. Create the link element
             const a = document.createElement('a');
             a.href = url;
-            a.download = payload.filename || "download.pdf";
+            a.download = payload.filename || "error.txt";
 
             // TRICK 1: Make it part of the DOM, but invisible
             a.style.display = 'block';

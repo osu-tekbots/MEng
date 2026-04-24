@@ -13,6 +13,12 @@ $evaluationsDao = new EvaluationsDao($dbConn, $logger); // [2] Initialize DAO
 // 2. Document Type (hardcoded to thesis)
 $selectedDocumentType = 1;
 
+$uploadAcceptedTypesString = "PDF, DOCX, ZIP";
+//Using mime_content_type("Filename") types list; more robust than extension checking
+$uploadAcceptedTypes = ["application/pdf", 
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+                        "application/zip", "application/x-zip-compressed"];
+
 // 3. Include Upload JS
 $js = array(
     array(
@@ -246,12 +252,12 @@ if ($userFlags && is_array($userFlags)) {
                             <?php else: ?>
                                 <div class="form-group row">
                                     <label for="userUpload" class="col-sm-3 col-form-label text-muted small text-uppercase font-weight-bold" id="userUploadLabel">
-                                        New File (PDF)
+                                        New File
                                     </label>
                                     <div class="col-sm-9">
                                         <div class="custom-file">
-                                            <input onchange="displayUpload()" name="userUpload" type="file" class="form-control pt-1" id="userUpload" accept=".pdf, application/pdf" style="height: auto;">
-                                            <small class="form-text text-muted">Please ensure your file is in PDF format.</small>
+                                            <input onchange="displayUpload()" name="userUpload" type="file" class="form-control pt-1" id="userUpload" accept="<?php echo implode(",", $uploadAcceptedTypes); ?>" style="height: auto;">
+                                            <small class="form-text text-muted">Please ensure your file is in <?php echo $uploadAcceptedTypesString; ?> format.</small>
                                         </div>
                                     </div>
                                 </div>

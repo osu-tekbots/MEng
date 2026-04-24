@@ -40,28 +40,21 @@ class UploadActionHandler extends ActionHandler {
             $this->respond(new Response(Response::BAD_REQUEST, 'Must include ID of user in request'));
         }
 
+        // Make sure we have a file
+        if (!isset($_FILES['userUpload'])) {
+            $this->respond(new Response(Response::BAD_REQUEST, 'Must include file in upload request'));
+        }
+
+        // Make sure we have the accepted types
+        $acceptedTypes = isset($_POST['acceptedTypes']) && !empty($_POST['acceptedTypes']) ? $_POST['acceptedTypes'] : null;
+        if (empty($acceptedTypes)) {
+            $this->respond(new Response(Response::BAD_REQUEST, 'ERROR Must include accepted types in request'));
+        }
+
         // Make sure we have the document type
         $documentType = isset($_POST['documentType']) && !empty($_POST['documentType']) ? $_POST['documentType'] : null;
         if (empty($documentType)) {
             $this->respond(new Response(Response::BAD_REQUEST, 'Must include document type in request'));
-        }
-
-        // Construct the path
-        $basePath = $this->configManager->get('server.upload_file_path');
-        $targetDir = "$basePath/$userId/$documentType";
-
-        // Check if directory exists; if not, create it
-        if (!is_dir($targetDir)) {
-            if (!mkdir($targetDir, 0777, true)) {
-                $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Failed to create upload directory'));
-            }
-        }
-
-        $filepath = $targetDir . "/";
-        
-        // Make sure we have a file
-        if (!isset($_FILES['userUpload'])) {
-            $this->respond(new Response(Response::BAD_REQUEST, 'Must include file in upload request'));
         }
 
         // Get the information we need
@@ -71,19 +64,29 @@ class UploadActionHandler extends ActionHandler {
 
         // Check the file size
         $tenMb = 10485760;
+        //Might be a problem for large zip files?
+        //Should ideally be passed in from profile page or stored in a ini file
         if ($fileSize > $tenMb) {
             $this->respond(new Response(Response::BAD_REQUEST, 'File size must be smaller than 10MB'));
         }
 
         // Check the mime type
         $mime = mime_content_type($fileTmpName);
-        if ($mime != 'application/pdf') {
-            $this->respond(new Response(Response::BAD_REQUEST, 'File must be a pdf'));
+        if (!in_array($mime, explode(",", $acceptedTypes))) {
+            $this->respond(new Response(Response::BAD_REQUEST, 'ERROR: Please upload a valid file type.'));
         }
 
-        //
-        // We've passed all the checks, now we can upload the image
-        //
+        // Construct the path
+        $basePath = $this->configManager->get('server.upload_file_path');
+        $targetDir = "$basePath/$userId/$documentType";
+        $filepath = $targetDir . "/";
+
+        // Check if directory exists; if not, create it
+        if (!is_dir($targetDir)) {
+            if (!mkdir($targetDir, 0777, true)) {
+                $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Failed to create upload directory'));
+            }
+        }
 
         $upload = new Upload();
         $upload->setFkUserId($userId)
@@ -126,6 +129,12 @@ class UploadActionHandler extends ActionHandler {
             $this->respond(new Response(Response::BAD_REQUEST, 'Must include ID of user in request'));
         }
 
+        // Make sure we have the accepted types
+        $acceptedTypes = isset($_POST['acceptedTypes']) && !empty($_POST['acceptedTypes']) ? $_POST['acceptedTypes'] : null;
+        if (empty($acceptedTypes)) {
+            $this->respond(new Response(Response::BAD_REQUEST, 'Must include accepted types in request'));
+        }
+
         // Make sure we have the document type
         $documentType = isset($_POST['documentType']) && !empty($_POST['documentType']) ? $_POST['documentType'] : null;
         if (empty($documentType)) {
@@ -162,8 +171,8 @@ class UploadActionHandler extends ActionHandler {
 
         // Check the mime type
         $mime = mime_content_type($fileTmpName);
-        if ($mime != 'application/pdf') {
-            $this->respond(new Response(Response::BAD_REQUEST, 'File must be a pdf'));
+        if (!in_array($mime, explode(",", $acceptedTypes))) {
+            $this->respond(new Response(Response::BAD_REQUEST, 'ERROR: Please upload a valid file type.'));
         }
 
         $previousUpload = $this->uploadsDao->getUpload($previousUploadId);
@@ -174,7 +183,7 @@ class UploadActionHandler extends ActionHandler {
             $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Failed to update document database object'));
         }
 
-        $ok = move_uploaded_file($fileTmpName, $filepath . $previousUploadId . ".pdf");
+        $ok = move_uploaded_file($fileTmpName, $filepath . $previousUploadId);
         if (!$ok) {
             $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Failed to update document'));
         }
@@ -191,7 +200,7 @@ class UploadActionHandler extends ActionHandler {
      * This function, after invocation is finished, will exit the script via the `ActionHandler\respond()` function.
      *
      * @return void
-     */
+     */ 
     public function handleDeleteDocument() {
         // Make sure we have the user ID
         $userId = isset($_POST['userId']) && !empty($_POST['userId']) ? $_POST['userId'] : null;
@@ -217,7 +226,7 @@ class UploadActionHandler extends ActionHandler {
             "/$documentType" .
             "/";
         
-        $ok = unlink($filepath . $previousUploadId . ".pdf");
+        $ok = unlink($filepath . $previousUploadId);
 
         $ok = $this->uploadsDao->deleteUpload($previousUploadId);
         if (!$ok) {
@@ -254,7 +263,7 @@ class UploadActionHandler extends ActionHandler {
         // 3. Construct the physical path
         $fullPath = $this->configManager->get('server.upload_file_path') . 
                     $upload->getFilePath() . 
-                    $upload->getId() . ".pdf";
+                    $upload->getId();
 
         // 4. Verify file exists
         if (!file_exists($fullPath)) {
@@ -267,9 +276,12 @@ class UploadActionHandler extends ActionHandler {
         $base64Data = base64_encode($fileContent);
 
         // 6. Return JSON response
+        // Detect the actual MIME type of the file
+        $mime = mime_content_type($fullPath);
+
         $responseData = [
             'filename' => $upload->getFileName(),
-            'mime' => 'application/pdf',
+            'mime' => $mime,
             'fileData' => $base64Data
         ];
 
