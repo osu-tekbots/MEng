@@ -42,6 +42,7 @@ if ($user) {
     $newUser->setFirstName($_SESSION['auth']['firstName']);
     $newUser->setLastName($_SESSION['auth']['lastName']);
     $newUser->setEmail($_SESSION['auth']['email']);
+    $newUser->setUuid($_SESSION['auth']['uuid']);
     $newUser->setLastLogin(new DateTime());
 
     // Determine how you generate IDs or UUIDs. 

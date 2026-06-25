@@ -16,6 +16,7 @@ if (!isset($_SESSION)) {
  * the following keys:
  * - `method`: `'onid'`
  * - `id`: the ONID of the user
+ * - `uuid`: the UUID of the user
  * - `firstName`: the first name of the user
  * - `lastName`: the last name of the user
  * - `email`: the email address of the user
@@ -89,9 +90,15 @@ function authenticateWithONID() {
             $id = strtolower(extractFromXml('cas:uid', $html));
         }
 
+        //Extract UUID (from CAS)
+        $uuid = extractFromXml('cas:osuuid', $html);
+
+        //Ignored from response: <cas:osupidm>4771255</cas:osupidm>
+
         $_SESSION['auth'] = array(
             'method' => 'onid',
             'id' => $id,
+            'uuid' => $uuid,
             'firstName' => $firstName,
             'lastName' => $lastName,
             'email' => $email

@@ -24,9 +24,9 @@ function authenticate() {
         $onid = authenticateWithONID();
     
         try {
-            $ok = createUserIfNeeded($dbConn, $logger, $onid);
+            $ok = setUserInformation($dbConn, $logger, $onid);
         } catch(\Exception $e) {
-            $logger->error("createUserIfNeeded() failed for ONID ".$onid.". Exception: ".$e);
+            $logger->error("setUserInformation() failed for ONID ".$onid.". Exception: ".$e);
             $ok = false;
         }
 
@@ -44,18 +44,17 @@ function authenticate() {
 
 
 /**
- * Creates a new user entry and a new profile entry if needed.
+ * Creates a new user entry if needed, updates user information if they exist.
  * 
  * This function utilizes the `$_SESSION['auth']` variables set by authentication providers. Therefore it must be
  * called after successful authentication to work properly.
  *
  * @param \DataAccess\DatabaseConnect $dbConn
  * @param \Util\Logger $logger
- * @param string $provider indicates which provider is being used
- * @param string $authId the ID provided by the provider
+ * @param string $onid the ID provided by ONID
  * @return bool true if an entry was created or one exists, false otherwise
  */
-function createUserIfNeeded($dbConn, $logger, $onid) {
+function setUserInformation($dbConn, $logger, $onid) {
     // First check if the user was created
     $usersDao = new UsersDao($dbConn, $logger);
     $user = $usersDao->getUserByOnid($onid);
@@ -67,12 +66,18 @@ function createUserIfNeeded($dbConn, $logger, $onid) {
             ->setFirstName($_SESSION['auth']['firstName'])
             ->setLastName($_SESSION['auth']['lastName'])
             ->setEmail($_SESSION['auth']['email']);
-
         $ok = $usersDao->addNewUser($user);
         if (!$ok) {
             $logger->error('Could not create new user');
             return false;
         }
+    } else {
+        //User exists but we're gonna update any fields that are given to their newest version, otherwise they stay the same
+        if (!empty($_SESSION['auth']['firstName'])) $user->setFirstName($_SESSION['auth']['firstName']);
+        if (!empty($_SESSION['auth']['lastName'])) $user->setLastName($_SESSION['auth']['lastName']);
+        if (!empty($_SESSION['auth']['email'])) $user->setEmail($_SESSION['auth']['email']);
+        if (!empty($_SESSION['auth']['uuid'])) $user->setUuid($_SESSION['auth']['uuid']);
+        $usersDao->updateUser($user);
     }
 
     return true;

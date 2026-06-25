@@ -119,7 +119,9 @@ function startMasquerade($user, $dao) {
         'method' => 'onid',
         'id' => strtolower($user->getOnid()),
         'firstName' => $user->getFirstName(),
-        'lastName' => $user->getLastName()
+        'lastName' => $user->getLastName(),
+        'email' => $user->getEmail(),
+        'uuid' => $user->getUuid()
     );
 }
 ?>

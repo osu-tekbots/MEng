@@ -97,6 +97,7 @@ function authenticateWithOAuth2($name, $clientId, $secret, $scope, $serverUrl) {
             'firstName' => $nameSegments[0],
             'lastName' => $nameSegments[$nameSegmentsCount - 1],
             'email' => $user->email,
+            'uuid' => $user->uuid,
             'serverName' => $name
         );
 

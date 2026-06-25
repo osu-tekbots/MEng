@@ -139,9 +139,9 @@ class UsersDao {
     }
 
     /**
-     * Fetches user developer status with the user's UUID.
+     * Fetches user developer status with the user's ID.
      *
-     * @param string $uuid the UUID of the user, provided by OSU
+     * @param string $user_id the user ID of the user, provided by OSU
      * @return boolean true if the user is a developer, 
      * false otherwise
      */
@@ -159,16 +159,16 @@ class UsersDao {
 
             return true;
         } catch (\Exception $e) {
-            $this->logError('Failed to fetch single user by UUID: ' . $e->getMessage());
+            $this->logError('Failed to fetch single user by User ID: ' . $e->getMessage());
 
             return false;
         }
     }
 
     /**
-     * Fetches user student status with the user's UUID.
+     * Fetches user student status with the user's ID.
      *
-     * @param string $uuid the UUID of the user, provided by OSU
+     * @param string $user_id the user ID of the user, provided by OSU
      * @return boolean true if the user is a student, 
      * false otherwise
      */
@@ -186,16 +186,16 @@ class UsersDao {
 
             return true;
         } catch (\Exception $e) {
-            $this->logError('Failed to fetch single user by UUID: ' . $e->getMessage());
+            $this->logError('Failed to fetch single user by User ID: ' . $e->getMessage());
 
             return false;
         }
     }
 
     /**
-     * Fetches user admin status with the user's UUID.
+     * Fetches user admin status with the user's ID.
      *
-     * @param string $uuid the UUID of the user, provided by OSU
+     * @param string $user_id the user ID of the user, provided by OSU
      * @return boolean true if the user is an admin, 
      * false otherwise
      */
@@ -220,9 +220,9 @@ class UsersDao {
     }
 
     /**
-     * Fetches user reviewer status with the user's UUID.
+     * Fetches user reviewer status with the user's ID.
      *
-     * @param string $uuid the UUID of the user, provided by OSU
+     * @param string $user_id the user ID of the user, provided by OSU
      * @return boolean true if the user is a reviewer, 
      * false otherwise
      */
