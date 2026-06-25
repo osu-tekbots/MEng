@@ -48,11 +48,14 @@ if ($user) {
     // If your DB auto-increments ID, you might need to insert first then fetch ID.
     // If you generate UUIDs in PHP:
     // $newUser->setUuid(\Ramsey\Uuid\Uuid::uuid4()->toString()); 
-    
+     
     if ($usersDao->addNewUser($newUser)) {
          // Re-fetch to get the auto-incremented ID
          $user = $usersDao->getUserByOnid($onid);
          $_SESSION['userID'] = $user->getId();
+		 $logger -> info("New User id is: " . $_SESSION['userID']);
+		 //Add the student flag by default. This is a magic number thing
+		 $usersDao->addUserFlag($_SESSION['userID'], 2);
     } else {
         die("Error creating new user account.");
     }

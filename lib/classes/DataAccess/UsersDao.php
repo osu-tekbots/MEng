@@ -374,7 +374,8 @@ class UsersDao {
     public function getAllDepartmentFlags() {
         try {
             $sql = 'SELECT User_flags.* FROM User_flags ';
-            $sql .= 'WHERE User_flags.type = "Department"';
+            $sql .= 'WHERE User_flags.type = "Department" ';
+			$sql .= 'ORDER BY User_flags.arrangement ASC';
 
             $result = $this->conn->query($sql);
 
@@ -397,7 +398,8 @@ class UsersDao {
             $sql = 'SELECT User_flags.* FROM User_flags ';
             $sql .= 'LEFT JOIN User_flag_assignments ';
             $sql .= 'ON User_flags.id = User_flag_assignments.fk_user_flag_id ';
-            $sql .= 'WHERE User_flag_assignments.fk_user_id = :id';
+            $sql .= 'WHERE User_flag_assignments.fk_user_id = :id ';
+			$sql .= 'ORDER BY User_flags.arrangement ASC';
 
             $params = array(':id' => $id);
             $result = $this->conn->query($sql, $params);
@@ -486,7 +488,7 @@ class UsersDao {
      */
     public function getAllRoleFlags() {
         try {
-            $sql = 'SELECT * FROM User_flags WHERE type = "Role"';
+            $sql = 'SELECT * FROM User_flags WHERE type = "Role" ORDER BY User_flags.arrangement ASC';
             $result = $this->conn->query($sql);
             return \array_map('self::ExtractUserFlagFromRow', $result);
         } catch (\Exception $e) {

@@ -63,11 +63,11 @@ class UploadActionHandler extends ActionHandler {
         $fileTmpName  = $_FILES['userUpload']['tmp_name'];
 
         // Check the file size
-        $tenMb = 10485760;
+        $fortyMb = 52428800; //Actually set to 50Mb
         //Might be a problem for large zip files?
         //Should ideally be passed in from profile page or stored in a ini file
-        if ($fileSize > $tenMb) {
-            $this->respond(new Response(Response::BAD_REQUEST, 'File size must be smaller than 10MB'));
+        if ($fileSize > $fortyMb) {
+            $this->respond(new Response(Response::BAD_REQUEST, 'File size must be smaller than 40MB'));
         }
 
         // Check the mime type
@@ -164,9 +164,9 @@ class UploadActionHandler extends ActionHandler {
         $fileTmpName  = $_FILES['userUpload']['tmp_name'];
 
         // Check the file size
-        $tenMb = 10485760;
-        if ($fileSize > $tenMb) {
-            $this->respond(new Response(Response::BAD_REQUEST, 'File size must be smaller than 10MB'));
+        $fortyMb = 52428800; //Actually set to 50Mb
+        if ($fileSize > $fortyMb) {
+            $this->respond(new Response(Response::BAD_REQUEST, 'File size must be smaller than 40MB'));
         }
 
         // Check the mime type

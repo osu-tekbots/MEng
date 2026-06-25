@@ -299,7 +299,29 @@ if ($userFlags && is_array($userFlags)) {
                         </div>
                     </div>
                 </div>
+<hr>
+<?php if($_SESSION['userIsAdmin']): ?>
 
+<h6 class="text-muted small text-uppercase font-weight-bold mb-2">User Roles</h6>
+                        <div>
+                            <?php foreach ($allRoles as $role): ?>
+                                <?php 
+                                    $hasFlag = in_array($role->getId(), $userFlagIds);
+                                    $btnStyle = $hasFlag ? 'btn-secondary' : 'btn-outline-secondary';
+                                    $action = $hasFlag ? 'remove' : 'add'; // Still needed for the generic buttons
+                                ?>
+                                <button type="button" 
+                                        class="btn btn-sm <?php echo $btnStyle; ?> mb-1 btn-flag-toggle"
+                                        data-flag-id="<?php echo $role->getId(); ?>"
+                                        data-user-id="<?php echo $user->getId(); ?>"
+                                        data-action="<?php echo $action; ?>" 
+                                        data-type="secondary"
+                                        <?php echo $btnDisabled ?? ''; ?>>
+                                    <?php echo $role->getName(); ?>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+<?php endif;?>						
             </div>
         </div>
     </div>
