@@ -32,6 +32,9 @@ class User {
     /** @var \DateTime|null */
     private $lastLogin;
 
+    /** @var boolean */
+    private $active;
+
     /**
      * Constructs a new instance of a user.
      *
@@ -43,6 +46,7 @@ class User {
         } else {
             $this->setId($id);
         }
+        $this->active = true;
     }
 
     /**
@@ -187,6 +191,23 @@ class User {
      */
     public function setLastLogin($lastLogin) {
         $this->lastLogin = $lastLogin;
+        return $this;
+    }
+
+    /**
+     * Get the value of active
+     */
+    public function getActive() {
+        return $this->active;
+    }
+
+    /**
+     * Set the value of active
+     *
+     * @return  self
+     */
+    public function setActive($active) {
+        $this->active = $active;
         return $this;
     }
 }

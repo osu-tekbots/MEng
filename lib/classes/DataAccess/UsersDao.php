@@ -42,7 +42,7 @@ class UsersDao {
      */
     public function getAllUsers() {
         try {
-            $sql = 'SELECT * FROM Users';
+            $sql = 'SELECT * FROM Users WHERE is_active = 1';
             $result = $this->conn->query($sql);
 
             return \array_map('self::ExtractUserFromRow', $result);
@@ -63,7 +63,7 @@ class UsersDao {
     public function getUser($id) {
         try {
             $sql = 'SELECT * FROM Users ';
-            $sql .= 'WHERE id = :id';
+            $sql .= 'WHERE id = :id AND is_active = 1';
             $params = array(':id' => $id);
             $result = $this->conn->query($sql, $params);
             if (\count($result) == 0) {
@@ -73,6 +73,30 @@ class UsersDao {
             return self::ExtractUserFromRow($result[0]);
         } catch (\Exception $e) {
             $this->logError('Failed to fetch single user by ID: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Fetches a single user by ID regardless of active status, for admin use.
+     *
+     * @param string $id the ID of the user to fetch
+     * @return User|boolean
+     */
+    public function getUserIncludingInactive($id) {
+        try {
+            $sql = 'SELECT * FROM Users ';
+            $sql .= 'WHERE id = :id';
+            $params = array(':id' => $id);
+            $result = $this->conn->query($sql, $params);
+            if (\count($result) == 0) {
+                return false;
+            }
+
+            return self::ExtractUserFromRow($result[0]);
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch single user by ID (including inactive): ' . $e->getMessage());
 
             return false;
         }
@@ -93,7 +117,7 @@ class UsersDao {
             }
 
             $sql = 'SELECT * FROM Users ';
-            $sql .= 'WHERE onid = :onid';
+            $sql .= 'WHERE onid = :onid AND is_active = 1';
             $params = array(':onid' => $onid);
             $result = $this->conn->query($sql, $params);
             if (!$result || \count($result) == 0) {
@@ -123,7 +147,7 @@ class UsersDao {
             }
 
             $sql = 'SELECT * FROM Users ';
-            $sql .= 'WHERE uuid = :uuid';
+            $sql .= 'WHERE uuid = :uuid AND is_active = 1';
             $params = array(':uuid' => $uuid);
             $result = $this->conn->query($sql, $params);
             if (!$result || \count($result) == 0) {
@@ -256,7 +280,8 @@ class UsersDao {
             $sql = 'SELECT Users.* FROM Users ';
             $sql .= 'LEFT JOIN User_flag_assignments ';
             $sql .= 'ON Users.id = User_flag_assignments.fk_user_id ';
-            $sql .= 'WHERE User_flag_assignments.fk_user_flag_id = 2';
+            $sql .= 'WHERE User_flag_assignments.fk_user_flag_id = 2 ';
+            $sql .= 'AND Users.is_active = 1';
 
             $result = $this->conn->query($sql);
 
@@ -283,7 +308,8 @@ class UsersDao {
             $sql .= 'JOIN User_flag_assignments as ufa_dept ON Users.id = ufa_dept.fk_user_id ';
             
             $sql .= 'WHERE ufa_student.fk_user_flag_id = 2 ';
-            $sql .= 'AND ufa_dept.fk_user_flag_id = :dept_id';
+            $sql .= 'AND ufa_dept.fk_user_flag_id = :dept_id ';
+            $sql .= 'AND Users.is_active = 1';
 
             $params = array(':dept_id' => $departmentFlagId);
             $result = $this->conn->query($sql, $params);
@@ -305,7 +331,8 @@ class UsersDao {
             $sql = 'SELECT Users.* FROM Users ';
             $sql .= 'LEFT JOIN User_flag_assignments ';
             $sql .= 'ON Users.id = User_flag_assignments.fk_user_id ';
-            $sql .= 'WHERE User_flag_assignments.fk_user_flag_id = 3';
+            $sql .= 'WHERE User_flag_assignments.fk_user_flag_id = 3 ';
+            $sql .= 'AND Users.is_active = 1';
 
             $result = $this->conn->query($sql);
 
@@ -327,7 +354,8 @@ class UsersDao {
             $sql = 'SELECT Users.* FROM Users ';
             $sql .= 'LEFT JOIN User_flag_assignments ';
             $sql .= 'ON Users.id = User_flag_assignments.fk_user_id ';
-            $sql .= 'WHERE User_flag_assignments.fk_user_flag_id = 4';
+            $sql .= 'WHERE User_flag_assignments.fk_user_flag_id = 4 ';
+            $sql .= 'AND Users.is_active = 1';
 
             $result = $this->conn->query($sql);
 
@@ -354,7 +382,8 @@ class UsersDao {
             $sql .= 'JOIN User_flag_assignments as ufa_dept ON Users.id = ufa_dept.fk_user_id ';
             
             $sql .= 'WHERE ufa_reviewer.fk_user_flag_id = 4 ';
-            $sql .= 'AND ufa_dept.fk_user_flag_id = :dept_id';
+            $sql .= 'AND ufa_dept.fk_user_flag_id = :dept_id ';
+            $sql .= 'AND Users.is_active = 1';
 
             $params = array(':dept_id' => $departmentFlagId);
             $result = $this->conn->query($sql, $params);
@@ -423,8 +452,8 @@ class UsersDao {
             $this->logger->info("Adding new user");
 
             $sql = 'INSERT INTO Users ';
-            $sql .= '(id, uuid, first_name, last_name, onid, email, last_login) ';
-            $sql .= 'VALUES (:id,:uuid,:first_name,:last_name,:onid,:email,:last_login)';
+            $sql .= '(id, uuid, first_name, last_name, onid, email, last_login, is_active) ';
+            $sql .= 'VALUES (:id,:uuid,:first_name,:last_name,:onid,:email,:last_login,:is_active)';
             $params = array(
                 ':id' => $user->getId(),
                 ':uuid' => $user->getUuid(),
@@ -432,7 +461,8 @@ class UsersDao {
                 ':last_name' => $user->getLastName(),
                 ':onid' => $user->getOnid(),
                 ':email' => $user->getEmail(),
-                ':last_login' => QueryUtils::FormatDate($user->getLastLogin())
+                ':last_login' => QueryUtils::FormatDate($user->getLastLogin()),
+                ':is_active' => $user->getActive() ? 1 : 0
             );
             $this->conn->execute($sql, $params);
 
@@ -458,7 +488,8 @@ class UsersDao {
             $sql .= 'last_name = :last_name, ';
             $sql .= 'onid = :onid, ';
             $sql .= 'email = :email, '; 
-            $sql .= 'last_login = :last_login '; 
+            $sql .= 'last_login = :last_login, ';
+            $sql .= 'is_active = :is_active '; 
             $sql .= 'WHERE id = :id';
             $params = array(
                 ':uuid' => $user->getUuid(),
@@ -468,7 +499,8 @@ class UsersDao {
                 ':onid' => $user->getOnid(),
                 ':email' => $user->getEmail(),
                 // CORRECTED LINE BELOW: Removed the leading backslash '\'
-                ':last_login' => QueryUtils::FormatDate($user->getLastLogin()), 
+                ':last_login' => QueryUtils::FormatDate($user->getLastLogin()),
+                ':is_active' => $user->getActive() ? 1 : 0, 
                 ':id' => $user->getId()
             );
             $this->conn->execute($sql, $params);
@@ -528,6 +560,27 @@ class UsersDao {
     }
 
     /**
+     * Deactivates a user by setting is_active to 0.
+     *
+     * @param \Model\User $user the user to deactivate
+     * @return boolean true if the query execution succeeds, false otherwise.
+     */
+    public function deactivateUser($user) {
+        try {
+            $sql = 'UPDATE Users SET is_active = 0 WHERE id = :id';
+            $params = array(':id' => $user->getId());
+            $this->conn->execute($sql, $params);
+            $user->setActive(false);
+
+            return true;
+        } catch (\Exception $e) {
+            $this->logError('Failed to deactivate user: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Creates a new User object by extracting the information from a row in the database.
      *
      * @param string[] $row a row from the database containing user information
@@ -541,7 +594,8 @@ class UsersDao {
             ->setLastName($row['last_name'])
             ->setOnid($row['onid'])
             ->setEmail($row['email'])
-            ->setLastLogin(new \DateTime(($row['last_login'] == '' ? "now" : $row['last_login'])));
+            ->setLastLogin(new \DateTime(($row['last_login'] == '' ? "now" : $row['last_login'])))
+            ->setActive(isset($row['is_active']) ? (bool)$row['is_active'] : true);
         
         return $user;
     }

@@ -22,7 +22,7 @@ function authenticate() {
         $logger->info('Logging in...');
         include_once PUBLIC_FILES . '/lib/auth/onid.php';
         $onid = authenticateWithONID();
-    
+        
         try {
             $ok = setUserInformation($dbConn, $logger, $onid);
         } catch(\Exception $e) {
@@ -58,27 +58,66 @@ function setUserInformation($dbConn, $logger, $onid) {
     // First check if the user was created
     $usersDao = new UsersDao($dbConn, $logger);
     $user = $usersDao->getUserByOnid($onid);
+
+    // Extract auth session fields once to avoid repetition
+    $firstName = $_SESSION['auth']['firstName'] ?? null;
+    $lastName  = $_SESSION['auth']['lastName'] ?? null;
+    $email     = $_SESSION['auth']['email'] ?? null;
+    $uuid      = $_SESSION['auth']['uuid'] ?? null;
+
     if (!$user) {
         $user = new User();
         $logger->info('Creating new user '.$user->getID());
         $user
             ->setOnid($onid)
-            ->setFirstName($_SESSION['auth']['firstName'])
-            ->setLastName($_SESSION['auth']['lastName'])
-            ->setEmail($_SESSION['auth']['email']);
+            ->setFirstName($firstName)
+            ->setLastName($lastName)
+            ->setEmail($email)
+            ->setUuid($uuid);
         $ok = $usersDao->addNewUser($user);
         if (!$ok) {
             $logger->error('Could not create new user');
             return false;
         }
-    } else {
-        //User exists but we're gonna update any fields that are given to their newest version, otherwise they stay the same
-        if (!empty($_SESSION['auth']['firstName'])) $user->setFirstName($_SESSION['auth']['firstName']);
-        if (!empty($_SESSION['auth']['lastName'])) $user->setLastName($_SESSION['auth']['lastName']);
-        if (!empty($_SESSION['auth']['email'])) $user->setEmail($_SESSION['auth']['email']);
-        if (!empty($_SESSION['auth']['uuid'])) $user->setUuid($_SESSION['auth']['uuid']);
-        $usersDao->updateUser($user);
+        return true;
     }
 
+    /*
+    log whether a user has been changed and then handle it somehow
+    if user's uuid exists AND were given a different value then that onid is compromised
+    maybe create a deactivate columna and switch onid but keep id
+    */
+
+    //Check if the user we already have in the database is refering to someone whos ONID got reused (needs to be deactivated)
+    if (!empty($uuid) && !empty($user->getUuid()) && $user->getUuid() !== $uuid) {
+        $logger->warn('SECURITY: Compromised ONID detected. ONID: '.$onid
+            .' | Old UUID: '.$user->getUuid().' | New UUID: '.$uuid);
+
+        // Deactivate the compromised user and create a new account for the new ONID owner
+        $usersDao->deactivateUser($user);
+
+        $newUser = new User();
+        $newUser
+            ->setOnid($onid)
+            ->setFirstName($firstName)
+            ->setLastName($lastName)
+            ->setEmail($email)
+            ->setUuid($uuid);
+        $ok = $usersDao->addNewUser($newUser);
+        if (!$ok) {
+            $logger->error('Could not create replacement user after ONID compromise');
+            return false;
+        }
+        return true;
+    }
+
+    //User exists but we're gonna update any fields that are given to their newest version, otherwise they stay the same
+    //UUID gets updated here only if the user's is empty
+    if (!empty($uuid)) $user->setUuid($uuid);
+    if (!empty($firstName)) $user->setFirstName($firstName);
+    if (!empty($lastName)) $user->setLastName($lastName);
+    if (!empty($email)) $user->setEmail($email);
+
+    $usersDao->updateUser($user);
     return true;
 }

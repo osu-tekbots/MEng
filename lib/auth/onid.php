@@ -49,7 +49,7 @@ function authenticateWithONID() {
 
         // ini_set("log_errors", 1);
         // ini_set("error_log", __DIR__ . "/../../../.private/logs/php-error.log");
-        error_log("Raw HTML from CAS response: " . print_r($html, true));
+        //error_log("Raw HTML from CAS response: " . print_r($html, true));
 
         // Extract first name with fallbacks: firstname -> givenName -> parsed from fullname -> parsed from commonName
         $firstName = extractFromXml('cas:firstname', $html);
