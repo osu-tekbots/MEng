@@ -167,6 +167,39 @@ class EvaluationsDao {
         }
     }
 
+    /**
+     * Gets all evaluations whose highest status flag matches the given arrangement value.
+     * E.g. pass 3 for Submitted, 2 for Draft, 1 for Pending.
+     *
+     * @param int $arrangement the status flag arrangement to filter by
+     * @return Evaluation[]|boolean an array of Evaluation objects, or false on failure
+     */
+    public function getEvaluationsByStatusArrangement($arrangement) {
+        try {
+            // Subquery finds each evaluation's highest status flag arrangement,
+            // then outer query filters to only those matching the requested value
+            $sql = 'SELECT e.* FROM Evaluations e
+                    WHERE (
+                        SELECT MAX(ef.arrangement)
+                        FROM Evaluation_flag_assignments efa
+                        JOIN Evaluation_flags ef ON ef.id = efa.fk_evaluation_flag_id
+                        WHERE efa.fk_evaluation_id = e.id AND ef.type = :type
+                    ) = :arrangement';
+            $params = array(
+                ':type' => 'Status',
+                ':arrangement' => $arrangement
+            );
+            $result = $this->conn->query($sql, $params);
+
+            if (!$result) return [];
+
+            return \array_map('self::buildEvaluationObjectFromRow', $result);
+        } catch (\Exception $e) {
+            $this->logError('Failed to get evaluations by status arrangement: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     //Kind of a rubric dao function 
     public function getRubricsByReviewerUserId($userId) {
         try {

@@ -171,6 +171,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                             <th scope="col">Date Updated</th>
                             <th scope="col">Rubric Name</th>
                             <th scope="col">Export Data</th>
+                            <th scope="col">View</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -198,6 +199,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                 echo '<td>' . $row['date_completed'] . '</td>';
                                 echo '<td>' . htmlspecialchars($row['rubric_name']) . '</td>';
                                 echo '<td> <button data-id = "' . $row['id'] . '"  class = "btn btn-success export-btn"> Export </button> </td>';
+                                echo '<td> <a href="viewEvaluation.php?evaluationId=' . urlencode($row['id']) . '" class="btn btn-primary btn-sm">View</a> </td>';
                                 echo '</tr>';
                             }
                         ?>
