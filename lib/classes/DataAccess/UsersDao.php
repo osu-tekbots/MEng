@@ -482,8 +482,7 @@ class UsersDao {
     public function updateUser($user) {
         try {
             $sql = 'UPDATE Users SET ';
-            $sql .= 'uuid = :uuid,';
-            $sql .= 'osu_id = :osu_id, ';
+            $sql .= 'uuid = :uuid, ';
             $sql .= 'first_name = :first_name, ';
             $sql .= 'last_name = :last_name, ';
             $sql .= 'onid = :onid, ';
@@ -493,7 +492,6 @@ class UsersDao {
             $sql .= 'WHERE id = :id';
             $params = array(
                 ':uuid' => $user->getUuid(),
-                ':osu_id' => $user->getOsuId(),
                 ':first_name' => $user->getFirstName(),
                 ':last_name' => $user->getLastName(),
                 ':onid' => $user->getOnid(),
@@ -589,7 +587,6 @@ class UsersDao {
     public static function ExtractUserFromRow($row) {
 		$user = new User($row['id']);
         $user->setUuid($row['uuid'])
-            ->setOsuId($row['osu_id'])
             ->setFirstName($row['first_name'])
             ->setLastName($row['last_name'])
             ->setOnid($row['onid'])

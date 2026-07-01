@@ -15,9 +15,6 @@ class User {
     private $uuid;
 
     /** @var string */
-    private $osuId;
-
-    /** @var string */
     private $firstName;
 
     /** @var string */
@@ -80,23 +77,6 @@ class User {
      */
     public function setUuid($uuid) {
         $this->uuid = $uuid;
-        return $this;
-    }
-
-    /**
-     * Get the value of osuId
-     */
-    public function getOsuId() {
-        return $this->osuId;
-    }
-
-    /**
-     * Set the value of osuId
-     *
-     * @return  self
-     */
-    public function setOsuId($osuId) {
-        $this->osuId = $osuId;
         return $this;
     }
 

@@ -292,11 +292,7 @@ if ($userFlags && is_array($userFlags)) {
                             <input type="text" class="form-control-plaintext font-weight-bold" 
                                    value="<?php echo $user->getOnid(); ?>" readonly>
                         </div>
-                        <div class="form-group mb-0">
-                            <label class="text-muted small text-uppercase font-weight-bold">OSU ID</label>
-                            <input type="text" class="form-control-plaintext font-weight-bold" 
-                                   value="<?php echo $user->getOsuId(); ?>" readonly>
-                        </div>
+                        
                     </div>
                 </div>
 <hr>
