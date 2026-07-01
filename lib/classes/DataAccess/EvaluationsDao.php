@@ -393,6 +393,46 @@ class EvaluationsDao {
     }
 
     /**
+     * Deletes an evaluation and all its associated records (flags and rubric items) from the database.
+     * 
+     * @param string $evaluationId the id of the evaluation to delete
+     * @return boolean true if the deletion succeeds, false otherwise.
+     */
+    public function deleteEvaluation($evaluationId) {
+        try {
+            if ($this->logger) {
+                $this->logger->info("EvaluationsDao: Starting deletion for evaluation ID $evaluationId");
+            }
+
+            // Delete flag assignments first to avoid FK constraint issues
+            $sql1 = 'DELETE FROM Evaluation_flag_assignments WHERE fk_evaluation_id = :evaluationId';
+            $this->conn->execute($sql1, array(':evaluationId' => $evaluationId));
+            if ($this->logger) {
+                $this->logger->info("EvaluationsDao: Deleted flag assignments for evaluation ID $evaluationId");
+            }
+
+            // Delete rubric items
+            $sql2 = 'DELETE FROM Evaluation_rubric_items WHERE fk_evaluation_id = :evaluationId';
+            $this->conn->execute($sql2, array(':evaluationId' => $evaluationId));
+            if ($this->logger) {
+                $this->logger->info("EvaluationsDao: Deleted rubric items for evaluation ID $evaluationId");
+            }
+
+            // Delete the evaluation itself
+            $sql3 = 'DELETE FROM Evaluations WHERE id = :evaluationId';
+            $this->conn->execute($sql3, array(':evaluationId' => $evaluationId));
+            if ($this->logger) {
+                $this->logger->info("EvaluationsDao: Successfully deleted evaluation ID $evaluationId");
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            $this->logError("Failed to delete evaluation ID $evaluationId: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Adds an evaluation flag to an evaluation.
      *
      * @param string $evaluationId the id of the evaluation

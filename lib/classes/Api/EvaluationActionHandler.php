@@ -176,6 +176,32 @@ class EvaluationActionHandler extends ActionHandler {
         }
     }
 
+    public function handleDeleteEvaluation() {
+        $evaluationId = $this->getFromBody('evaluationId');
+
+        $this->logger->info("EvaluationActionHandler: Received request to delete evaluation ID $evaluationId");
+
+        if (empty($evaluationId)) {
+            $this->logger->warn("EvaluationActionHandler: Missing evaluation ID in delete request.");
+            $this->respond(new Response(Response::BAD_REQUEST, 'Missing evaluation ID.'));
+            return;
+        }
+
+        try {
+            $success = $this->evaluationsDao->deleteEvaluation($evaluationId);
+            if ($success) {
+                $this->logger->info("EvaluationActionHandler: Successfully deleted evaluation ID $evaluationId");
+                $this->respond(new Response(Response::OK, 'Evaluation deleted successfully.'));
+            } else {
+                $this->logger->error("EvaluationActionHandler: Failed to delete evaluation ID $evaluationId in DAO.");
+                $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Failed to delete evaluation.'));
+            }
+        } catch (\Exception $e) {
+            $this->logger->error("EvaluationActionHandler: Exception while deleting evaluation ID $evaluationId - " . $e->getMessage());
+            $this->respond(new Response(Response::INTERNAL_SERVER_ERROR, 'Error deleting evaluation: ' . $e->getMessage()));
+        }
+    }
+
     public function handleRequest() {
         if(!isset($this->requestBody['action'])){
              $this->respond(new Response(Response::BAD_REQUEST, 'Missing action parameter'));
@@ -201,6 +227,10 @@ class EvaluationActionHandler extends ActionHandler {
 
             case 'getBulkExportData':
                 $this->handleGetBulkExportData();
+                break;
+
+            case 'deleteEvaluation':
+                $this->handleDeleteEvaluation();
                 break;
 
             default:

@@ -179,6 +179,13 @@ include_once PUBLIC_FILES . '/modules/header.php';
             </div>
         <?php endif; ?>
 
+        <!-- Action Buttons -->
+        <div class="mb-3 text-end">
+            <button onclick="deleteEvaluation('<?= htmlspecialchars($selectedEvaluation->getId()) ?>')" class="btn btn-danger">
+                <i class="bi bi-trash-fill me-1"></i> Delete Evaluation
+            </button>
+        </div>
+
         <!-- Evaluation metadata: reviewer, student, rubric -->
         <div class="card mb-4">
             <div class="card-body">
@@ -314,6 +321,37 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
     <div style="height: 150px;"></div>
 </div>
+
+<script>
+    // Handle evaluation deletion
+    function deleteEvaluation(evalId) {
+        console.log("Delete button clicked for evaluation ID:", evalId);
+        
+        if (confirm("Are you sure you want to delete this evaluation? This action cannot be undone.")) {
+            console.log("Deletion confirmed by user. Sending POST request to api/evaluations.php...");
+            
+            let body = {
+                action: 'deleteEvaluation',
+                evaluationId: evalId
+            };
+
+            api.post('/evaluations.php', body)
+                .then(res => {
+                    console.log("Delete request succeeded. Response:", res);
+                    if (typeof snackbar === 'function') snackbar(res.message, 'success');
+                    else alert(res.message || "Evaluation deleted successfully.");
+                    setTimeout(() => window.location.replace("viewReviews.php"), 1000);
+                })
+                .catch(err => {
+                    console.error("Delete request failed. Error:", err);
+                    if (typeof snackbar === 'function') snackbar(err.message, 'error');
+                    else alert(err.message || "Failed to delete evaluation.");
+                });
+        } else {
+            console.log("Deletion cancelled by user.");
+        }
+    }
+</script>
 
 <?php
 include_once PUBLIC_FILES . '/modules/footer.php';
