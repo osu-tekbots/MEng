@@ -9,22 +9,17 @@ include_once PUBLIC_FILES . '/lib/auth-onid.php';
 use DataAccess\UsersDao;
 use Model\User; // Needed if we create a new user
 
-// 1. Authenticate (Populates $_SESSION['auth'])
+//Authenticate (Populates $_SESSION['auth'] and the database with the user)
 authenticate();
 
-// 2. Initialize DAO
+//Initialize DAO
 $usersDao = new UsersDao($dbConn, $logger);
-
-// 3. Get ONID from the session structure we saw in the debugger
+//Get ONID from the session structure we saw in the debugger
 $onid = $_SESSION['auth']['id'];
 //Output: {"method":"onid","id":"arorae","firstName":"Ekansh","lastName":"Arora","email":"arorae@oregonstate.edu"}
-
-// 4. Attempt to fetch the user from the database
+//Attempt to fetch the user from the database and check to make sure the user was properly updated or created
 $user = $usersDao->getUserByOnid($onid);
-
 if ($user) {
-    // --- EXISTING USER ---
-    
     // Update Last Login
     $user->setLastLogin(new DateTime());
     $usersDao->updateUser($user);
@@ -33,36 +28,11 @@ if ($user) {
     $_SESSION['userID'] = $user->getId();
 
 } else {
-    // --- NEW USER (First time logging in) ---
-    // You might want to handle user creation here if they don't exist yet
-    $logger -> info("New User Auth: " . json_encode($_SESSION['auth']));
-
-    $newUser = new User();
-    $newUser->setOnid($onid);
-    $newUser->setFirstName($_SESSION['auth']['firstName']);
-    $newUser->setLastName($_SESSION['auth']['lastName']);
-    $newUser->setEmail($_SESSION['auth']['email']);
-    $newUser->setUuid($_SESSION['auth']['uuid']);
-    $newUser->setLastLogin(new DateTime());
-
-    // Determine how you generate IDs or UUIDs. 
-    // If your DB auto-increments ID, you might need to insert first then fetch ID.
-    // If you generate UUIDs in PHP:
-    // $newUser->setUuid(\Ramsey\Uuid\Uuid::uuid4()->toString()); 
-     
-    if ($usersDao->addNewUser($newUser)) {
-         // Re-fetch to get the auto-incremented ID
-         $user = $usersDao->getUserByOnid($onid);
-         $_SESSION['userID'] = $user->getId();
-		 $logger -> info("New User id is: " . $_SESSION['userID']);
-		 //Add the student flag by default. This is a magic number thing
-		 $usersDao->addUserFlag($_SESSION['userID'], 2);
-    } else {
-        die("Error creating new user account.");
-    }
+    $logger->error("Failed to load user '{$onid}' after authentication");
+    die("Error: Could not find the authenticated user in the database. Please contact an administrator.");
 }
 
-// 5. Redirect
+//Redirect
 $redirect = $configManager->getBaseUrl();
 echo "<script>window.location.replace('$redirect');</script>";
 die();

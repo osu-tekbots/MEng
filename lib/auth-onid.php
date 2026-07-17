@@ -13,6 +13,7 @@ $baseUrl = $configManager->getBaseUrl();
  * When the function returns, the user will have been authenticated and the SESSION variable will have been set
  * accordingly.
  *
+ * Calls setUserInformation to populate database with information
  * @return void
  */
 function authenticate() {
@@ -24,7 +25,7 @@ function authenticate() {
         $onid = authenticateWithONID();
         
         try {
-            $ok = setUserInformation($dbConn, $logger, $onid);
+            $ok = setUserInformationInDatabase($dbConn, $logger, $onid);
         } catch(\Exception $e) {
             $logger->error("setUserInformation() failed for ONID ".$onid.". Exception: ".$e);
             $ok = false;
@@ -54,7 +55,7 @@ function authenticate() {
  * @param string $onid the ID provided by ONID
  * @return bool true if an entry was created or one exists, false otherwise
  */
-function setUserInformation($dbConn, $logger, $onid) {
+function setUserInformationInDatabase($dbConn, $logger, $onid) {
     // First check if the user was created
     $usersDao = new UsersDao($dbConn, $logger);
     $user = $usersDao->getUserByOnid($onid);
@@ -65,6 +66,7 @@ function setUserInformation($dbConn, $logger, $onid) {
     $email     = $_SESSION['auth']['email'] ?? null;
     $uuid      = $_SESSION['auth']['uuid'] ?? null;
 
+    //Completely new user just logged in for the first time
     if (!$user) {
         $user = new User();
         $logger->info('Creating new user '.$user->getID());
@@ -74,19 +76,16 @@ function setUserInformation($dbConn, $logger, $onid) {
             ->setLastName($lastName)
             ->setEmail($email)
             ->setUuid($uuid);
-        $ok = $usersDao->addNewUser($user);
+            
+        $ok = $usersDao->addNewUser($user) && $usersDao->addUserFlag($user->getId(), 2);
+        //Default user is set to student (flag 2)
+
         if (!$ok) {
             $logger->error('Could not create new user');
             return false;
         }
         return true;
     }
-
-    /*
-    log whether a user has been changed and then handle it somehow
-    if user's uuid exists AND were given a different value then that onid is compromised
-    maybe create a deactivate columna and switch onid but keep id
-    */
 
     //Check if the user we already have in the database is refering to someone whos ONID got reused (needs to be deactivated)
     if (!empty($uuid) && !empty($user->getUuid()) && $user->getUuid() !== $uuid) {
@@ -103,7 +102,10 @@ function setUserInformation($dbConn, $logger, $onid) {
             ->setLastName($lastName)
             ->setEmail($email)
             ->setUuid($uuid);
-        $ok = $usersDao->addNewUser($newUser);
+
+        $ok = $usersDao->addNewUser($user) && $usersDao->addUserFlag($user->getId(), 2);
+        //Default user is set to student (flag 2)
+
         if (!$ok) {
             $logger->error('Could not create replacement user after ONID compromise');
             return false;
