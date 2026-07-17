@@ -68,7 +68,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
                     <div class="mb-3">
                         <label for="faqCategory" class="form-label"><strong>Category (Page):</strong></label>
-                        <select name="category" id="faqCategory" class="form-select">
+                        <select name="category" id="faqCategory" class="form-select" required>
                             <option value="">-- Select a Page --</option>
                             <?php 
                             foreach ($categories as $cat) {
@@ -81,7 +81,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
                     <div class="mb-3">
                         <label for="faqQuestion" class="form-label"><strong>Question:</strong></label>
-                        <textarea class="form-control" rows="3" name="question" id="faqQuestion"><?php echo htmlspecialchars($question); ?></textarea>
+                        <textarea class="form-control" rows="3" name="question" id="faqQuestion" required><?php echo htmlspecialchars($question); ?></textarea>
                     </div>
 
                     <div class="mb-3">
@@ -93,17 +93,17 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
                     <div class="d-flex gap-2">
                         <?php if ($faq): ?>
-                            <button type="button" class="btn btn-primary" onclick="onUpdateFaqClick();">
+                            <button name = "updateFaq" type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Update FAQ
                             </button>
                             <button type="button" class="btn btn-danger" onclick="onDeleteFaqClick();">
                                 <i class="fas fa-trash"></i> Delete FAQ
                             </button>
                             <a href="createFaq" class="btn btn-secondary">
-                                <i class="fas fa-plus"></i> Create New Instead
+                                <i class="fas fa-plus"></i> Create New FAQ
                             </a>
                         <?php else: ?>
-                            <button type="button" class="btn btn-primary" onclick="onCreateFaqClick();">
+                            <button name = "newFaq" type="submit" class="btn btn-primary">
                                 <i class="fas fa-plus"></i> Add New FAQ
                             </button>
                         <?php endif; ?>
@@ -123,7 +123,6 @@ include_once PUBLIC_FILES . '/modules/header.php';
                 <table id="faqsTable" class="table table-striped table-hover table-bordered w-100">
                     <thead class="thead-light">
                         <tr>
-                            <th scope="col">#</th>
                             <th scope="col">Category</th>
                             <th scope="col">Question</th>
                             <th scope="col" class="text-center" style="width: 100px;">Edit</th>
@@ -132,7 +131,6 @@ include_once PUBLIC_FILES . '/modules/header.php';
                     <tbody>
                         <?php foreach ($allFaqs as $f): ?>
                         <tr>
-                            <td><?php echo htmlspecialchars($f->getId()); ?></td>
                             <td><?php echo htmlspecialchars($f->getCategory()); ?></td>
                             <td><?php echo htmlspecialchars($f->getQuestion()); ?></td>
                             <td class="text-center">
@@ -154,10 +152,25 @@ include_once PUBLIC_FILES . '/modules/header.php';
 </div>
 
 <script>
+
+    document.getElementById('faqForm').addEventListener('submit', function(event) {
+        //Form required fields are handled by HTML5 validation, 
+        //but we need to check which button was pressed.
+        //Delete doesnt need the required validation so it doesnt go through this
+        event.preventDefault();
+        const buttonPressed = event.submitter.name
+        if (buttonPressed == 'updateFaq') {
+            onUpdateFaqClick();
+        } else if (buttonPressed == 'newFaq') {
+            onCreateFaqClick();
+        }
+    });
+
+
     // Initialize DataTable on the FAQs listing
     if (document.getElementById('faqsTable')) {
         new DataTable('#faqsTable', {
-            order: [[1, 'asc']]
+            order: [[0, 'asc'], [1, 'asc']]
         });
     }
 

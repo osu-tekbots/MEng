@@ -41,7 +41,7 @@ class FaqDao {
      */
     public function getAllFaqs() {
         try {
-            $sql = 'SELECT * FROM faqs';
+            $sql = 'SELECT * FROM Faqs';
             $result = $this->conn->query($sql);
 
             return \array_map('self::ExtractFaqFromRow', $result);
@@ -60,7 +60,7 @@ class FaqDao {
      */
     public function getFaqsByCategory($category) {
         try {
-            $sql = 'SELECT * FROM faqs ';
+            $sql = 'SELECT * FROM Faqs ';
             $sql .= 'WHERE category = :category';
             $params = array(':category' => $category);
             $result = $this->conn->query($sql, $params);
@@ -82,7 +82,7 @@ class FaqDao {
      */
     public function getFaqById($id) {
         try {
-            $sql = 'SELECT * FROM faqs ';
+            $sql = 'SELECT * FROM Faqs ';
             $sql .= 'WHERE id = :id';
             $params = array(':id' => $id);
             $result = $this->conn->query($sql, $params);
@@ -106,7 +106,7 @@ class FaqDao {
      */
     public function addNewFaq($faq) {
         try {
-            $sql = 'INSERT INTO faqs ';
+            $sql = 'INSERT INTO Faqs ';
             $sql .= '(category, question, answer) ';
             $sql .= 'VALUES (:category, :question, :answer)';
             $params = array(
@@ -132,7 +132,7 @@ class FaqDao {
      */
     public function updateFaq($faq) {
         try {
-            $sql = 'UPDATE faqs SET ';
+            $sql = 'UPDATE Faqs SET ';
             $sql .= 'category = :category, ';
             $sql .= 'question = :question, ';
             $sql .= 'answer = :answer ';
@@ -161,7 +161,7 @@ class FaqDao {
      */
     public function deleteFaq($id) {
         try {
-            $sql = 'DELETE FROM faqs WHERE id = :id';
+            $sql = 'DELETE FROM Faqs WHERE id = :id';
             $params = array(':id' => $id);
             $this->conn->execute($sql, $params);
 

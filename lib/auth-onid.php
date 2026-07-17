@@ -90,7 +90,7 @@ function setUserInformation($dbConn, $logger, $onid) {
 
     //Check if the user we already have in the database is refering to someone whos ONID got reused (needs to be deactivated)
     if (!empty($uuid) && !empty($user->getUuid()) && $user->getUuid() !== $uuid) {
-        $logger->warn('SECURITY: Compromised ONID detected. ONID: '.$onid
+        $logger->warn('SECURITY: Possible New ONID User detected. ONID: '.$onid
             .' | Old UUID: '.$user->getUuid().' | New UUID: '.$uuid);
 
         // Deactivate the compromised user and create a new account for the new ONID owner

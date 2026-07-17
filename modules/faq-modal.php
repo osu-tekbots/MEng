@@ -94,6 +94,9 @@ $faqIsAdmin = $faqIsLoggedIn && isset($_SESSION['userIsAdmin']) && $_SESSION['us
         }
 
         let html = '<div class="accordion" id="faqAccordion">';
+        //Sort faqs by question alphabetically 
+        faqs.sort((a, b) => a.question.localeCompare(b.question));
+        
         faqs.forEach(function(faq) {
             const collapseId = 'faqCollapse' + faq.id;
             const headingId = 'faqHeading' + faq.id;
@@ -169,12 +172,16 @@ $faqIsAdmin = $faqIsLoggedIn && isset($_SESSION['userIsAdmin']) && $_SESSION['us
             const answer = item.querySelector('.accordion-body').textContent.toLowerCase();
 
             if (question.includes(query) || answer.includes(query)) {
+                if(answer.includes(query)) {
+                    item.querySelector('.accordion-button').click();
+                }
                 item.style.display = '';
                 visibleCount++;
             } else {
                 item.style.display = 'none';
             }
         });
+        
 
         const noResults = document.getElementById('faqNoResults');
         if (visibleCount === 0 && query.length > 0) {
