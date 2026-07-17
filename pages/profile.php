@@ -19,13 +19,7 @@ $uploadAcceptedTypes = ["application/pdf",
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
                         "application/zip", "application/x-zip-compressed"];
 
-// 3. Include Upload JS
-$js = array(
-    array(
-        'src' => 'assets/js/fileUpload.js',
-        'defer' => 'true'
-    )
-);
+
 
 include_once PUBLIC_FILES . '/modules/header.php';
 
@@ -100,7 +94,6 @@ if ($previousUpload) {
 
 
 // 6. Process Flags/Roles
-$allRoles = $usersDao->getAllRoleFlags();
 $allPrograms = $usersDao->getAllDepartmentFlags();
 
 // Robustly build the array of IDs checking for validity
@@ -296,28 +289,24 @@ if ($userFlags && is_array($userFlags)) {
                     </div>
                 </div>
 <hr>
-<?php if($_SESSION['userIsAdmin']): ?>
 
 <h6 class="text-muted small text-uppercase font-weight-bold mb-2">User Roles</h6>
                         <div>
-                            <?php foreach ($allRoles as $role): ?>
-                                <?php 
-                                    $hasFlag = in_array($role->getId(), $userFlagIds);
-                                    $btnStyle = $hasFlag ? 'btn-secondary' : 'btn-outline-secondary';
-                                    $action = $hasFlag ? 'remove' : 'add'; // Still needed for the generic buttons
-                                ?>
-                                <button type="button" 
-                                        class="btn btn-sm <?php echo $btnStyle; ?> mb-1 btn-flag-toggle"
-                                        data-flag-id="<?php echo $role->getId(); ?>"
-                                        data-user-id="<?php echo $user->getId(); ?>"
-                                        data-action="<?php echo $action; ?>" 
-                                        data-type="secondary"
-                                        <?php echo $btnDisabled ?? ''; ?>>
-                                    <?php echo $role->getName(); ?>
-                                </button>
-                            <?php endforeach; ?>
-                        </div>
-<?php endif;?>						
+                            <?php 
+                                $hasRoles = false;
+                                if ($userFlags && is_array($userFlags)) {
+                                    foreach ($userFlags as $flag) {
+                                        if ($flag->getType() == 'Role') {
+                                            $hasRoles = true;
+                                            echo '<span class="badge bg-secondary mb-1">' . $flag->getName() . '</span> ';
+                                        }
+                                    }
+                                }
+                                if (!$hasRoles) {
+                                    echo '<span class="text-muted small font-italic">No Roles</span>';
+                                }
+                            ?>
+                        </div>						
             </div>
         </div>
     </div>
@@ -328,58 +317,182 @@ if ($userFlags && is_array($userFlags)) {
  * Displays the Upload Button only after a file upload is selected.
  */
 function displayUpload() {
-	document.getElementById("btnUploadSubmit").style.visibility = "visible"; 
+    document.getElementById("btnUploadSubmit").style.visibility = "visible";
 }
 
-    /**
-     * Handles the logic to swap programs.
-     * Removes the previously selected program flag and adds the new one.
-     */
-    async function updateProgram(selectElem) {
-        const userId = selectElem.getAttribute('data-user-id');
-        const oldDeptId = selectElem.getAttribute('data-current-prog');
-        const newDeptId = selectElem.value;
-        
-        // UPDATED: Point to the root '/users' endpoint which the UserActionHandler listens to
-        const endpoint = '/users'; 
+/**
+ * Handles the logic to swap programs.
+ * Removes the previously selected program flag and adds the new one.
+ */
+async function updateProgram(selectElem) {
+    const userId = selectElem.getAttribute('data-user-id');
+    const oldDeptId = selectElem.getAttribute('data-current-prog');
+    const newDeptId = selectElem.value;
+    const endpoint = '/users';
 
-        // Disable select while processing to prevent rapid clicks
-        selectElem.disabled = true;
+    selectElem.disabled = true;
 
-        try {
-            // 1. Remove the old program (if one was previously set)
-            if (oldDeptId && oldDeptId !== "") {
-                await api.post(endpoint, { 
-                    action: 'toggleUserFlag', // MATCHES CASE IN handleRequest()
-                    operation: 'remove',      // MATCHES PARAM IN handleToggleFlag()
-                    userId: userId, 
-                    flagId: oldDeptId 
-                });
-            }
+    try {
+        if (oldDeptId && oldDeptId !== "") {
+            await api.post(endpoint, {
+                action: 'toggleUserFlag',
+                operation: 'remove',
+                userId: userId,
+                flagId: oldDeptId
+            });
+        }
 
-            // 2. Add the new program (if the user didn't just select the placeholder)
-            if (newDeptId && newDeptId !== "") {
-                await api.post(endpoint, { 
-                    action: 'toggleUserFlag', // MATCHES CASE IN handleRequest()
-                    operation: 'add',         // MATCHES PARAM IN handleToggleFlag()
-                    userId: userId, 
-                    flagId: newDeptId 
-                });
-            }
+        if (newDeptId && newDeptId !== "") {
+            await api.post(endpoint, {
+                action: 'toggleUserFlag',
+                operation: 'add',
+                userId: userId,
+                flagId: newDeptId
+            });
+        }
 
-            // 3. Update the tracker so the next change knows what to remove
-            selectElem.setAttribute('data-current-prog', newDeptId);
-            
-            // Optional: Provide visual feedback
-            // alert('Program updated');
+        selectElem.setAttribute('data-current-prog', newDeptId);
+    } catch (err) {
+        console.error("Failed to update program", err);
+        alert("An error occurred while saving the program selection. Please refresh the page.");
+    } finally {
+        selectElem.disabled = false;
+    }
+}
 
-        } catch (err) {
-            console.error("Failed to update program", err);
-            alert("An error occurred while saving the program selection. Please refresh the page.");
-        } finally {
-            selectElem.disabled = false;
+/**
+ * Enables the Save Changes button when a profile form input changes.
+ */
+let changesDetected = false;
+function onEditProfileFormInputChange() {
+    if (!changesDetected) {
+        $('#btnEditProfileSubmit').attr('disabled', false);
+        changesDetected = true;
+    }
+}
+$('#formEditProfile input[type=file]').change(onEditProfileFormInputChange);
+
+/**
+ * Handles the Document Upload form submission (new upload or update).
+ */
+function onUploadDocumentFormSubmit(event) {
+    if (event) event.preventDefault();
+
+    let form = new FormData(document.getElementById('formUploadDocument'));
+    let bodyDocumentUpload = new FormData();
+
+    let previousUpload = false;
+    let newUpload = false;
+
+    for (const [key, value] of form.entries()) {
+        if (key == 'userUpload' && value.size > 0) {
+            bodyDocumentUpload.append(key, value);
+            newUpload = true;
+        } else if (key == 'previousUploadId') {
+            bodyDocumentUpload.append(key, value);
+            previousUpload = true;
+        } else {
+            bodyDocumentUpload.append(key, value);
         }
     }
+
+    const documentType = document.getElementById("documentType");
+    const userId = document.getElementById("userId");
+    let acceptedTypes = document.getElementById('userUpload').getAttribute('accept').trim().split(",");
+
+    bodyDocumentUpload.append('userId', userId.value);
+    bodyDocumentUpload.append('documentType', documentType.value);
+    bodyDocumentUpload.append('acceptedTypes', acceptedTypes);
+
+    if (previousUpload) {
+        bodyDocumentUpload.append('action', 'updateDocument');
+        api.post('/uploads.php', bodyDocumentUpload, true)
+            .then(res => {
+                snackbar('Successfully updated', 'success');
+                $('#btnUploadLoader').hide();
+                setTimeout(function () { location.reload(); }, 1000);
+            })
+            .catch(err => {
+                snackbar(err.message, 'error');
+                $('#btnUploadLoader').hide();
+            });
+    } else if (newUpload) {
+        bodyDocumentUpload.append('action', 'uploadDocument');
+        api.post('/uploads.php', bodyDocumentUpload, true)
+            .then(res => {
+                snackbar('Successfully uploaded', 'success');
+                $('#btnUploadLoader').hide();
+                setTimeout(function () { location.reload(); }, 1000);
+            })
+            .catch(err => {
+                snackbar(err.message, 'error');
+                $('#btnUploadLoader').hide();
+            });
+    }
+
+    $('#btnUploadSubmit').attr('disabled', true);
+    changesDetected = false;
+    $('#btnUploadLoader').show();
+    return false;
+}
+$('#formUploadDocument').on('submit', onUploadDocumentFormSubmit);
+
+/**
+ * Handles deleting an uploaded document.
+ */
+function onUploadDelete(event) {
+    if (event) event.preventDefault();
+
+    let bodyDocumentUpload = new FormData();
+    const documentType = document.getElementById("documentType");
+    const userId = document.getElementById("userId");
+    const previousUploadId = document.getElementById("previousUploadId");
+
+    bodyDocumentUpload.append('userId', userId.value);
+    bodyDocumentUpload.append('documentType', documentType.value);
+    bodyDocumentUpload.append('previousUploadId', previousUploadId.value);
+
+    bodyDocumentUpload.append('action', 'deleteDocument');
+    api.post('/uploads.php', bodyDocumentUpload, true)
+        .then(res => {
+            snackbar('Successfully deleted', 'success');
+            $('#btnUploadLoader').hide();
+            setTimeout(function () { location.reload(); }, 1000);
+        })
+        .catch(err => {
+            snackbar(err.message, 'error');
+            $('#btnUploadLoader').hide();
+        });
+}
+$('#aUploadDelete').on('click', onUploadDelete);
+
+/**
+ * Handles the Profile Edit form submission.
+ */
+function onEditProfileFormSubmit(event) {
+    if (event) event.preventDefault();
+
+    let body = {
+        action: 'updateUserProfile',
+        userId: document.getElementById('userId').value,
+        firstName: document.getElementById('firstName').value,
+        lastName: document.getElementById('lastName').value,
+        email: document.getElementById('email').value
+    };
+
+    $('#btnEditProfileSubmit').attr('disabled', true);
+
+    api.post('/users.php', body)
+        .then(res => {
+            snackbar('Profile updated successfully', 'success');
+            setTimeout(function () { location.reload(); }, 1000);
+        })
+        .catch(err => {
+            snackbar(err.message, 'error');
+            $('#btnEditProfileSubmit').attr('disabled', false);
+        });
+}
+$('#formEditProfile').on('submit', onEditProfileFormSubmit);
 </script>
 
 <?php

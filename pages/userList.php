@@ -9,24 +9,19 @@ $usersDao = new UsersDao($dbConn, $logger);
 // 3. Fetch All Users
 $users = $usersDao->getAllUsers();
 
+// 4. Fetch All Role Flags (for toggle buttons)
+$allRoles = $usersDao->getAllRoleFlags();
+
 include_once PUBLIC_FILES . '/modules/header.php';
 ?>
 
 <div class="container-fluid">
     <div class="container mt-5 mb-5">
         
-        <div class="row mb-4 align-items-center">
-            <div class="col-md-8">
+        <div class="row mb-4">
+            <div class="col">
                 <h2>User Management</h2>
                 <p class="text-muted">View all registered users, check their roles, and access their profiles.</p>
-            </div>
-            <div class="col-md-4">
-                 <div class="input-group">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    </div>
-                    <input type="text" id="userSearch" class="form-control" placeholder="Search by name or email...">
-                 </div>
             </div>
         </div>
 
@@ -49,14 +44,12 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                 foreach ($users as $u): 
                                     // Fetch specific permissions for this user
                                     $flags = $usersDao->getUserFlags($u->getId());
-                                    $roles = [];
                                     
-                                    // Filter just the "Role" type flags (ignoring Programs for this column)
-                                    if ($flags) {
+                                    // Build array of this user's flag IDs for comparison
+                                    $userFlagIds = [];
+                                    if ($flags && is_array($flags)) {
                                         foreach ($flags as $flag) {
-                                            if ($flag->getType() == 'Role') {
-                                                $roles[] = $flag->getName();
-                                            }
+                                            $userFlagIds[] = (string)$flag->getId();
                                         }
                                     }
                             ?>
@@ -70,13 +63,20 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                     </a>
                                 </td>
                                 <td class="align-middle">
-                                    <?php if (count($roles) > 0): ?>
-                                        <?php foreach ($roles as $role): ?>
-                                            <span class="badge bg-secondary"><?php echo $role; ?></span>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <span class="text-muted small font-italic">No Roles</span>
-                                    <?php endif; ?>
+                                    <?php foreach ($allRoles as $role): ?>
+                                        <?php 
+                                            $hasFlag = in_array($role->getId(), $userFlagIds);
+                                            $btnStyle = $hasFlag ? 'btn-secondary' : 'btn-outline-secondary';
+                                            $action = $hasFlag ? 'remove' : 'add';
+                                        ?>
+                                        <button type="button" 
+                                                class="btn btn-sm <?php echo $btnStyle; ?> mb-1 btn-flag-toggle"
+                                                data-flag-id="<?php echo $role->getId(); ?>"
+                                                data-user-id="<?php echo $u->getId(); ?>"
+                                                data-action="<?php echo $action; ?>">
+                                            <?php echo $role->getName(); ?>
+                                        </button>
+                                    <?php endforeach; ?>
                                 </td>
                                 <td class="align-middle">
                                     <?php 
@@ -111,22 +111,41 @@ include_once PUBLIC_FILES . '/modules/header.php';
 </div>
 
 <script>
-/**
- * Simple client-side search to filter table rows
- */
-document.getElementById('userSearch').addEventListener('keyup', function() {
-    let searchText = this.value.toLowerCase();
-    let tableRows = document.querySelectorAll('#usersTable tbody tr');
+$("#usersTable").DataTable({
+    'scrollX': false,
+    'paging': false,
+    'ordering': true,
+    'info': true,
+    'order': [[ 0, "asc" ]],
+    "columns": [
+        null,
+        null,
+        null,
+        null,
+        { "orderable": false }
+    ]
+});
 
-    tableRows.forEach(row => {
-        // We get the text content of the row (Name, Email, Roles)
-        let text = row.innerText.toLowerCase();
-        if(text.includes(searchText)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
+$('.btn-flag-toggle').on('click', function () {
+    const btn = $(this);
+    if (btn.prop('disabled')) return;
+    btn.prop('disabled', true);
+
+    const action = btn.data('action');
+
+    api.post('/users.php', {
+        action: 'toggleAdminUserFlag',
+        userId: btn.data('user-id'),
+        flagId: btn.data('flag-id'),
+        operation: action
+    })
+    .then(() => {
+        btn.toggleClass('btn-secondary btn-outline-secondary');
+        btn.data('action', action === 'add' ? 'remove' : 'add');
+        snackbar('Permissions updated', 'success');
+    })
+    .catch(err => snackbar(err.message, 'error'))
+    .always(() => btn.prop('disabled', false));
 });
 </script>
 
