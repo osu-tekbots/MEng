@@ -133,7 +133,7 @@ if ($userFlags && is_array($userFlags)) {
                         <h5 class="mb-0">Personal Information</h5>
                     </div>
                     <div class="card-body">
-                        <form id="formEditProfile">
+                        <form id="formEditProfile" onsubmit="return onEditProfileFormSubmit(event)">
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="firstName">First Name</label>
@@ -195,7 +195,7 @@ if ($userFlags && is_array($userFlags)) {
                     </div>
                 </div>
 
-                <form id="formUploadDocument">
+                <form id="formUploadDocument" onsubmit="return onUploadDocumentFormSubmit(event)">
                     <input type="hidden" name="userId" id="userId" value="<?php echo $user->getId(); ?>" />
 
                     <div class="card shadow-sm mb-4">
@@ -229,7 +229,7 @@ if ($userFlags && is_array($userFlags)) {
                                                     <i class="fas fa-lock"></i> Locked
                                                 </button>
                                             <?php else: ?>
-                                                <a id="aUploadDelete" class="btn btn-sm btn-outline-danger">Delete</a>
+                                                <a id="aUploadDelete" class="btn btn-sm btn-outline-danger" onclick="onUploadDelete(event)">Delete</a>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -285,12 +285,10 @@ if ($userFlags && is_array($userFlags)) {
                             <input type="text" class="form-control-plaintext font-weight-bold" 
                                    value="<?php echo $user->getOnid(); ?>" readonly>
                         </div>
-                        
-                    </div>
-                </div>
-<hr>
 
-<h6 class="text-muted small text-uppercase font-weight-bold mb-2">User Roles</h6>
+                        <hr>
+
+                        <h6 class="text-muted small text-uppercase font-weight-bold mb-2">User Roles</h6>
                         <div>
                             <?php 
                                 $hasRoles = false;
@@ -306,7 +304,9 @@ if ($userFlags && is_array($userFlags)) {
                                     echo '<span class="text-muted small font-italic">No Roles</span>';
                                 }
                             ?>
-                        </div>						
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -360,17 +360,7 @@ async function updateProgram(selectElem) {
     }
 }
 
-/**
- * Enables the Save Changes button when a profile form input changes.
- */
-let changesDetected = false;
-function onEditProfileFormInputChange() {
-    if (!changesDetected) {
-        $('#btnEditProfileSubmit').attr('disabled', false);
-        changesDetected = true;
-    }
-}
-$('#formEditProfile input[type=file]').change(onEditProfileFormInputChange);
+
 
 /**
  * Handles the Document Upload form submission (new upload or update).
@@ -435,7 +425,7 @@ function onUploadDocumentFormSubmit(event) {
     $('#btnUploadLoader').show();
     return false;
 }
-$('#formUploadDocument').on('submit', onUploadDocumentFormSubmit);
+
 
 /**
  * Handles deleting an uploaded document.
@@ -464,7 +454,7 @@ function onUploadDelete(event) {
             $('#btnUploadLoader').hide();
         });
 }
-$('#aUploadDelete').on('click', onUploadDelete);
+
 
 /**
  * Handles the Profile Edit form submission.
@@ -492,7 +482,7 @@ function onEditProfileFormSubmit(event) {
             $('#btnEditProfileSubmit').attr('disabled', false);
         });
 }
-$('#formEditProfile').on('submit', onEditProfileFormSubmit);
+
 </script>
 
 <?php
