@@ -52,6 +52,8 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                             $userFlagIds[] = (string)$flag->getId();
                                         }
                                     }
+                                    $minArr = 999;
+                                    foreach ($allRoles as $r) { if (in_array($r->getId(), $userFlagIds) && $r->getArrangement() < $minArr) $minArr = $r->getArrangement(); }
                             ?>
                             <tr>
                                 <td class="align-middle font-weight-bold">
@@ -62,7 +64,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                         <?php echo $u->getEmail(); ?>
                                     </a>
                                 </td>
-                                <td class="align-middle">
+                                <td class="align-middle" data-order="<?php echo $minArr; ?>">
                                     <?php foreach ($allRoles as $role): ?>
                                         <?php 
                                             $hasFlag = in_array($role->getId(), $userFlagIds);
