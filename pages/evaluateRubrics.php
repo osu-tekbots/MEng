@@ -30,8 +30,16 @@ $usersDao = new UsersDao($dbConn, $logger); //Need first name, last name
 $uploadsDao = new UploadsDao($dbConn, $logger);//Need upload name and upload file path
 $rubricsDao = new RubricsDao($dbConn, $logger);
 
+// Detect view-only mode (used when admin views a completed evaluation)
+$isViewMode = isset($_GET['viewMode']) && $_GET['viewMode'] === '1';
+
 // Evaluations assigned to the current reviewer
 $evaluations = $evaluationsDao->getEvaluationsByReviewerUserId($_SESSION['userID']);
+
+// View-mode metadata (student / reviewer / rubric names for the info card)
+$viewStudentName  = '';
+$viewReviewerName = '';
+$viewRubricName   = '';
 
 
 /* =========================================================================
@@ -45,14 +53,15 @@ $evaluations = $evaluationsDao->getEvaluationsByReviewerUserId($_SESSION['userID
  * @param string $inputName       The HTML input `name` attribute (e.g. "answers[<id>]")
  * @param string $rawId           The rubric-item ID (used to build unique element IDs)
  * @param string|null $currentOptionId  The currently-selected option ID (if any)
+ * @param bool   $isViewMode      When true, the input is disabled (read-only)
  */
-function renderOptionButton($opt, $inputName, $rawId, $currentOptionId) { ?>
+function renderOptionButton($opt, $inputName, $rawId, $currentOptionId, $isViewMode = false) { ?>
     <input class="btn-check" type="radio"
            name="<?= htmlspecialchars($inputName) ?>"
            id="<?= htmlspecialchars($rawId . '_' . $opt->getId()) ?>"
            value="<?= htmlspecialchars($opt->getId()) ?>"
            <?= ($currentOptionId == $opt->getId() ? 'checked' : '') ?>
-           required>
+           <?= $isViewMode ? 'disabled' : 'required' ?>>
     <label class="btn rubric-btn w-100 h-100 d-flex align-items-center justify-content-center text-center p-3"
            for="<?= htmlspecialchars($rawId . '_' . $opt->getId()) ?>">
         <?= htmlspecialchars($opt->getTitle()) ?>
@@ -70,8 +79,9 @@ function renderOptionButton($opt, $inputName, $rawId, $currentOptionId) { ?>
  * @param string       $currentComment  Existing comment text
  * @param string       $rawId           The rubric-item ID
  * @param string       $name            HTML input name for the answers radio group
+ * @param bool         $isViewMode      When true, inputs are disabled and comments are read-only
  */
-function renderEvaluationItem($item, $options, $currentOptionId, $currentComment, $rawId, $name) {
+function renderEvaluationItem($item, $options, $currentOptionId, $currentComment, $rawId, $name, $isViewMode = false) {
     $optionCount = $options ? count($options) : 0;
     ?>
     <div class="row mb-5">
@@ -98,7 +108,7 @@ function renderEvaluationItem($item, $options, $currentOptionId, $currentComment
                     <div class="d-flex w-100 gap-2 mb-4 flex-wrap">
                         <?php foreach ($options as $opt): ?>
                             <div class="flex-fill" style="flex-basis: 0; min-width: 150px;">
-                                <?php renderOptionButton($opt, $name, $rawId, $currentOptionId); ?>
+                                <?php renderOptionButton($opt, $name, $rawId, $currentOptionId, $isViewMode); ?>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -114,23 +124,33 @@ function renderEvaluationItem($item, $options, $currentOptionId, $currentComment
                         <div class="col-md-5 d-flex flex-column gap-3 mb-3 mb-md-0">
                             <?php foreach ($options as $opt): ?>
                                 <div class="flex-fill">
-                                    <?php renderOptionButton($opt, $name, $rawId, $currentOptionId); ?>
+                                    <?php renderOptionButton($opt, $name, $rawId, $currentOptionId, $isViewMode); ?>
                                 </div>
                             <?php endforeach; ?>
                         </div>
                         <div class="col-md-7">
-                            <label class="mb-2" for="<?= htmlspecialchars('comments_' . $rawId) ?>">
-                                <strong>Add Comments <?= $item->getCommentRequired() ? '<span class="text-danger">*</span>' : '' ?>:</strong>
-                            </label>
-                            <textarea class="form-control item-comments" style="field-sizing: content;" id="<?= htmlspecialchars('comments_' . $rawId) ?>" name="<?= htmlspecialchars('comments[' . $rawId . ']') ?>" <?= $item->getCommentRequired() ? 'required' : '' ?>><?= htmlspecialchars($currentComment) ?></textarea>
+                            <?php if ($isViewMode): ?>
+                                <label class="mb-2"><strong>Comments:</strong></label>
+                                <div class="readonly-comment"><?= !empty($currentComment) ? $currentComment : '<em class="text-muted">No comments provided.</em>' ?></div>
+                            <?php else: ?>
+                                <label class="mb-2" for="<?= htmlspecialchars('comments_' . $rawId) ?>">
+                                    <strong>Add Comments <?= $item->getCommentRequired() ? '<span class="text-danger">*</span>' : '' ?>:</strong>
+                                </label>
+                                <textarea class="form-control item-comments" style="field-sizing: content;" id="<?= htmlspecialchars('comments_' . $rawId) ?>" name="<?= htmlspecialchars('comments[' . $rawId . ']') ?>" <?= $item->getCommentRequired() ? 'required' : '' ?>><?= htmlspecialchars($currentComment) ?></textarea>
+                            <?php endif; ?>
                         </div>
                     <?php else: ?>
                         <!-- Full-width comment box (used when there are 0 or >2 options) -->
                         <div class="col-12">
-                            <label class="mb-2" for="<?= htmlspecialchars('comments_' . $rawId) ?>">
-                                <strong>Add Comments <?= $item->getCommentRequired() ? '<span class="text-danger">*</span>' : '' ?>:</strong> 
-                            </label>
-                            <textarea class="form-control item-comments" style="field-sizing: content;" id="<?= htmlspecialchars('comments_' . $rawId) ?>" name="<?= htmlspecialchars('comments[' . $rawId . ']') ?>" <?= $item->getCommentRequired() ? 'required' : '' ?>><?= htmlspecialchars($currentComment) ?></textarea>
+                            <?php if ($isViewMode): ?>
+                                <label class="mb-2"><strong>Comments:</strong></label>
+                                <div class="readonly-comment"><?= !empty($currentComment) ? $currentComment : '<em class="text-muted">No comments provided.</em>' ?></div>
+                            <?php else: ?>
+                                <label class="mb-2" for="<?= htmlspecialchars('comments_' . $rawId) ?>">
+                                    <strong>Add Comments <?= $item->getCommentRequired() ? '<span class="text-danger">*</span>' : '' ?>:</strong> 
+                                </label>
+                                <textarea class="form-control item-comments" style="field-sizing: content;" id="<?= htmlspecialchars('comments_' . $rawId) ?>" name="<?= htmlspecialchars('comments[' . $rawId . ']') ?>" <?= $item->getCommentRequired() ? 'required' : '' ?>><?= htmlspecialchars($currentComment) ?></textarea>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -195,7 +215,7 @@ function renderStatusBanner($highestStatusFlag) {
  *       reviewer sees fresh data and a browser-refresh won't re-post.
  * ========================================================================= */
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isViewMode) {
 
     // Pull submitted data from the form
     $evaluationId = $_POST['evaluationId'] ?? '';
@@ -293,6 +313,18 @@ if (isset($_GET['evaluationId'])) {
     // Load the highest status flag (includes date_created from flag_assignments)
     $highestStatusFlag = $evaluationsDao->getHighestStatusFlagByEvaluationId($_GET['evaluationId']);
 
+    // In view mode, load student/reviewer/rubric names for the info card
+    if ($isViewMode) {
+        $viewEval = $evaluationsDao->getEvaluationById($_GET['evaluationId']);
+        if ($viewEval) {
+            $student  = $usersDao->getUser($viewEval->getFkStudentId());
+            $reviewer = $usersDao->getUser($viewEval->getFkReviewerId());
+            $viewStudentName  = $student  ? $student->getFullName()  : 'Unknown Student';
+            $viewReviewerName = $reviewer ? $reviewer->getFullName() : 'Unknown Reviewer';
+            $viewRubricName   = $selectedTemplate ? $selectedTemplate->getName() : 'Unknown Rubric';
+        }
+    }
+
     if ($logger && $selectedTemplate) {
         $logger->info('Selected Evaluation ID: ' . $_GET['evaluationId']);
         $logger->info('Selected Template Name: ' . $selectedTemplate->getName());
@@ -343,6 +375,25 @@ include_once PUBLIC_FILES . '/modules/header.php';
     border-color: #198754 !important;
     box-shadow: inset 0 3px 5px rgba(0,0,0,0.125);
 }
+/* View-mode overrides — scoped via .view-mode on the container */
+.view-mode .rubric-btn {
+    cursor: default;
+    pointer-events: none;
+}
+.view-mode .rubric-btn:hover {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+}
+/* Read-only comment display box (view mode) */
+.readonly-comment {
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    min-height: 60px;
+    overflow-y: auto;
+    color: #495057;
+}
 </style>
 
 
@@ -350,12 +401,26 @@ include_once PUBLIC_FILES . '/modules/header.php';
      PAGE CONTENT
      ===================================================================== -->
 
-<div class="container mt-4">
+<div class="container mt-4<?= $isViewMode ? ' view-mode' : '' ?>">
 
-    <!-- Back to Reviewer Assignments button -->
-    <a href="./reviewerAssignments.php" class="btn btn-outline-secondary mb-3">
-        <i class="bi bi-arrow-left"></i> Back to Reviewer Assignments
-    </a>
+    <!-- Back button — context-aware -->
+    <?php if ($isViewMode): ?>
+        <div class="d-flex">
+            <a href="./viewReviews.php" class="btn btn-outline-secondary mb-3">
+                <i class="bi bi-arrow-left"></i> Back to View Reviews
+            </a>
+            
+            <!-- Edit button — switches to edit mode -->
+            <a href="./evaluateRubrics.php?evaluationId=<?= urlencode($_GET['evaluationId']) ?>&viewMode=0" 
+                    class="btn btn-outline-primary mb-3 ms-auto">
+                <i class="bi bi-pencil-fill me-1"></i> Edit Evaluation
+            </a>
+        </div>
+    <?php else: ?>
+        <a href="./reviewerAssignments.php" class="btn btn-outline-secondary mb-3">
+            <i class="bi bi-arrow-left"></i> Back to Reviewer Assignments
+        </a>
+    <?php endif; ?>
 
     <!-- =================================================================
          Rubric evaluation form (shown when an evaluation is selected)
@@ -370,7 +435,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
             <div class="d-flex align-items-center justify-content-between">
                 <h2 class="mb-0 mt-3">
-                    Evaluating rubric: <?php echo htmlspecialchars($selectedTemplate->getName()); ?>
+                    <?= $isViewMode ? 'Viewing Evaluation' : 'Evaluating rubric' ?>: <?php echo htmlspecialchars($selectedTemplate->getName()); ?>
                 </h2>
 
                 <a class="fs-5 fw-semibold text-decoration-none"
@@ -382,10 +447,32 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
             <?php renderStatusBanner($highestStatusFlag); ?>
 
-            <br>
+            <?php if ($isViewMode): ?>
+                <!-- Evaluation metadata: student, reviewer, rubric -->
+                <div class="card mb-4 mt-2">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Student:</strong> <?= htmlspecialchars($viewStudentName) ?>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Reviewer:</strong> <?= htmlspecialchars($viewReviewerName) ?>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Rubric:</strong> <?= htmlspecialchars($viewRubricName) ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+
+            <!-- Doesnt render the form when in view mode, only the components so submission is impossible-->
+            <?php if (!$isViewMode): ?>
             <form method="POST" action="" id="rubricAnswersForm">
                 <input type="hidden" name="templateId" value="<?php echo $selectedTemplate->getId(); ?>">
                 <input type="hidden" name="evaluationId" value="<?php echo htmlspecialchars($_GET['evaluationId']); ?>">
+            <?php endif; ?>
                 
                 <!--Evaluation questions + answer box-->
                 <?php $logger->info('Iterating through ' . count($selectedTemplate->items) . ' items for rendering.'); ?>
@@ -402,8 +489,10 @@ include_once PUBLIC_FILES . '/modules/header.php';
                     $rawId = $item->getId();
                     $name = 'answers[' . $rawId . ']';
                 ?>
-                    <?php renderEvaluationItem($item, $options, $currentOptionId, $currentComment, $rawId, $name); ?>
+                    <?php renderEvaluationItem($item, $options, $currentOptionId, $currentComment, $rawId, $name, $isViewMode); ?>
                 <?php endforeach; ?>
+
+            <?php if (!$isViewMode): ?>
 
                 <div class="mb-3">
                     <?php if (!$isSubmitted): ?>
@@ -415,8 +504,9 @@ include_once PUBLIC_FILES . '/modules/header.php';
                 </div>
             </form>
 
-    <?php else: ?>
+            <?php endif; ?>
 
+    <?php else: ?>
             <!-- No evaluation selected message -->
             <div class="alert alert-warning d-flex align-items-center mt-3" role="alert">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -469,8 +559,12 @@ include_once PUBLIC_FILES . '/modules/footer.php';
         .catch(err => console.error('CKEditor init error:', err));
     }
 
-    /** Initialise CKEditor on every comment textarea. */
+    /** Initialise CKEditor on every comment textarea (skipped in view mode). */
     function initializeAnswerEditors() {
+        <?php if ($isViewMode): ?>
+        // View mode — no textareas to initialise
+        return;
+        <?php endif; ?>
         /*
         document.querySelectorAll('textarea.item-comments').forEach(textarea => {
             createEditorForAnswer(textarea);

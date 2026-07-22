@@ -172,6 +172,7 @@ include_once PUBLIC_FILES . '/modules/header.php';
                             <th scope="col">Rubric Name</th>
                             <th scope="col">Export Data</th>
                             <th scope="col">View</th>
+                            <th scope="col">Delete</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -199,7 +200,8 @@ include_once PUBLIC_FILES . '/modules/header.php';
                                 echo '<td>' . $row['date_completed'] . '</td>';
                                 echo '<td>' . htmlspecialchars($row['rubric_name']) . '</td>';
                                 echo '<td> <button data-id = "' . $row['id'] . '"  class = "btn btn-success export-btn"> Export </button> </td>';
-                                echo '<td> <a href="viewEvaluation.php?evaluationId=' . urlencode($row['id']) . '" class="btn btn-primary btn-sm">View</a> </td>';
+                                echo '<td> <a href="evaluateRubrics.php?evaluationId=' . urlencode($row['id']) . '&viewMode=1" class="btn btn-primary btn-sm">View</a> </td>';
+                                echo '<td> <button onclick="deleteEvaluation(\'' . htmlspecialchars($row['id']) . '\')" class="btn btn-danger btn-sm"><i class="bi bi-trash-fill"></i></button> </td>';
                                 echo '</tr>';
                             }
                         ?>
@@ -360,6 +362,35 @@ include_once PUBLIC_FILES . '/modules/header.php';
             url += "program=" + progValue;
         }
         window.location.href = window.location.pathname + url;
+    }
+
+    // Handle evaluation deletion
+    function deleteEvaluation(evalId) {
+        console.log("Delete button clicked for evaluation ID:", evalId);
+        
+        if (confirm("Are you sure you want to delete this evaluation? This action cannot be undone.")) {
+            console.log("Deletion confirmed by user. Sending POST request to api/evaluations.php...");
+            
+            let body = {
+                action: 'deleteEvaluation',
+                evaluationId: evalId
+            };
+
+            api.post('/evaluations.php', body)
+                .then(res => {
+                    console.log("Delete request succeeded. Response:", res);
+                    if (typeof snackbar === 'function') snackbar(res.message, 'success');
+                    else alert(res.message || "Evaluation deleted successfully.");
+                    setTimeout(() => window.location.reload(), 1000);
+                })
+                .catch(err => {
+                    console.error("Delete request failed. Error:", err);
+                    if (typeof snackbar === 'function') snackbar(err.message, 'error');
+                    else alert(err.message || "Failed to delete evaluation.");
+                });
+        } else {
+            console.log("Deletion cancelled by user.");
+        }
     }
 
     // Initialize DataTable
