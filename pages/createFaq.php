@@ -53,13 +53,20 @@ include_once PUBLIC_FILES . '/modules/header.php';
         
         <div class="row mb-4">
             <div class="col">
-                <h2><?php echo ($faq ? 'Edit FAQ' : 'Create New FAQ'); ?></h2>
+                <h2><?php echo ($faq ? 'Edit FAQ' : 'Manage FAQs'); ?></h2>
                 <p class="text-muted">Use this form to create or edit a frequently asked question. FAQs are shown on pages based on their category.</p>
             </div>
+            <?php if (!$faq): ?>
+            <div class="col-auto d-flex align-items-center">
+                <button id="toggleCreateBtn" class="btn btn-primary" onclick="toggleCreateForm();">
+                    <i class="fas fa-plus"></i> Create New
+                </button>
+            </div>
+            <?php endif; ?>
         </div>
 
-        <!-- FAQ Form -->
-        <div class="card shadow-sm mb-4">
+        <!-- FAQ Form (hidden by default when creating, visible when editing) -->
+        <div id="faqFormCard" class="card shadow-sm mb-4 <?php echo ($faq ? '' : 'd-none'); ?>">
             <div class="card-header bg-light">
                 <h5 class="mb-0"><?php echo ($faq ? 'Edit FAQ #' . htmlspecialchars($id) : 'New FAQ'); ?></h5>
             </div>
@@ -93,18 +100,22 @@ include_once PUBLIC_FILES . '/modules/header.php';
 
                     <div class="d-flex gap-2">
                         <?php if ($faq): ?>
-                            <button name = "updateFaq" type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Update FAQ
-                            </button>
-                            <button type="button" class="btn btn-danger" onclick="onDeleteFaqClick();">
-                                <i class="fas fa-trash"></i> Delete FAQ
-                            </button>
                             <a href="createFaq" class="btn btn-secondary">
-                                <i class="fas fa-plus"></i> Create New FAQ
+                                Cancel
                             </a>
+                            <div class = "ms-auto"> 
+                                <button name = "updateFaq" type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Update FAQ
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="onDeleteFaqClick();">
+                                    <i class="fas fa-trash"></i> Delete FAQ
+                                </button>
+                            </div>
+                            
+                            
                         <?php else: ?>
-                            <button name = "newFaq" type="submit" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Add New FAQ
+                            <button name = "newFaq" type="submit" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Save
                             </button>
                         <?php endif; ?>
                     </div>
@@ -148,6 +159,8 @@ include_once PUBLIC_FILES . '/modules/header.php';
             </div>
         </div>
 
+
+
     </div>
 </div>
 
@@ -172,6 +185,19 @@ include_once PUBLIC_FILES . '/modules/header.php';
         new DataTable('#faqsTable', {
             order: [[0, 'asc'], [1, 'asc']]
         });
+    }
+
+    function toggleCreateForm() {
+        const formCard = document.getElementById('faqFormCard');
+        const btn = document.getElementById('toggleCreateBtn');
+        const isHidden = formCard.classList.toggle('d-none');
+        if (isHidden) {
+            btn.className = 'btn btn-primary';
+            btn.innerHTML = '<i class="fas fa-plus"></i> Create New';
+        } else {
+            btn.className = 'btn btn-secondary';
+            btn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+        }
     }
 
     function onCreateFaqClick() {
