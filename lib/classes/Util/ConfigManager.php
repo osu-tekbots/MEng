@@ -161,7 +161,22 @@ class ConfigManager {
      * @return string
      */
     public function getBaseUrl() {
-        return $this->get('client.base_url');
+        $map = $this->get('client_hosts') ?? [];
+
+        $host = strtolower($_SERVER['HTTP_HOST'] ?? '');
+        if ($host === '') {
+            throw new RuntimeException('No HTTP_HOST; base URL is request-scoped.');
+        }
+
+        // strip any :port — HTTP_HOST carries it, map keys don't
+        if (($colon = strrpos($host, ':')) !== false) {
+            $host = substr($host, 0, $colon);
+        }
+
+        if (!isset($map[$host])) {
+            throw new RuntimeException("Unrecognized host: {$host}");
+        }
+        return $map[$host];
     }
 
     /**
